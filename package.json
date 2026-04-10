@@ -1,0 +1,12 @@
+{
+  "name": "bagipangan",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev:fe": "npm run dev --prefix fe-nextjs",
+    "dev:be": "cd be-laravel && php artisan serve",
+    "dev": "npx concurrently -n \"frontend,backend\" -c \"cyan,magenta\" \"npm:dev:fe\" \"npm:dev:be\"",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
