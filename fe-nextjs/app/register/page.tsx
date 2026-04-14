@@ -53,9 +53,11 @@ export default function RegisterPage() {
     const validationErrors = validate();
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
-    // TODO: Integrasi backend, kirim form ke backend jika sudah siap
-    setNotification("Registrasi Berhasil (dummy)");
-    // setTimeout(() => router.push("/login"), 1500);
+    // Simpan data step 1 ke sessionStorage dan lanjut ke step 2
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("registerStep1", JSON.stringify(form));
+    }
+    router.push("/register/step2");
   };
 
   return (

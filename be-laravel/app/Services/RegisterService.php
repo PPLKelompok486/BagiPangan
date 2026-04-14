@@ -24,6 +24,10 @@ class RegisterService
                 'regex:/[0-9]/',
             ],
             'password_confirmation' => 'required|same:password',
+            'phone' => 'required|digits_between:8,15',
+            'city' => 'required|string|max:100',
+            'organization' => 'nullable|string|max:255',
+            'job' => 'nullable|string|max:100',
         ], [
             'role.required' => 'Peran wajib dipilih',
             'role.in' => 'Peran tidak valid',
@@ -36,6 +40,9 @@ class RegisterService
             'password.regex' => 'Password harus kombinasi huruf besar, kecil, dan angka',
             'password_confirmation.required' => 'Konfirmasi password wajib diisi',
             'password_confirmation.same' => 'Password dan konfirmasi harus sama',
+            'phone.required' => 'Nomor telepon wajib diisi',
+            'phone.digits_between' => 'Nomor telepon harus berupa angka 8-15 digit',
+            'city.required' => 'Kota wajib diisi',
         ]);
 
         if ($validator->fails()) {
@@ -47,6 +54,10 @@ class RegisterService
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
+            'phone' => $data['phone'] ?? null,
+            'city' => $data['city'] ?? null,
+            'organization' => $data['organization'] ?? null,
+            'job' => $data['job'] ?? null,
         ]);
 
         return $user;

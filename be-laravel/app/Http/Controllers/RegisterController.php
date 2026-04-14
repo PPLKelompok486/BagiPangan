@@ -23,8 +23,13 @@ class RegisterController extends Controller
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
+            \Log::error('Register Error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'request' => $request->all(),
+            ]);
             return response()->json([
-                'message' => 'Registrasi Gagal',
+                'message' => 'Registrasi Gagal: ' . $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
