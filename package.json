@@ -8,5 +8,8 @@
     "dev:be": "cd be-laravel && php artisan serve",
     "dev": "npx concurrently -n \"frontend,backend\" -c \"cyan,magenta\" \"npm:dev:fe\" \"npm:dev:be\"",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "react-icons": "^5.6.0"
   }
 }
