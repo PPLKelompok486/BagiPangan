@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+.bagi-theme {
+  --brand-950: #071710;
+  --brand-900: #0d2b1a;
+  --brand-800: #1a4731;
+  --brand-700: #1f5c3e;
+  --brand-600: #2d7a4f;
+  --brand-500: #3daa6b;
+  --brand-400: #5ec989;
+  --brand-300: #8edba8;
+  --brand-100: #d6f5e3;
+  --brand-50: #f0fbf4;
+  --lime: #a8e63d;
+  --cream: #fdfaf4;
+  --text-dark: #0d1f15;
+  --text-mid: #3d5c4a;
+  --shadow-soft: 0 24px 80px rgba(13, 43, 26, 0.2);
+  --shadow-card: 0 18px 40px rgba(13, 43, 26, 0.08);
+}
+
+.bagi-theme,
+.bagi-theme body {
+  font-family: var(--font-bagipangan-body), sans-serif;
+}
+
+.bagi-display {
+  font-family: var(--font-bagipangan-display), serif;
+  font-variation-settings: "opsz" 120;
+  letter-spacing: -0.03em;
+}
+
+.bagi-text-balance {
+  text-wrap: balance;
+}
+
+.bagi-noise {
+  position: relative;
+}
+
+.bagi-noise::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.16;
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.35) 0 1px, transparent 1px),
+    radial-gradient(circle at 80% 0%, rgba(255, 255, 255, 0.22) 0 1px, transparent 1px),
+    radial-gradient(circle at 40% 60%, rgba(255, 255, 255, 0.16) 0 1px, transparent 1px);
+  background-size: 24px 24px, 32px 32px, 28px 28px;
+  mix-blend-mode: soft-light;
+}
+
+.bagi-ring {
+  position: absolute;
+  inset: auto;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.bagi-dashboard-grid {
+  background-image:
+    linear-gradient(rgba(214, 245, 227, 0.64) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(214, 245, 227, 0.64) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+
+  .bagi-noise::after {
+    opacity: 0.08;
+  }
+}
