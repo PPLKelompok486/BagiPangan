@@ -54,11 +54,21 @@ export function ProblemStatement() {
           className="flex flex-col gap-8"
           variants={createStaggerContainer(reducedMotion, 0.12, 0.2)}
         >
-          {problemStats.map((stat) => (
+          {problemStats.map((stat, index) => (
             <motion.div
               key={stat.label}
-              className="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur-sm"
+              className="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-colors"
               variants={createFadeSideVariants(reducedMotion, "right")}
+              whileHover={
+                reducedMotion
+                  ? undefined
+                  : {
+                      borderColor: "rgba(168, 230, 61, 0.3)",
+                      backgroundColor: "rgba(255, 255, 255, 0.08)",
+                      y: -4,
+                    }
+              }
+              transition={{ type: "spring", stiffness: 260, damping: 25 }}
             >
               <p className="bagi-display text-3xl font-semibold text-[var(--lime)] sm:text-4xl">
                 {stat.value}
@@ -69,6 +79,25 @@ export function ProblemStatement() {
                 ) : null}
               </p>
               <p className="mt-2 text-base text-white/72">{stat.label}</p>
+
+              {/* Animated underline */}
+              <motion.div
+                className="mt-4 h-px bg-[linear-gradient(90deg,var(--lime),transparent)]"
+                initial={{ scaleX: 0 }}
+                animate={isInView ? { scaleX: 1 } : { scaleX: 0 }}
+                transition={
+                  reducedMotion
+                    ? { duration: 0 }
+                    : { duration: 0.8, delay: 0.5 + index * 0.15, ease: [0.16, 1, 0.3, 1] }
+                }
+                style={{ transformOrigin: "left" }}
+              />
+
+              {/* Hover glow */}
+              <div
+                className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-[var(--lime)] opacity-0 blur-3xl transition-opacity group-hover:opacity-15"
+                aria-hidden="true"
+              />
             </motion.div>
           ))}
         </motion.div>

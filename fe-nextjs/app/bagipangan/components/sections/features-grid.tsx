@@ -1,10 +1,10 @@
 "use client";
 
 import { motion, useInView, useReducedMotion } from "framer-motion";
-import { useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import { features } from "../../data";
 import { cn } from "../../lib/cn";
-import { createFadeUpVariants, createStaggerContainer } from "../../lib/motion";
+import { createFadeUpVariants, createStaggerContainer, compute3DTilt, computeSpotlight } from "../../lib/motion";
 import { SectionHeader } from "../ui/section-header";
 
 const sizeClasses: Record<string, string> = {
@@ -13,6 +13,69 @@ const sizeClasses: Record<string, string> = {
   wide: "xl:col-span-2",
   full: "xl:col-span-3",
 };
+
+function TiltCard({
+  children,
+  className,
+  reducedMotion,
+  variants,
+  spotlightColor,
+}: {
+  children: React.ReactNode;
+  className: string;
+  reducedMotion: boolean | null;
+  variants: any;
+  spotlightColor: string;
+}) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [tilt, setTilt] = useState({ rotateX: 0, rotateY: 0 });
+  const [spotlight, setSpotlight] = useState("");
+  const [isHovered, setIsHovered] = useState(false);
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      if (reducedMotion || !cardRef.current) return;
+      const rect = cardRef.current.getBoundingClientRect();
+      const { rotateX, rotateY } = compute3DTilt(e.clientX, e.clientY, rect, 10);
+      setTilt({ rotateX, rotateY });
+      setSpotlight(computeSpotlight(e.clientX, e.clientY, rect, spotlightColor, 300));
+    },
+    [reducedMotion, spotlightColor],
+  );
+
+  const handleMouseLeave = useCallback(() => {
+    setTilt({ rotateX: 0, rotateY: 0 });
+    setSpotlight("");
+    setIsHovered(false);
+  }, []);
+
+  return (
+    <motion.article
+      ref={cardRef}
+      className={className}
+      variants={variants}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={handleMouseLeave}
+      animate={{
+        rotateX: reducedMotion ? 0 : tilt.rotateX,
+        rotateY: reducedMotion ? 0 : tilt.rotateY,
+        y: isHovered && !reducedMotion ? -8 : 0,
+      }}
+      transition={{ type: "spring", stiffness: 260, damping: 25 }}
+      style={{ perspective: "600px", transformStyle: "preserve-3d" }}
+    >
+      {/* Spotlight overlay */}
+      {spotlight && (
+        <div
+          className="pointer-events-none absolute inset-0 z-10 rounded-[2rem] transition-opacity duration-200"
+          style={{ backgroundImage: spotlight, opacity: isHovered ? 1 : 0 }}
+        />
+      )}
+      {children}
+    </motion.article>
+  );
+}
 
 export function FeaturesGrid() {
   const reducedMotion = useReducedMotion();
@@ -44,29 +107,30 @@ export function FeaturesGrid() {
             const size = feature.size ?? "standard";
             const isLarge = size === "large";
             const isFull = size === "full";
+            const spotlightColor =
+              isLarge || isFull
+                ? "rgba(168, 230, 61, 0.12)"
+                : "rgba(45, 122, 79, 0.08)";
 
             return (
-              <motion.article
+              <TiltCard
                 key={feature.title}
                 className={cn(
-                  "group rounded-[2rem] border border-[var(--brand-100)] p-7 shadow-[var(--shadow-card)]",
+                  "group relative overflow-hidden rounded-[2rem] border border-[var(--brand-100)] p-7 shadow-[var(--shadow-card)] transition-shadow duration-300",
                   sizeClasses[size],
                   isFull
-                    ? "bg-[var(--brand-600)] text-white"
+                    ? "bg-[var(--brand-600)] text-white hover:shadow-[0_24px_60px_rgba(45,122,79,0.25)]"
                     : isLarge
-                      ? "bg-[linear-gradient(135deg,var(--brand-900)_0%,var(--brand-700)_100%)] text-white"
-                      : "bg-[var(--cream)]",
+                      ? "bg-[linear-gradient(135deg,var(--brand-900)_0%,var(--brand-700)_100%)] text-white hover:shadow-[0_24px_60px_rgba(13,43,26,0.3)]"
+                      : "bg-[var(--cream)] hover:shadow-[0_24px_60px_rgba(13,43,26,0.12)]",
                 )}
+                reducedMotion={reducedMotion}
                 variants={createFadeUpVariants(reducedMotion)}
-                whileHover={
-                  reducedMotion
-                    ? undefined
-                    : { y: -8, borderColor: "var(--brand-400)" }
-                }
+                spotlightColor={spotlightColor}
               >
                 <div
                   className={cn(
-                    "flex h-full flex-col",
+                    "relative z-20 flex h-full flex-col",
                     isFull && "items-center text-center",
                   )}
                 >
@@ -80,8 +144,9 @@ export function FeaturesGrid() {
                     whileHover={
                       reducedMotion
                         ? undefined
-                        : { scale: 1.08, rotate: 8 }
+                        : { scale: 1.15, rotate: 12 }
                     }
+                    transition={{ type: "spring", stiffness: 300, damping: 15 }}
                   >
                     <Icon className={isLarge ? "h-7 w-7" : "h-6 w-6"} />
                   </motion.div>
@@ -108,7 +173,7 @@ export function FeaturesGrid() {
                     {feature.description}
                   </p>
                 </div>
-              </motion.article>
+              </TiltCard>
             );
           })}
         </motion.div>

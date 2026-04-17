@@ -1,11 +1,12 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
 import { ChevronDown } from "lucide-react";
+import { useCallback, useRef } from "react";
 import { Button } from "../ui/button";
 import {
-  createFadeUpVariants,
   createStaggerContainer,
+  createFadeUpVariants,
   withMotionPreference,
 } from "../../lib/motion";
 import { useSmoothScroll } from "../../providers/smooth-scroll-provider";
@@ -16,31 +17,37 @@ const blobs: Array<{
   className: string;
   animate: { x: number[]; y: number[]; scale: number[] };
   duration: number;
+  parallaxSpeed: number;
 }> = [
   {
     className: "left-[-10%] top-[10%] h-[26rem] w-[26rem] bg-[var(--brand-500)]",
     animate: { x: [0, 40, -10], y: [0, 30, -15], scale: [1, 1.08, 0.96] },
     duration: 18,
+    parallaxSpeed: 0.15,
   },
   {
     className: "right-[-12%] top-[8%] h-[20rem] w-[20rem] bg-[var(--brand-400)]",
     animate: { x: [0, -28, 12], y: [0, 24, -18], scale: [1, 0.95, 1.06] },
     duration: 14,
+    parallaxSpeed: 0.25,
   },
   {
     className: "left-[25%] bottom-[18%] h-[18rem] w-[18rem] bg-[var(--lime)]",
     animate: { x: [0, 20, -16], y: [0, -18, 14], scale: [1, 1.1, 0.94] },
     duration: 17,
+    parallaxSpeed: 0.2,
   },
   {
     className: "right-[20%] bottom-[12%] h-[22rem] w-[22rem] bg-[var(--brand-300)]",
     animate: { x: [0, -20, 14], y: [0, 18, -10], scale: [1, 0.94, 1.04] },
     duration: 16,
+    parallaxSpeed: 0.3,
   },
   {
     className: "left-[46%] top-[20%] h-[15rem] w-[15rem] bg-[var(--brand-600)]",
     animate: { x: [0, 18, -12], y: [0, -14, 8], scale: [1, 1.03, 0.97] },
     duration: 12,
+    parallaxSpeed: 0.1,
   },
 ];
 
@@ -69,6 +76,15 @@ const chips: Array<{
     duration: 5.9,
   },
 ];
+
+const sparkles = Array.from({ length: 8 }, (_, i) => ({
+  id: i,
+  left: `${15 + Math.random() * 70}%`,
+  top: `${10 + Math.random() * 80}%`,
+  size: 2 + Math.random() * 3,
+  delay: Math.random() * 3,
+  duration: 2 + Math.random() * 2,
+}));
 
 function FoodBowlIllustration() {
   return (
@@ -184,18 +200,64 @@ function FoodBowlIllustration() {
 export function Hero() {
   const reducedMotion = useReducedMotion();
   const { scrollTo } = useSmoothScroll();
+  const sectionRef = useRef<HTMLElement>(null);
+  const bowlRef = useRef<HTMLDivElement>(null);
+
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end start"],
+  });
+
+  // Parallax transforms for blobs at different speeds
+  const blobParallax = blobs.map((blob) =>
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useTransform(scrollYProgress, [0, 1], [0, -120 * blob.parallaxSpeed]),
+  );
+
+  // Interactive bowl tilt
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const bowlRotateX = useSpring(useTransform(mouseY, [-300, 300], [8, -8]), {
+    stiffness: 150,
+    damping: 20,
+  });
+  const bowlRotateY = useSpring(useTransform(mouseX, [-300, 300], [-8, 8]), {
+    stiffness: 150,
+    damping: 20,
+  });
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      if (reducedMotion || !bowlRef.current) return;
+      const rect = bowlRef.current.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      mouseX.set(e.clientX - centerX);
+      mouseY.set(e.clientY - centerY);
+    },
+    [reducedMotion, mouseX, mouseY],
+  );
+
+  const handleMouseLeave = useCallback(() => {
+    mouseX.set(0);
+    mouseY.set(0);
+  }, [mouseX, mouseY]);
 
   return (
     <section
       className="bagi-noise relative isolate flex min-h-screen items-center overflow-hidden bg-[var(--brand-900)] px-4 pb-16 pt-28 text-white sm:px-6 lg:px-10"
       id="hero"
+      ref={sectionRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
     >
       <div className="absolute inset-0 overflow-hidden">
-        {blobs.map((blob) => (
+        {blobs.map((blob, index) => (
           <motion.div
             key={blob.className}
             animate={reducedMotion ? undefined : blob.animate}
             className={`absolute rounded-full opacity-8 blur-3xl ${blob.className}`}
+            style={{ y: reducedMotion ? 0 : blobParallax[index] }}
             transition={
               reducedMotion
                 ? { duration: 0 }
@@ -233,22 +295,35 @@ export function Hero() {
             Terhubung untuk donatur, penerima, dan relawan
           </motion.div>
 
+          {/* Animated text reveal heading */}
           <motion.h1
             aria-label="Bagi Makanan, Kurangi Pemborosan"
             className="bagi-display bagi-text-balance text-5xl font-semibold leading-[0.95] sm:text-6xl lg:text-[5.2rem]"
+            style={{ perspective: "600px" }}
             variants={createFadeUpVariants(reducedMotion, 0.04)}
           >
             <span className="flex flex-wrap gap-x-4 gap-y-3">
               {words.map((word, index) => (
                 <motion.span
                   key={word}
+                  className="inline-block"
                   transition={withMotionPreference(reducedMotion, {
                     duration: 0.7,
-                    delay: index * 0.08,
+                    delay: index * 0.1,
                   })}
                   variants={{
-                    hidden: { opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 28 },
-                    visible: { opacity: 1, y: 0 },
+                    hidden: {
+                      opacity: reducedMotion ? 1 : 0,
+                      y: reducedMotion ? 0 : 40,
+                      rotateX: reducedMotion ? 0 : 45,
+                      filter: reducedMotion ? "blur(0px)" : "blur(6px)",
+                    },
+                    visible: {
+                      opacity: 1,
+                      y: 0,
+                      rotateX: 0,
+                      filter: "blur(0px)",
+                    },
                   }}
                 >
                   <span className={word === "Makanan," ? "italic text-[var(--lime)]" : ""}>
@@ -288,7 +363,9 @@ export function Hero() {
           </motion.div>
         </motion.div>
 
+        {/* Interactive bowl with 3D tilt */}
         <motion.div
+          ref={bowlRef}
           className="relative z-10 mx-auto w-full max-w-[34rem]"
           initial={{ opacity: reducedMotion ? 1 : 0, x: reducedMotion ? 0 : 48 }}
           transition={withMotionPreference(reducedMotion, {
@@ -298,8 +375,22 @@ export function Hero() {
           })}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ amount: 0.3, once: true }}
+          style={{
+            perspective: "800px",
+          }}
         >
-          <div className="relative rounded-[2rem] border border-white/12 bg-white/6 px-5 py-7 shadow-[0_24px_80px_rgba(5,12,8,0.28)] backdrop-blur-sm sm:px-8">
+          <motion.div
+            className="relative rounded-[2rem] border border-white/12 bg-white/6 px-5 py-7 shadow-[0_24px_80px_rgba(5,12,8,0.28)] backdrop-blur-sm sm:px-8"
+            style={
+              reducedMotion
+                ? undefined
+                : {
+                    rotateX: bowlRotateX,
+                    rotateY: bowlRotateY,
+                    transformStyle: "preserve-3d",
+                  }
+            }
+          >
             <motion.div
               animate={reducedMotion ? undefined : { rotate: 360 }}
               className="bagi-ring left-[18%] top-[12%] h-56 w-56"
@@ -318,6 +409,32 @@ export function Hero() {
                 repeat: Number.POSITIVE_INFINITY,
               }}
             />
+
+            {/* Sparkle particles */}
+            {!reducedMotion &&
+              sparkles.map((sparkle) => (
+                <motion.div
+                  key={sparkle.id}
+                  className="absolute rounded-full bg-white/60"
+                  style={{
+                    left: sparkle.left,
+                    top: sparkle.top,
+                    width: sparkle.size,
+                    height: sparkle.size,
+                  }}
+                  animate={{
+                    opacity: [0, 1, 0],
+                    scale: [0, 1, 0],
+                    y: [0, -20, -40],
+                  }}
+                  transition={{
+                    duration: sparkle.duration,
+                    delay: sparkle.delay,
+                    repeat: Number.POSITIVE_INFINITY,
+                    ease: "easeOut",
+                  }}
+                />
+              ))}
 
             <motion.div
               animate={reducedMotion ? undefined : { y: [0, -14, 0] }}
@@ -342,11 +459,16 @@ export function Hero() {
                   ease: "easeInOut",
                   repeat: Number.POSITIVE_INFINITY,
                 }}
+                whileHover={
+                  reducedMotion
+                    ? undefined
+                    : { scale: 1.1, borderColor: "rgba(168, 230, 61, 0.4)" }
+                }
               >
                 {chip.label}
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         </motion.div>
       </div>
 

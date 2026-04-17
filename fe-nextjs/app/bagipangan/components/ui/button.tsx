@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
+import { useCallback, useRef, useState } from "react";
 import { cn } from "../../lib/cn";
 
 type ButtonVariant = "primary" | "secondary" | "ghost";
@@ -35,14 +36,60 @@ const variantStyles: Record<ButtonVariant, string> = {
 
 function sharedClassName(variant: ButtonVariant, className?: string) {
   return cn(
-    "inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold tracking-tight transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:px-6",
+    "relative inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold tracking-tight transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent overflow-hidden sm:px-6",
     variantStyles[variant],
     className,
   );
 }
 
+type Ripple = { id: number; x: number; y: number; size: number };
+
+function useRipple(reducedMotion: boolean | null) {
+  const [ripples, setRipples] = useState<Ripple[]>([]);
+  const nextId = useRef(0);
+
+  const addRipple = useCallback(
+    (e: React.MouseEvent) => {
+      if (reducedMotion) return;
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height) * 2;
+      const ripple: Ripple = {
+        id: nextId.current++,
+        x: e.clientX - rect.left - size / 2,
+        y: e.clientY - rect.top - size / 2,
+        size,
+      };
+      setRipples((prev) => [...prev, ripple]);
+      setTimeout(() => {
+        setRipples((prev) => prev.filter((r) => r.id !== ripple.id));
+      }, 600);
+    },
+    [reducedMotion],
+  );
+
+  const rippleElements = ripples.map((ripple) => (
+    <motion.span
+      key={ripple.id}
+      className="pointer-events-none absolute rounded-full bg-white/25"
+      initial={{ scale: 0, opacity: 0.5 }}
+      animate={{ scale: 1, opacity: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      style={{
+        left: ripple.x,
+        top: ripple.y,
+        width: ripple.size,
+        height: ripple.size,
+      }}
+    />
+  ));
+
+  return { addRipple, rippleElements };
+}
+
 export function Button(props: LinkButtonProps | ActionButtonProps) {
   const reducedMotion = useReducedMotion();
+  const { addRipple, rippleElements } = useRipple(reducedMotion);
+
   const hover = reducedMotion
     ? {}
     : {
@@ -66,8 +113,10 @@ export function Button(props: LinkButtonProps | ActionButtonProps) {
           className={sharedClassName(variant, linkProps.className)}
           whileHover={hover}
           whileTap={tap}
+          onMouseDown={addRipple}
         >
-          {linkProps.children}
+          {rippleElements}
+          <span className="relative z-10">{linkProps.children}</span>
         </motion.span>
       </Link>
     );
@@ -82,8 +131,10 @@ export function Button(props: LinkButtonProps | ActionButtonProps) {
       type={actionProps.type ?? "button"}
       whileHover={hover}
       whileTap={tap}
+      onMouseDown={addRipple}
     >
-      {actionProps.children}
+      {rippleElements}
+      <span className="relative z-10">{actionProps.children}</span>
     </motion.button>
   );
 }

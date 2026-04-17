@@ -10,10 +10,12 @@ import { PartnerLogos } from "./components/sections/partner-logos";
 import { ProblemStatement } from "./components/sections/problem-statement";
 import { ImpactStats } from "./components/sections/stats";
 import { Testimonials } from "./components/sections/testimonials";
+import { ScrollProgress } from "./components/ui/scroll-progress";
 
 export default function BagiPanganPage() {
   return (
     <main className="relative overflow-x-clip bg-[var(--cream)] text-[var(--text-dark)]">
+      <ScrollProgress />
       <Navbar />
       <Hero />
       <ProblemStatement />

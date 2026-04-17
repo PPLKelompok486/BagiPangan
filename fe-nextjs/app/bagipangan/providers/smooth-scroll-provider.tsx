@@ -35,12 +35,17 @@ export function SmoothScrollProvider({
       return undefined;
     }
 
+    const isTouch = window.matchMedia("(hover: none), (pointer: coarse)").matches;
+
+    if (isTouch) {
+      return undefined;
+    }
+
     const lenis = new Lenis({
       autoRaf: true,
       duration: 1.05,
       smoothWheel: true,
-      syncTouch: true,
-      touchMultiplier: 1.1,
+      syncTouch: false,
     });
 
     lenisRef.current = lenis;

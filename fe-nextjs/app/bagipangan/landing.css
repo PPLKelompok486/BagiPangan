@@ -66,6 +66,58 @@
   background-size: 24px 24px;
 }
 
+/* Animated gradient border for feature cards */
+@property --gradient-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.bagi-gradient-border {
+  position: relative;
+  isolation: isolate;
+}
+
+.bagi-gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--gradient-angle),
+    var(--brand-600),
+    var(--lime),
+    var(--brand-400),
+    var(--brand-600)
+  );
+  opacity: 0;
+  transition: opacity 0.3s;
+  animation: bagi-gradient-spin 4s linear infinite;
+}
+
+.bagi-gradient-border:hover::before {
+  opacity: 1;
+}
+
+@keyframes bagi-gradient-spin {
+  to {
+    --gradient-angle: 360deg;
+  }
+}
+
+/* Smooth focus glow for form inputs */
+.bagi-input-glow:focus {
+  box-shadow: 0 0 0 4px rgba(45, 122, 79, 0.1);
+}
+
+/* Cursor interaction hint */
+.bagi-interactive {
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html:focus-within {
     scroll-behavior: auto;
@@ -73,5 +125,9 @@
 
   .bagi-noise::after {
     opacity: 0.08;
+  }
+
+  .bagi-gradient-border::before {
+    animation: none;
   }
 }
