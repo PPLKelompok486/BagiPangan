@@ -77,13 +77,24 @@ const chips: Array<{
   },
 ];
 
-const sparkles = Array.from({ length: 8 }, (_, i) => ({
+const sparkleSeeds = [
+  [0.12, 0.74, 0.33, 0.81, 0.45],
+  [0.63, 0.18, 0.57, 0.29, 0.92],
+  [0.41, 0.86, 0.09, 0.66, 0.23],
+  [0.78, 0.35, 0.72, 0.14, 0.58],
+  [0.27, 0.51, 0.88, 0.47, 0.16],
+  [0.95, 0.62, 0.21, 0.83, 0.39],
+  [0.08, 0.44, 0.67, 0.32, 0.75],
+  [0.56, 0.29, 0.48, 0.91, 0.11],
+];
+
+const sparkles = sparkleSeeds.map(([a, b, c, d, e], i) => ({
   id: i,
-  left: `${15 + Math.random() * 70}%`,
-  top: `${10 + Math.random() * 80}%`,
-  size: 2 + Math.random() * 3,
-  delay: Math.random() * 3,
-  duration: 2 + Math.random() * 2,
+  left: `${15 + a * 70}%`,
+  top: `${10 + b * 80}%`,
+  size: 2 + c * 3,
+  delay: d * 3,
+  duration: 2 + e * 2,
 }));
 
 function FoodBowlIllustration() {

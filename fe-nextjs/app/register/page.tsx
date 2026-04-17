@@ -280,7 +280,11 @@ export default function RegisterPage() {
                           ? { scale: [1, 1.03, 1] }
                           : { scale: 1 }
                       }
-                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                      transition={
+                        isActive && !rm
+                          ? { duration: 0.4, ease: "easeOut" }
+                          : { type: "spring", stiffness: 300, damping: 20 }
+                      }
                     >
                       <motion.div
                         animate={

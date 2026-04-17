@@ -42,13 +42,15 @@ export function ImpactStats() {
               transition={{ type: "spring", stiffness: 260, damping: 25 }}
             >
               <div className="bagi-display flex items-end gap-1 text-5xl font-semibold text-[var(--brand-600)] md:text-6xl">
-                <CountUp
-                  duration={reducedMotion ? 0 : 1.6}
-                  enableScrollSpy
-                  end={stat.value}
-                  scrollSpyOnce
-                  start={isInView ? undefined : 0}
-                />
+                {isInView ? (
+                  <CountUp
+                    duration={reducedMotion ? 0 : 1.6}
+                    end={stat.value}
+                    start={0}
+                  />
+                ) : (
+                  <span>0</span>
+                )}
                 <span className="text-[var(--lime)]">{stat.suffix}</span>
               </div>
               <p className="mt-4 text-lg font-medium text-[var(--text-mid)]">
