@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Clock, Package, ArrowRight, Flame, Search, Filter, X } from "lucide-react";
+import { motion, AnimatePresence, useMotionValue, useTransform, animate } from "framer-motion";
+import { MapPin, Clock, Package, ArrowRight, Flame, Search, Filter, X, RefreshCw } from "lucide-react";
 import { ApiError, apiFetch, getUser, type AuthUser } from "@/lib/api";
 import { type Donation, formatPickupTime, imageForDonation } from "@/lib/donations";
 
@@ -33,28 +33,39 @@ export default function ReceiverDashboard() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [query, setQuery] = useState("");
   const [filterKey, setFilterKey] = useState<FilterKey>("all");
+  const [refreshing, setRefreshing] = useState(false);
+  const [_tick, setTick] = useState(0);
 
   useEffect(() => {
     setUser(getUser());
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await apiFetch<{ data: Donation[] }>("/donations");
-        if (!cancelled) setDonations(res.data);
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof ApiError ? err.message : "Gagal memuat donasi");
-          setDonations([]);
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+  const fetchDonations = useCallback(async () => {
+    try {
+      const res = await apiFetch<{ data: Donation[] }>("/donations");
+      setDonations(res.data);
+      setError("");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Gagal memuat donasi");
+      setDonations([]);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchDonations();
+  }, [fetchDonations]);
+
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const handleRefresh = useCallback(async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    await fetchDonations();
+    setTimeout(() => setRefreshing(false), 600);
+  }, [refreshing, fetchDonations]);
 
   const stats = useMemo(() => {
     if (!donations) return { total: 0, endingToday: 0, urgent: 0 };
@@ -138,7 +149,14 @@ export default function ReceiverDashboard() {
             Donasi tersedia
           </span>
           <h1 className="bagi-display mt-2 text-2xl sm:text-3xl font-semibold text-white">
-            {greeting}{firstName ? `, ${firstName}` : ""} — {stats.total > 0 ? `${stats.total} donasi menunggu Anda` : "belum ada donasi, tetap pantau"}
+            {greeting}{firstName ? `, ${firstName}` : ""} —{" "}
+            {stats.total > 0 ? (
+              <>
+                <CountUp value={stats.total} /> donasi menunggu Anda
+              </>
+            ) : (
+              "belum ada donasi, tetap pantau"
+            )}
           </h1>
           <p className="mt-2 max-w-xl text-sm leading-6 text-white/80">
             Pilih yang bisa Anda jemput tepat waktu. Setiap klaim divalidasi foto — tanpa biaya, tanpa komisi.
@@ -207,6 +225,22 @@ export default function ReceiverDashboard() {
               >
                 Hari ini
               </FilterChip>
+              <motion.button
+                type="button"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                aria-label="Muat ulang daftar donasi"
+                whileTap={{ scale: 0.9 }}
+                className="ml-1 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--brand-100)] bg-white text-[var(--brand-700)] hover:border-[var(--brand-300)] disabled:opacity-60"
+              >
+                <motion.span
+                  animate={refreshing ? { rotate: 360 } : { rotate: 0 }}
+                  transition={refreshing ? { duration: 0.8, ease: "linear", repeat: Infinity } : { duration: 0.3 }}
+                  className="flex"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </motion.span>
+              </motion.button>
             </div>
           </div>
 
@@ -376,6 +410,16 @@ function DonationCard({ donation, index }: { donation: Donation; index: number }
       </div>
     </motion.article>
   );
+}
+
+function CountUp({ value }: { value: number }) {
+  const mv = useMotionValue(0);
+  const rounded = useTransform(mv, (v) => Math.round(v).toString());
+  useEffect(() => {
+    const controls = animate(mv, value, { duration: 0.9, ease: [0.16, 1, 0.3, 1] });
+    return () => controls.stop();
+  }, [mv, value]);
+  return <motion.span aria-label={String(value)}>{rounded}</motion.span>;
 }
 
 function FilterChip({
