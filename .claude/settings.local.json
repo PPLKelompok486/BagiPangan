@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx skills:*)",
+      "Bash(claude mcp:*)",
+      "Bash(composer install:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npm install:*)",
+      "mcp__refero__refero_search_screens",
+      "Bash(npx tsc *)",
+      "mcp__refero__refero_search_flows",
+      "Bash(npm run *)"
+    ]
+  }
+}

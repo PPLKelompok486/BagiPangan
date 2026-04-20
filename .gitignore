@@ -1,0 +1,56 @@
+# Assistant
+.agents/
+
+# Dependencies
+node_modules/
+**/node_modules/
+be-laravel/vendor/
+
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.local.example
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.local.example
+
+# OS files
+.DS_Store
+Thumbs.db
+*.log
+
+# Build artifacts
+.next/
+**/.next/
+build/
+dist/
+public/build/
+public/hot/
+public/storage
+
+# IDEs and editors
+.vscode/
+.idea/
+.fleet/
+.nova/
+.zed/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Testing
+.phpunit.result.cache
+.phpunit.cache/
+coverage/
+
+# Misc
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
+
+# MCP (contains API keys — keep local only)
+.mcp.json
