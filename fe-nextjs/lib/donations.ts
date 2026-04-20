@@ -51,3 +51,26 @@ export const STATUS_TONE: Record<DonationStatus, string> = {
   completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
   cancelled: "bg-red-50 text-red-700 border-red-200",
 };
+
+const DONATION_IMAGE_MAP: Array<[RegExp, string]> = [
+  [/nasi|rice|bento|kotak/i, "/images/donations/nasi-kotak.jpg"],
+  [/roti|bread|baguette/i, "/images/donations/roti-tawar.jpg"],
+  [/pisang|banana|buah/i, "/images/donations/pisang.jpg"],
+  [/catering|acara|kantor|prasmanan/i, "/images/donations/catering.jpg"],
+  [/sayur|tumis|oseng|vegetable/i, "/images/donations/sayur.jpg"],
+  [/donat|donut|kue|roll/i, "/images/donations/donat.jpg"],
+];
+
+const DONATION_IMAGE_FALLBACK = [
+  "/images/donations/catering.jpg",
+  "/images/donations/nasi-kotak.jpg",
+  "/images/donations/sayur.jpg",
+];
+
+export function imageForDonation(donation: { id: number; title: string; description?: string }): string {
+  const haystack = `${donation.title} ${donation.description ?? ""}`;
+  for (const [pattern, path] of DONATION_IMAGE_MAP) {
+    if (pattern.test(haystack)) return path;
+  }
+  return DONATION_IMAGE_FALLBACK[donation.id % DONATION_IMAGE_FALLBACK.length];
+}

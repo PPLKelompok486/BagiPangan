@@ -8,6 +8,7 @@ import { ApiError, apiFetch } from "@/lib/api";
 import {
   type Donation,
   formatPickupTime,
+  imageForDonation,
   STATUS_LABEL,
   STATUS_TONE,
 } from "@/lib/donations";
@@ -210,15 +211,31 @@ function ClaimCard({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: Math.min(index, 6) * 0.05, ease: [0.16, 1, 0.3, 1] }}
-      className="bg-white border border-[var(--brand-100)] rounded-3xl p-5 shadow-[var(--shadow-soft)]"
+      whileHover={{ y: -2 }}
+      className="group bg-white border border-[var(--brand-100)] rounded-3xl p-5 shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-soft)] hover:border-[var(--brand-300)] transition-all"
     >
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <h3 className="font-bold text-[var(--brand-950)]">{d.title}</h3>
-        <span
-          className={`text-xs font-semibold px-2 py-1 rounded-full border ${STATUS_TONE[d.status]}`}
-        >
-          {STATUS_LABEL[d.status]}
-        </span>
+      <div className="flex items-start gap-4 mb-3">
+        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-[var(--brand-50)]">
+          <motion.img
+            src={imageForDonation(d)}
+            alt=""
+            aria-hidden="true"
+            className="h-full w-full object-cover"
+            initial={{ scale: 1.1 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="font-bold text-[var(--brand-950)] leading-tight line-clamp-1">{d.title}</h3>
+            <span
+              className={`text-xs font-semibold px-2 py-1 rounded-full border whitespace-nowrap ${STATUS_TONE[d.status]}`}
+            >
+              {STATUS_LABEL[d.status]}
+            </span>
+          </div>
+        </div>
       </div>
       <div className="text-xs text-[var(--text-mid)] mb-3">
         Dari{" "}

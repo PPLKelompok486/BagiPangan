@@ -20,6 +20,7 @@ import { ApiError, apiFetch } from "@/lib/api";
 import {
   type Donation,
   formatPickupTime,
+  imageForDonation,
   STATUS_LABEL,
   STATUS_TONE,
 } from "@/lib/donations";
@@ -124,6 +125,9 @@ export default function DonationDetailPage({ params }: Props) {
 
   const canClaim = donation.status === "available";
   const isSuccess = notification.includes("berhasil");
+  const heroImage = imageForDonation(donation);
+  const hoursLeft = (Date.parse(donation.pickup_time) - Date.now()) / 3_600_000;
+  const isUrgent = hoursLeft >= 0 && hoursLeft < 2;
 
   return (
     <div className="max-w-3xl mx-auto pb-28 sm:pb-8">
@@ -138,8 +142,39 @@ export default function DonationDetailPage({ params }: Props) {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="bg-white border border-[var(--brand-100)] rounded-3xl p-6 sm:p-8 shadow-[var(--shadow-soft)]"
+        className="bg-white border border-[var(--brand-100)] rounded-3xl overflow-hidden shadow-[var(--shadow-soft)]"
       >
+        <div className="relative h-56 sm:h-72 overflow-hidden bg-[var(--brand-50)]">
+          <motion.img
+            src={heroImage}
+            alt={donation.title}
+            className="h-full w-full object-cover"
+            initial={{ scale: 1.08 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+          />
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent"
+          />
+          <div className="absolute bottom-4 left-5 right-5 flex items-end justify-between gap-3">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 backdrop-blur px-3 py-1 text-xs font-semibold text-[var(--brand-700)] shadow-sm">
+              <Package className="h-3 w-3" /> {donation.quantity}
+            </span>
+            {isUrgent && canClaim && (
+              <motion.span
+                animate={{ scale: [1, 1.06, 1] }}
+                transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+                className="inline-flex items-center gap-1.5 rounded-full bg-red-500 text-white px-3 py-1 text-xs font-semibold shadow-md"
+              >
+                <AlarmClock className="h-3 w-3" />
+                Mendesak
+              </motion.span>
+            )}
+          </div>
+        </div>
+
+        <div className="p-6 sm:p-8">
         <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
           <div>
             <span className="text-xs tracking-[0.24em] text-[var(--brand-600)] font-semibold uppercase">
@@ -244,6 +279,7 @@ export default function DonationDetailPage({ params }: Props) {
               Donasi ini sudah tidak tersedia untuk diklaim.
             </div>
           )}
+        </div>
         </div>
       </motion.article>
 

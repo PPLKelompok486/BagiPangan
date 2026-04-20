@@ -2,12 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { MapPin, Clock, Package, ArrowRight, Flame, Search } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { MapPin, Clock, Package, ArrowRight, Flame, Search, Filter, X } from "lucide-react";
 import { ApiError, apiFetch, getUser, type AuthUser } from "@/lib/api";
-import { type Donation, formatPickupTime } from "@/lib/donations";
+import { type Donation, formatPickupTime, imageForDonation } from "@/lib/donations";
 
 const URGENT_WINDOW_HOURS = 6;
+const EASE_OUT_QUART: [number, number, number, number] = [0.16, 1, 0.3, 1];
+
+type FilterKey = "all" | "urgent" | "today";
 
 function hoursUntil(iso: string): number | null {
   const t = Date.parse(iso);
@@ -29,6 +32,7 @@ export default function ReceiverDashboard() {
   const [error, setError] = useState<string>("");
   const [user, setUser] = useState<AuthUser | null>(null);
   const [query, setQuery] = useState("");
+  const [filterKey, setFilterKey] = useState<FilterKey>("all");
 
   useEffect(() => {
     setUser(getUser());
@@ -72,14 +76,26 @@ export default function ReceiverDashboard() {
   const filtered = useMemo(() => {
     if (!donations) return null;
     const q = query.trim().toLowerCase();
-    if (!q) return donations;
-    return donations.filter((d) =>
-      [d.title, d.description, d.pickup_address, d.donor?.name ?? "", d.donor?.city ?? ""]
-        .join(" ")
-        .toLowerCase()
-        .includes(q),
-    );
-  }, [donations, query]);
+    const now = Date.now();
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+    return donations.filter((d) => {
+      if (q) {
+        const hay = [d.title, d.description, d.pickup_address, d.donor?.name ?? "", d.donor?.city ?? ""]
+          .join(" ")
+          .toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (filterKey === "urgent") {
+        const h = hoursUntil(d.pickup_time);
+        if (h === null || h < 0 || h >= URGENT_WINDOW_HOURS) return false;
+      } else if (filterKey === "today") {
+        const t = Date.parse(d.pickup_time);
+        if (Number.isNaN(t) || t < now || t > endOfDay.getTime()) return false;
+      }
+      return true;
+    });
+  }, [donations, query, filterKey]);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -90,20 +106,24 @@ export default function ReceiverDashboard() {
   }, []);
 
   const firstName = user?.name?.split(" ")[0] ?? "";
+  const hasActiveFilter = filterKey !== "all" || query.length > 0;
 
   return (
     <div>
       <motion.section
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.55, ease: EASE_OUT_QUART }}
         className="relative overflow-hidden rounded-3xl mb-8 border border-[var(--brand-100)]"
       >
-        <img
+        <motion.img
           src="/images/receiver-dashboard-banner.jpg"
           alt=""
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-90"
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+          initial={{ scale: 1.08 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 1.4, ease: EASE_OUT_QUART }}
         />
         <div
           aria-hidden="true"
@@ -134,6 +154,7 @@ export default function ReceiverDashboard() {
                 label={`${stats.urgent} harus segera diambil`}
                 tone="hot"
                 icon={<Flame className="h-3 w-3" />}
+                pulse
               />
             )}
           </div>
@@ -141,23 +162,66 @@ export default function ReceiverDashboard() {
       </motion.section>
 
       {donations && donations.length > 0 && (
-        <div className="mb-5 flex items-center gap-2">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-mid)]" />
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Cari berdasarkan nama, alamat, donatur..."
-              aria-label="Cari donasi"
-              className="w-full rounded-xl border border-[var(--brand-100)] bg-white py-2.5 pl-9 pr-3 text-sm text-[var(--brand-950)] placeholder:text-[var(--text-mid)]/60 focus:border-[var(--brand-400)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-50)]"
-            />
+        <div className="mb-5 sticky top-[72px] z-10 -mx-2 px-2 py-3 bg-[var(--cream)]/85 backdrop-blur rounded-2xl">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-mid)]" />
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Cari berdasarkan nama, alamat, donatur..."
+                aria-label="Cari donasi"
+                className="w-full rounded-xl border border-[var(--brand-100)] bg-white py-2.5 pl-9 pr-9 text-sm text-[var(--brand-950)] placeholder:text-[var(--text-mid)]/60 focus:border-[var(--brand-400)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-50)]"
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  aria-label="Hapus pencarian"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-[var(--text-mid)] hover:bg-[var(--brand-50)] hover:text-[var(--brand-700)]"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <Filter className="h-4 w-4 text-[var(--text-mid)] mr-1" aria-hidden="true" />
+              <FilterChip active={filterKey === "all"} onClick={() => setFilterKey("all")}>
+                Semua
+              </FilterChip>
+              <FilterChip
+                active={filterKey === "urgent"}
+                onClick={() => setFilterKey("urgent")}
+                tone="hot"
+                count={stats.urgent}
+              >
+                Mendesak
+              </FilterChip>
+              <FilterChip
+                active={filterKey === "today"}
+                onClick={() => setFilterKey("today")}
+                tone="warm"
+                count={stats.endingToday}
+              >
+                Hari ini
+              </FilterChip>
+            </div>
           </div>
-          {filtered && query && (
-            <span className="text-xs text-[var(--text-mid)]">
-              {filtered.length} dari {donations.length}
-            </span>
-          )}
+
+          <AnimatePresence>
+            {hasActiveFilter && filtered && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="text-xs text-[var(--text-mid)] mt-2 px-1"
+              >
+                Menampilkan <span className="font-semibold text-[var(--brand-700)]">{filtered.length}</span> dari {donations.length} donasi
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
 
@@ -182,88 +246,178 @@ export default function ReceiverDashboard() {
 
       {donations && donations.length > 0 && filtered && filtered.length === 0 && (
         <EmptyState
-          title="Tidak ada hasil untuk pencarian ini"
-          body={`Coba kata kunci lain atau hapus filter.`}
+          title="Tidak ada hasil"
+          body={hasActiveFilter ? "Coba ubah kata kunci atau hapus filter." : "Belum ada donasi yang cocok."}
           action={
-            <button
-              type="button"
-              onClick={() => setQuery("")}
-              className="inline-flex items-center gap-2 bg-[var(--brand-600)] text-white px-4 py-2.5 rounded-xl font-semibold text-sm"
-            >
-              Reset pencarian
-            </button>
+            hasActiveFilter && (
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("");
+                  setFilterKey("all");
+                }}
+                className="inline-flex items-center gap-2 bg-[var(--brand-600)] text-white px-4 py-2.5 rounded-xl font-semibold text-sm hover:bg-[var(--brand-700)]"
+              >
+                Reset pencarian
+              </button>
+            )
           }
         />
       )}
 
       {filtered && filtered.length > 0 && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((d, i) => {
-            const urg = urgencyLabel(d.pickup_time);
-            return (
-              <motion.article
-                key={d.id}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: Math.min(i, 8) * 0.04, ease: [0.16, 1, 0.3, 1] }}
-                whileHover={{ y: -3 }}
-                className="bg-white border border-[var(--brand-100)] rounded-3xl p-5 flex flex-col shadow-[var(--shadow-soft)] hover:border-[var(--brand-300)] transition-colors"
-              >
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <h3 className="font-bold text-[var(--brand-950)] leading-tight">
-                    {d.title}
-                  </h3>
-                  <span className="text-xs font-semibold px-2 py-1 rounded-full bg-[var(--brand-50)] text-[var(--brand-700)] whitespace-nowrap">
-                    {d.quantity}
-                  </span>
-                </div>
-
-                {urg.tone && (
-                  <div
-                    className={`mb-3 inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                      urg.tone === "hot"
-                        ? "bg-red-50 text-red-700 border border-red-200"
-                        : "bg-amber-50 text-amber-700 border border-amber-200"
-                    }`}
-                  >
-                    <Flame className="h-3 w-3" />
-                    {urg.label}
-                  </div>
-                )}
-
-                <p className="text-sm text-[var(--text-mid)] line-clamp-2 mb-4">
-                  {d.description}
-                </p>
-                <div className="space-y-2 text-sm text-[var(--brand-950)] mb-4">
-                  <div className="flex items-start gap-2">
-                    <Clock className="h-4 w-4 text-[var(--brand-600)] mt-0.5 shrink-0" />
-                    <span>{formatPickupTime(d.pickup_time)}</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <MapPin className="h-4 w-4 text-[var(--brand-600)] mt-0.5 shrink-0" />
-                    <span className="line-clamp-1">{d.pickup_address}</span>
-                  </div>
-                </div>
-                <div className="text-xs text-[var(--text-mid)] mb-4">
-                  Dari{" "}
-                  <span className="font-semibold text-[var(--brand-950)]">
-                    {d.donor?.name ?? "Donatur"}
-                  </span>
-                  {d.donor?.city ? ` · ${d.donor.city}` : ""}
-                </div>
-                <Link
-                  href={`/receiver/donations/${d.id}`}
-                  className="mt-auto inline-flex items-center justify-center gap-2 bg-[var(--brand-600)] text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-[var(--brand-700)] transition-colors"
-                >
-                  Lihat detail
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </motion.article>
-            );
-          })}
-        </div>
+        <motion.div
+          layout
+          className="grid gap-5 md:grid-cols-2 lg:grid-cols-3"
+        >
+          <AnimatePresence mode="popLayout">
+            {filtered.map((d, i) => (
+              <DonationCard key={d.id} donation={d} index={i} />
+            ))}
+          </AnimatePresence>
+        </motion.div>
       )}
     </div>
+  );
+}
+
+function DonationCard({ donation, index }: { donation: Donation; index: number }) {
+  const urg = urgencyLabel(donation.pickup_time);
+  const image = imageForDonation(donation);
+
+  return (
+    <motion.article
+      layout
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.96 }}
+      transition={{ duration: 0.45, delay: Math.min(index, 8) * 0.05, ease: EASE_OUT_QUART }}
+      whileHover="hover"
+      className="group relative bg-white border border-[var(--brand-100)] rounded-3xl overflow-hidden flex flex-col shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-soft)] hover:border-[var(--brand-300)] transition-all"
+    >
+      <div className="relative h-44 overflow-hidden bg-[var(--brand-50)]">
+        <motion.img
+          src={image}
+          alt={donation.title}
+          loading="lazy"
+          className="h-full w-full object-cover"
+          variants={{
+            hover: { scale: 1.06 },
+          }}
+          transition={{ duration: 0.5, ease: EASE_OUT_QUART }}
+        />
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/30 to-transparent"
+        />
+        <span className="absolute top-3 right-3 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-white/95 text-[var(--brand-700)] shadow-sm backdrop-blur">
+          {donation.quantity}
+        </span>
+        {urg.tone === "hot" && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-red-500/95 text-white px-2.5 py-1 text-[11px] font-semibold shadow-md backdrop-blur"
+          >
+            <motion.span
+              animate={{ scale: [1, 1.25, 1], opacity: [1, 0.7, 1] }}
+              transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+              className="flex"
+            >
+              <Flame className="h-3 w-3" />
+            </motion.span>
+            {urg.label}
+          </motion.div>
+        )}
+        {urg.tone === "warm" && (
+          <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-amber-400/95 text-amber-950 px-2.5 py-1 text-[11px] font-semibold shadow-md backdrop-blur">
+            {urg.label}
+          </div>
+        )}
+      </div>
+
+      <div className="p-5 flex flex-col flex-1">
+        <h3 className="font-bold text-[var(--brand-950)] leading-tight mb-2 line-clamp-1">
+          {donation.title}
+        </h3>
+        <p className="text-sm text-[var(--text-mid)] line-clamp-2 mb-4">
+          {donation.description}
+        </p>
+        <div className="space-y-2 text-sm text-[var(--brand-950)] mb-4">
+          <div className="flex items-start gap-2">
+            <Clock className="h-4 w-4 text-[var(--brand-600)] mt-0.5 shrink-0" />
+            <span>{formatPickupTime(donation.pickup_time)}</span>
+          </div>
+          <div className="flex items-start gap-2">
+            <MapPin className="h-4 w-4 text-[var(--brand-600)] mt-0.5 shrink-0" />
+            <span className="line-clamp-1">{donation.pickup_address}</span>
+          </div>
+        </div>
+        <div className="text-xs text-[var(--text-mid)] mb-4">
+          Dari{" "}
+          <span className="font-semibold text-[var(--brand-950)]">
+            {donation.donor?.name ?? "Donatur"}
+          </span>
+          {donation.donor?.city ? ` · ${donation.donor.city}` : ""}
+        </div>
+        <Link
+          href={`/receiver/donations/${donation.id}`}
+          className="mt-auto inline-flex items-center justify-center gap-2 bg-[var(--brand-600)] text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-[var(--brand-700)] transition-all group-hover:gap-3"
+        >
+          Lihat detail
+          <motion.span
+            variants={{ hover: { x: 3 } }}
+            transition={{ duration: 0.25 }}
+            className="inline-flex"
+          >
+            <ArrowRight className="h-4 w-4" />
+          </motion.span>
+        </Link>
+      </div>
+    </motion.article>
+  );
+}
+
+function FilterChip({
+  active,
+  onClick,
+  children,
+  tone,
+  count,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  tone?: "hot" | "warm";
+  count?: number;
+}) {
+  const activeClass = active
+    ? tone === "hot"
+      ? "bg-red-600 text-white border-red-600"
+      : tone === "warm"
+        ? "bg-amber-500 text-white border-amber-500"
+        : "bg-[var(--brand-600)] text-white border-[var(--brand-600)]"
+    : "bg-white text-[var(--text-mid)] border-[var(--brand-100)] hover:border-[var(--brand-300)] hover:text-[var(--brand-700)]";
+
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileTap={{ scale: 0.95 }}
+      aria-pressed={active}
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors ${activeClass}`}
+    >
+      {children}
+      {typeof count === "number" && count > 0 && (
+        <span
+          className={`text-[10px] font-bold px-1.5 min-w-[18px] h-[18px] rounded-full inline-flex items-center justify-center ${
+            active ? "bg-white/25" : "bg-[var(--brand-50)] text-[var(--brand-700)]"
+          }`}
+        >
+          {count}
+        </span>
+      )}
+    </motion.button>
   );
 }
 
@@ -271,10 +425,12 @@ function StatChip({
   label,
   tone,
   icon,
+  pulse,
 }: {
   label: string;
   tone: "default" | "warm" | "hot";
   icon?: React.ReactNode;
+  pulse?: boolean;
 }) {
   const toneClass =
     tone === "hot"
@@ -283,12 +439,14 @@ function StatChip({
         ? "bg-white/95 text-amber-700"
         : "bg-white/15 text-white border border-white/20 backdrop-blur";
   return (
-    <span
+    <motion.span
+      animate={pulse ? { scale: [1, 1.04, 1] } : undefined}
+      transition={pulse ? { duration: 1.8, repeat: Infinity, ease: "easeInOut" } : undefined}
       className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${toneClass}`}
     >
       {icon}
       {label}
-    </span>
+    </motion.span>
   );
 }
 
@@ -302,31 +460,39 @@ function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="bg-white border border-[var(--brand-100)] rounded-3xl p-12 text-center">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="bg-white border border-[var(--brand-100)] rounded-3xl p-12 text-center"
+    >
       <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--brand-50)] text-[var(--brand-600)] mb-4">
         <Package className="h-6 w-6" />
       </div>
       <h2 className="font-bold text-lg text-[var(--brand-950)]">{title}</h2>
       <p className="text-[var(--text-mid)] mt-1 text-sm">{body}</p>
       {action && <div className="mt-4">{action}</div>}
-    </div>
+    </motion.div>
   );
 }
 
 function SkeletonGrid() {
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: 6 }).map((_, i) => (
         <div
           key={i}
-          className="bg-white border border-[var(--brand-100)] rounded-3xl p-5 animate-pulse h-56"
+          className="bg-white border border-[var(--brand-100)] rounded-3xl overflow-hidden animate-pulse"
         >
-          <div className="h-4 w-2/3 bg-[var(--brand-50)] rounded mb-3" />
-          <div className="h-3 w-full bg-[var(--brand-50)] rounded mb-2" />
-          <div className="h-3 w-5/6 bg-[var(--brand-50)] rounded mb-6" />
-          <div className="h-3 w-1/2 bg-[var(--brand-50)] rounded mb-2" />
-          <div className="h-3 w-2/3 bg-[var(--brand-50)] rounded mb-6" />
-          <div className="h-9 w-full bg-[var(--brand-50)] rounded-xl" />
+          <div className="h-44 bg-[var(--brand-50)]" />
+          <div className="p-5">
+            <div className="h-4 w-2/3 bg-[var(--brand-50)] rounded mb-3" />
+            <div className="h-3 w-full bg-[var(--brand-50)] rounded mb-2" />
+            <div className="h-3 w-5/6 bg-[var(--brand-50)] rounded mb-5" />
+            <div className="h-3 w-1/2 bg-[var(--brand-50)] rounded mb-2" />
+            <div className="h-3 w-2/3 bg-[var(--brand-50)] rounded mb-5" />
+            <div className="h-10 w-full bg-[var(--brand-50)] rounded-xl" />
+          </div>
         </div>
       ))}
     </div>
