@@ -13,6 +13,7 @@ use Illuminate\Notifications\Notifiable;
 
 #[Fillable([
     'role',
+    'is_admin',
     'is_active',
     'deactivated_at',
     'name',
@@ -39,6 +40,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
             'is_active' => 'boolean',
             'deactivated_at' => 'datetime',
         ];
@@ -46,7 +48,7 @@ class User extends Authenticatable
 
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return $this->is_admin || $this->role === 'admin';
     }
 
     public function scopeActive($query)
@@ -56,7 +58,7 @@ class User extends Authenticatable
 
     public function donations(): HasMany
     {
-        return $this->hasMany(Donation::class, 'donor_id');
+        return $this->hasMany(Donation::class, 'user_id');
     }
 
     public function approvedDonations(): HasMany
@@ -71,6 +73,6 @@ class User extends Authenticatable
 
     public function activityLogs(): HasMany
     {
-        return $this->hasMany(ActivityLog::class, 'actor_id');
+        return $this->hasMany(ActivityLog::class, 'actor_user_id');
     }
 }

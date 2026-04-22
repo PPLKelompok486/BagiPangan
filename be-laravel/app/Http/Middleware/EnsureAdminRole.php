@@ -18,7 +18,7 @@ class EnsureAdminRole
             ], 401);
         }
 
-        if ($user->role !== 'admin') {
+        if (!$user->isAdmin()) {
             return response()->json([
                 'message' => 'Forbidden. Admin access only.',
             ], 403);

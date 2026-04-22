@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ActivityLog extends Model
 {
@@ -12,9 +11,9 @@ class ActivityLog extends Model
 
     protected $fillable = [
         'actor_user_id',
-        'target_type',
-        'target_id',
         'action',
+        'entity_type',
+        'entity_id',
         'metadata',
     ];
 
@@ -25,7 +24,7 @@ class ActivityLog extends Model
         ];
     }
 
-    public function actor(): BelongsTo
+    public function actor()
     {
         return $this->belongsTo(User::class, 'actor_user_id');
     }
