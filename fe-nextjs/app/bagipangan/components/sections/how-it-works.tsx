@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, useInView, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { Clock } from "lucide-react";
 import { useRef } from "react";
 import { steps } from "../../data";
 import { cn } from "../../lib/cn";
@@ -117,10 +118,33 @@ export function HowItWorks() {
                     </motion.div>
                   </div>
 
-                  <div className="flex flex-1 flex-col gap-2 p-7">
-                    <h3 className="text-2xl font-semibold text-[var(--brand-900)]">
-                      {step.title}
-                    </h3>
+                  <div className="flex flex-1 flex-col gap-3 p-7">
+                    <div className="flex items-start justify-between gap-3">
+                      <h3 className="text-2xl font-semibold text-[var(--brand-900)]">
+                        {step.title}
+                      </h3>
+                      <motion.span
+                        animate={isInView ? { opacity: 1, scale: 1 } : {}}
+                        className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--brand-50)] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--brand-700)]"
+                        initial={{
+                          opacity: reducedMotion ? 1 : 0,
+                          scale: reducedMotion ? 1 : 0.7,
+                        }}
+                        transition={
+                          reducedMotion
+                            ? { duration: 0 }
+                            : {
+                                type: "spring",
+                                stiffness: 300,
+                                damping: 20,
+                                delay: 0.5 + stepIndex * 0.15,
+                              }
+                        }
+                      >
+                        <Clock className="h-3 w-3" strokeWidth={2.6} />
+                        {step.duration}
+                      </motion.span>
+                    </div>
                     <p className="text-base leading-8 text-[var(--text-mid)]">
                       {step.description}
                     </p>

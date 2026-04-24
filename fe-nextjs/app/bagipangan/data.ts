@@ -18,10 +18,10 @@ export const navLinks = [
 ] as const;
 
 export const stats = [
-  { value: 1200, suffix: "+", label: "Donasi Dibuat" },
-  { value: 15000, suffix: "+", label: "Porsi Tersalurkan" },
-  { value: 800, suffix: "+", label: "Pengguna Aktif" },
-  { value: 20, suffix: "+", label: "Kota" },
+  { value: 1200, suffix: "+", label: "Donasi Dibuat", trend: "+18%", trendLabel: "bulan ini" },
+  { value: 15000, suffix: "+", label: "Porsi Tersalurkan", trend: "+24%", trendLabel: "bulan ini" },
+  { value: 800, suffix: "+", label: "Pengguna Aktif", trend: "+12%", trendLabel: "bulan ini" },
+  { value: 20, suffix: "+", label: "Kota", trend: "+3", trendLabel: "kota baru" },
 ] as const;
 
 type Step = {
@@ -31,6 +31,7 @@ type Step = {
   icon: LucideIcon;
   image: string;
   imageAlt: string;
+  duration: string;
 };
 
 export const steps: Step[] = [
@@ -41,6 +42,7 @@ export const steps: Step[] = [
     icon: HandHeart,
     image: "/images/how-posting.jpg",
     imageAlt: "Relawan menyiapkan porsi makanan untuk didonasikan",
+    duration: "± 2 menit",
   },
   {
     number: "02",
@@ -49,6 +51,7 @@ export const steps: Step[] = [
     icon: Truck,
     image: "/images/how-pickup.jpg",
     imageAlt: "Penerima mengambil paket makanan dari titik distribusi",
+    duration: "± 30 menit",
   },
   {
     number: "03",
@@ -57,6 +60,7 @@ export const steps: Step[] = [
     icon: Camera,
     image: "/images/how-confirm.jpg",
     imageAlt: "Nampan makanan terdokumentasi sebagai bukti distribusi",
+    duration: "± 30 detik",
   },
 ] as const;
 

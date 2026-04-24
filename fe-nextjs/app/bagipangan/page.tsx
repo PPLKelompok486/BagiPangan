@@ -12,6 +12,7 @@ import { ProblemStatement } from "./components/sections/problem-statement";
 import { ImpactStats } from "./components/sections/stats";
 import { Testimonials } from "./components/sections/testimonials";
 import { ScrollProgress } from "./components/ui/scroll-progress";
+import { ScrollToTop } from "./components/ui/scroll-to-top";
 
 export default function BagiPanganPage() {
   return (
@@ -30,6 +31,7 @@ export default function BagiPanganPage() {
       <FAQ />
       <CtaBanner />
       <Footer />
+      <ScrollToTop />
     </main>
   );
 }

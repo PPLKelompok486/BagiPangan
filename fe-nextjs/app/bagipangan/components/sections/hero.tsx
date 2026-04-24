@@ -270,8 +270,36 @@ export function Hero() {
           </motion.div>
 
           <motion.div
-            className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-white/65"
-            variants={createFadeUpVariants(reducedMotion, 0.32)}
+            className="mt-8 inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/6 px-4 py-2.5 text-sm font-medium text-white/85 shadow-[0_10px_30px_rgba(0,0,0,0.18)] backdrop-blur"
+            variants={createFadeUpVariants(reducedMotion, 0.3)}
+          >
+            <span className="relative flex h-2.5 w-2.5">
+              <motion.span
+                animate={
+                  reducedMotion
+                    ? undefined
+                    : { scale: [1, 2.2, 2.2], opacity: [0.6, 0, 0] }
+                }
+                className="absolute inline-flex h-full w-full rounded-full bg-[var(--lime)]"
+                transition={
+                  reducedMotion
+                    ? { duration: 0 }
+                    : {
+                        duration: 2,
+                        ease: "easeOut",
+                        repeat: Number.POSITIVE_INFINITY,
+                      }
+                }
+              />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--lime)]" />
+            </span>
+            <span className="font-semibold text-white">12 porsi</span>
+            <span className="text-white/65">tersalurkan · 1 jam terakhir</span>
+          </motion.div>
+
+          <motion.div
+            className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-white/65"
+            variants={createFadeUpVariants(reducedMotion, 0.36)}
           >
             <span className="inline-flex items-center gap-2">
               <span className="bagi-display text-xl font-semibold text-[var(--lime)]">
