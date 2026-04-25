@@ -20,7 +20,7 @@ class DonationController extends Controller
 
     public function show(Donation $donation)
     {
-        $donation->load('donor:id,name,city,phone', 'receiver:id,name');
+        $donation->load('donor:id,name,city,phone', 'receiver:id,name', 'proof');
 
         return response()->json(['data' => $donation]);
     }
@@ -65,7 +65,7 @@ class DonationController extends Controller
 
     public function myClaims(Request $request)
     {
-        $donations = Donation::with('donor:id,name,city,phone')
+        $donations = Donation::with('donor:id,name,city,phone', 'proof')
             ->where('receiver_id', $request->user()->id)
             ->latest('claimed_at')
             ->get();

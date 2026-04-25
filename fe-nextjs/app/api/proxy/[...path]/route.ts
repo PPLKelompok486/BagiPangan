@@ -15,11 +15,11 @@ async function forward(req: NextRequest, path: string[]) {
   const init: RequestInit = { method: req.method, headers };
 
   if (req.method !== "GET" && req.method !== "HEAD") {
-    const body = await req.text();
-    if (body) {
+    const buf = await req.arrayBuffer();
+    if (buf.byteLength > 0) {
       headers["Content-Type"] =
         req.headers.get("content-type") ?? "application/json";
-      init.body = body;
+      init.body = buf;
     }
   }
 

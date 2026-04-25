@@ -7,6 +7,17 @@ export type DonationDonor = {
   phone?: string | null;
 };
 
+export type DonationProof = {
+  id: number;
+  donation_id: number;
+  receiver_id: number;
+  image_path: string;
+  image_url: string;
+  uploaded_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Donation = {
   id: number;
   donor_id: number;
@@ -22,6 +33,7 @@ export type Donation = {
   updated_at: string;
   donor?: DonationDonor;
   receiver?: { id: number; name: string } | null;
+  proof?: DonationProof | null;
 };
 
 export function formatPickupTime(iso: string): string {

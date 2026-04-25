@@ -1,12 +1,25 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { MapPin, Clock, ListChecks, ArrowRight, AlarmClock, CheckCircle2 } from "lucide-react";
-import { ApiError, apiFetch } from "@/lib/api";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  MapPin,
+  Clock,
+  ListChecks,
+  ArrowRight,
+  AlarmClock,
+  CheckCircle2,
+  Camera,
+  Upload,
+  Loader2,
+  X,
+  ImageIcon,
+} from "lucide-react";
+import { ApiError, apiFetch, getToken } from "@/lib/api";
 import {
   type Donation,
+  type DonationProof,
   formatPickupTime,
   imageForDonation,
   STATUS_LABEL,
@@ -35,6 +48,47 @@ const STEPS: { key: Donation["status"]; label: string }[] = [
   { key: "completed", label: "Selesai" },
 ];
 
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
+const ACCEPTED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
+async function uploadProof(
+  donationId: number,
+  file: File,
+): Promise<{ proof: DonationProof; donation: Donation }> {
+  const token = getToken();
+  const form = new FormData();
+  form.append("image", file);
+
+  const res = await fetch(`/api/proxy/donations/${donationId}/proof`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: form,
+  });
+
+  const text = await res.text();
+  let data: unknown = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = text;
+    }
+  }
+
+  if (!res.ok) {
+    const message =
+      data && typeof data === "object" && "message" in data
+        ? String((data as { message: unknown }).message)
+        : `Upload gagal (${res.status})`;
+    throw new ApiError(res.status, message, data);
+  }
+
+  return (data as { data: { proof: DonationProof; donation: Donation } }).data;
+}
+
 export default function MyClaimsPage() {
   const [donations, setDonations] = useState<Donation[] | null>(null);
   const [error, setError] = useState("");
@@ -56,6 +110,12 @@ export default function MyClaimsPage() {
       cancelled = true;
     };
   }, []);
+
+  const handleDonationUpdated = (updated: Donation) => {
+    setDonations((prev) =>
+      prev ? prev.map((d) => (d.id === updated.id ? { ...d, ...updated } : d)) : prev,
+    );
+  };
 
   const { active, past, next } = useMemo(() => {
     if (!donations) return { active: [], past: [], next: null as Donation | null };
@@ -175,7 +235,13 @@ export default function MyClaimsPage() {
           </h3>
           <div className="grid gap-4 md:grid-cols-2">
             {active.map((d, i) => (
-              <ClaimCard key={d.id} donation={d} index={i} active />
+              <ClaimCard
+                key={d.id}
+                donation={d}
+                index={i}
+                active
+                onUpdated={handleDonationUpdated}
+              />
             ))}
           </div>
         </section>
@@ -188,7 +254,7 @@ export default function MyClaimsPage() {
           </h3>
           <div className="grid gap-4 md:grid-cols-2">
             {past.map((d, i) => (
-              <ClaimCard key={d.id} donation={d} index={i} />
+              <ClaimCard key={d.id} donation={d} index={i} onUpdated={handleDonationUpdated} />
             ))}
           </div>
         </section>
@@ -201,11 +267,16 @@ function ClaimCard({
   donation: d,
   index,
   active,
+  onUpdated,
 }: {
   donation: Donation;
   index: number;
   active?: boolean;
+  onUpdated: (donation: Donation) => void;
 }) {
+  const showUpload = d.status === "claimed" && !d.proof;
+  const showProof = d.status === "completed" && d.proof;
+
   return (
     <motion.article
       initial={{ opacity: 0, y: 16 }}
@@ -262,7 +333,52 @@ function ClaimCard({
         </div>
       </div>
 
-      {active && <ClaimProgress status={d.status} />}
+      {(active || d.status === "completed") && (
+        <ClaimProgress status={d.status} />
+      )}
+
+      <AnimatePresence mode="wait">
+        {showUpload && (
+          <motion.div
+            key="upload"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <ProofUploader donation={d} onUpdated={onUpdated} />
+          </motion.div>
+        )}
+
+        {showProof && d.proof && (
+          <motion.div
+            key="proof"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-3"
+          >
+            <div className="flex items-start gap-3">
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-emerald-200 bg-white">
+                <img
+                  src={d.proof.image_url}
+                  alt="Bukti pengambilan"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Bukti pengambilan terkirim
+                </div>
+                <p className="mt-1 text-xs text-emerald-700/80">
+                  Donasi telah selesai. Terima kasih sudah mengonfirmasi.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <Link
         href={`/receiver/donations/${d.id}`}
@@ -272,6 +388,185 @@ function ClaimCard({
         <ArrowRight className="h-4 w-4" />
       </Link>
     </motion.article>
+  );
+}
+
+function ProofUploader({
+  donation,
+  onUpdated,
+}: {
+  donation: Donation;
+  onUpdated: (donation: Donation) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    if (!file) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  const pickFile = (selected: File | null) => {
+    setError("");
+    setSuccess("");
+    if (!selected) {
+      setFile(null);
+      return;
+    }
+    if (!ACCEPTED_TYPES.includes(selected.type)) {
+      setFile(null);
+      setError("Hanya format JPG, PNG, atau WebP yang didukung");
+      return;
+    }
+    if (selected.size > MAX_FILE_BYTES) {
+      setFile(null);
+      setError("Ukuran file maksimal 5MB");
+      return;
+    }
+    setFile(selected);
+  };
+
+  const clearFile = () => {
+    setFile(null);
+    setError("");
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  const submit = async () => {
+    if (!file || uploading) return;
+    setUploading(true);
+    setError("");
+    try {
+      const result = await uploadProof(donation.id, file);
+      const merged: Donation = {
+        ...donation,
+        ...result.donation,
+        status: "completed",
+        proof: result.proof,
+      };
+      setSuccess("Bukti berhasil diunggah! Donasi selesai.");
+      setFile(null);
+      if (inputRef.current) inputRef.current.value = "";
+      onUpdated(merged);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Gagal mengunggah bukti");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="mt-4 rounded-2xl border border-[var(--brand-100)] bg-[var(--brand-50)]/40 p-4">
+      <div className="flex items-start gap-2 mb-3">
+        <div className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white text-[var(--brand-600)] border border-[var(--brand-100)]">
+          <Camera className="h-4 w-4" />
+        </div>
+        <div>
+          <h4 className="text-sm font-bold text-[var(--brand-950)]">
+            Konfirmasi Pengambilan
+          </h4>
+          <p className="text-xs text-[var(--text-mid)] mt-0.5">
+            Unggah foto bukti bahwa Anda sudah mengambil donasi ini.
+          </p>
+        </div>
+      </div>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/jpg,image/png,image/webp"
+        className="sr-only"
+        onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
+      />
+
+      {previewUrl ? (
+        <div className="flex items-start gap-3 rounded-xl border border-[var(--brand-100)] bg-white p-2">
+          <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-[var(--brand-50)]">
+            <img
+              src={previewUrl}
+              alt="Pratinjau bukti"
+              className="h-full w-full object-cover"
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--brand-950)]">
+              <ImageIcon className="h-3.5 w-3.5 text-[var(--brand-600)]" />
+              <span className="truncate">{file?.name}</span>
+            </div>
+            <p className="text-[11px] text-[var(--text-mid)] mt-0.5">
+              {file ? `${(file.size / 1024).toFixed(0)} KB` : ""}
+            </p>
+            <button
+              type="button"
+              onClick={clearFile}
+              disabled={uploading}
+              className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--text-mid)] hover:text-[var(--brand-700)] disabled:opacity-50"
+            >
+              <X className="h-3 w-3" />
+              Ganti foto
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--brand-300)] bg-white px-4 py-3 text-sm font-semibold text-[var(--brand-700)] hover:bg-[var(--brand-50)] hover:border-[var(--brand-400)] transition-all disabled:opacity-50"
+        >
+          <Upload className="h-4 w-4" />
+          Pilih foto bukti
+        </button>
+      )}
+
+      <button
+        type="button"
+        onClick={submit}
+        disabled={!file || uploading}
+        className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--brand-600)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--brand-700)] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+      >
+        {uploading ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Mengunggah...
+          </>
+        ) : (
+          <>
+            <Upload className="h-4 w-4" />
+            Unggah Bukti
+          </>
+        )}
+      </button>
+
+      {error && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="mt-3 rounded-xl bg-red-50 text-red-700 border border-red-200 px-3 py-2 text-xs font-medium"
+        >
+          {error}
+        </div>
+      )}
+
+      {success && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="mt-3 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-2 text-xs font-medium"
+        >
+          {success}
+        </div>
+      )}
+    </div>
   );
 }
 

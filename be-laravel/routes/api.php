@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DonationController;
+use App\Http\Controllers\ProofController;
 use App\Http\Controllers\RegisterController;
 use Illuminate\Support\Facades\Route;
 
@@ -16,5 +17,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/donations/mine', [DonationController::class, 'myClaims']);
         Route::get('/donations/{donation}', [DonationController::class, 'show']);
         Route::post('/donations/{donation}/claim', [DonationController::class, 'claim']);
+        Route::post('/donations/{donation}/proof', [ProofController::class, 'store']);
     });
 });
