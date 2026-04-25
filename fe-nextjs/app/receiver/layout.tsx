@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { LogOut, Package, ListChecks } from "lucide-react";
+import { LogOut, Package, ListChecks, Map as MapIcon } from "lucide-react";
 import { apiFetch, clearAuth, getUser, type AuthUser } from "@/lib/api";
 
 export default function ReceiverLayout({ children }: { children: React.ReactNode }) {
@@ -38,6 +38,7 @@ export default function ReceiverLayout({ children }: { children: React.ReactNode
 
   const navItems = [
     { href: "/receiver/dashboard", label: "Donasi tersedia", icon: Package },
+    { href: "/receiver/map", label: "Peta donasi", icon: MapIcon },
     { href: "/receiver/my-claims", label: "Klaim saya", icon: ListChecks },
   ];
 
