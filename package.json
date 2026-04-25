@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev:fe": "npm run dev --prefix fe-nextjs",
-    "dev:be": "cd be-laravel && \"C:\\Users\\User\\AppData\\Local\\Microsoft\\WinGet\\Packages\\PHP.PHP.8.5_Microsoft.Winget.Source_8wekyb3d8bbwe\\php.exe\" artisan serve",
+    "dev:be": "cd be-laravel && php artisan serve",
     "dev": "npx concurrently -n \"frontend,backend\" -c \"cyan,magenta\" \"npm:dev:fe\" \"npm:dev:be\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
