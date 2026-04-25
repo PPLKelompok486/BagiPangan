@@ -41,27 +41,6 @@ export function ProblemStatement() {
               </>
             }
           />
-
-          <motion.figure
-            className="relative mt-10 overflow-hidden rounded-[2rem] border border-white/10 shadow-[0_24px_60px_rgba(5,12,8,0.45)]"
-            variants={createFadeUpVariants(reducedMotion, 0.2)}
-          >
-            <img
-              alt="Relawan menyajikan makanan kepada anak-anak di komunitas"
-              className="h-[320px] w-full object-cover sm:h-[360px]"
-              loading="lazy"
-              src="/images/problem-feeding.jpg"
-            />
-            <div
-              aria-hidden="true"
-              className="absolute inset-0 bg-gradient-to-t from-[var(--brand-900)]/80 via-[var(--brand-900)]/10 to-transparent"
-            />
-            <figcaption className="absolute inset-x-5 bottom-5 flex items-center gap-3 text-xs font-medium tracking-wide text-white/80">
-              <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[var(--lime)]" />
-              Cerita dari lapangan — distribusi pangan komunitas
-            </figcaption>
-          </motion.figure>
-
           <motion.p
             className="mt-8 text-lg font-medium text-[var(--lime)]"
             variants={createFadeUpVariants(reducedMotion, 0.3)}

@@ -132,7 +132,7 @@ function TestimonialCard({
     >
       <div className="flex items-center gap-4">
         <motion.div
-          className="relative h-14 w-14 overflow-hidden rounded-full ring-2 ring-[var(--brand-100)] ring-offset-2 ring-offset-[var(--cream)]"
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--brand-600)] text-sm font-bold text-white"
           initial={{ scale: rm ? 1 : 0 }}
           animate={isInView ? { scale: 1 } : {}}
           transition={
@@ -141,12 +141,7 @@ function TestimonialCard({
               : { type: "spring", stiffness: 300, damping: 15, delay: 0.3 + cardIndex * 0.1 }
           }
         >
-          <img
-            alt={`Foto profil ${t.name}`}
-            className="h-full w-full object-cover"
-            loading="lazy"
-            src={t.avatar}
-          />
+          {t.initials}
         </motion.div>
         <div>
           <p className="font-semibold text-[var(--brand-900)]">{t.name}</p>

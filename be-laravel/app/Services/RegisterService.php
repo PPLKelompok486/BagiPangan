@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
@@ -52,7 +53,7 @@ class RegisterService
             'role' => $data['role'],
             'name' => $data['name'],
             'email' => $data['email'],
-            'password' => $data['password'],
+            'password' => Hash::make($data['password']),
             'phone' => $data['phone'] ?? null,
             'city' => $data['city'] ?? null,
             'organization' => $data['organization'] ?? null,

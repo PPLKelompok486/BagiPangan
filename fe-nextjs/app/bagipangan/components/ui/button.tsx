@@ -86,16 +86,6 @@ function useRipple(reducedMotion: boolean | null) {
   return { addRipple, rippleElements };
 }
 
-function Shine({ reducedMotion }: { reducedMotion: boolean | null }) {
-  if (reducedMotion) return null;
-  return (
-    <span
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 -translate-x-full bg-[linear-gradient(110deg,transparent_30%,rgba(255,255,255,0.45)_50%,transparent_70%)] transition-transform duration-700 ease-out group-hover/btn:translate-x-full"
-    />
-  );
-}
-
 export function Button(props: LinkButtonProps | ActionButtonProps) {
   const reducedMotion = useReducedMotion();
   const { addRipple, rippleElements } = useRipple(reducedMotion);
@@ -120,12 +110,11 @@ export function Button(props: LinkButtonProps | ActionButtonProps) {
         onClick={linkProps.onClick}
       >
         <motion.span
-          className={cn("group/btn", sharedClassName(variant, linkProps.className))}
+          className={sharedClassName(variant, linkProps.className)}
           whileHover={hover}
           whileTap={tap}
           onMouseDown={addRipple}
         >
-          <Shine reducedMotion={reducedMotion} />
           {rippleElements}
           <span className="relative z-10">{linkProps.children}</span>
         </motion.span>
@@ -137,14 +126,13 @@ export function Button(props: LinkButtonProps | ActionButtonProps) {
   return (
     <motion.button
       aria-label={actionProps.ariaLabel}
-      className={cn("group/btn", sharedClassName(variant, actionProps.className))}
+      className={sharedClassName(variant, actionProps.className)}
       onClick={actionProps.onClick}
       type={actionProps.type ?? "button"}
       whileHover={hover}
       whileTap={tap}
       onMouseDown={addRipple}
     >
-      <Shine reducedMotion={reducedMotion} />
       {rippleElements}
       <span className="relative z-10">{actionProps.children}</span>
     </motion.button>

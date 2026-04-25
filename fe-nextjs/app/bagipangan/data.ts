@@ -18,10 +18,10 @@ export const navLinks = [
 ] as const;
 
 export const stats = [
-  { value: 1200, suffix: "+", label: "Donasi Dibuat", trend: "+18%", trendLabel: "bulan ini" },
-  { value: 15000, suffix: "+", label: "Porsi Tersalurkan", trend: "+24%", trendLabel: "bulan ini" },
-  { value: 800, suffix: "+", label: "Pengguna Aktif", trend: "+12%", trendLabel: "bulan ini" },
-  { value: 20, suffix: "+", label: "Kota", trend: "+3", trendLabel: "kota baru" },
+  { value: 1200, suffix: "+", label: "Donasi Dibuat" },
+  { value: 15000, suffix: "+", label: "Porsi Tersalurkan" },
+  { value: 800, suffix: "+", label: "Pengguna Aktif" },
+  { value: 20, suffix: "+", label: "Kota" },
 ] as const;
 
 type Step = {
@@ -29,9 +29,6 @@ type Step = {
   title: string;
   description: string;
   icon: LucideIcon;
-  image: string;
-  imageAlt: string;
-  duration: string;
 };
 
 export const steps: Step[] = [
@@ -40,27 +37,18 @@ export const steps: Step[] = [
     title: "Posting Donasi",
     description: "Unggah detail makanan berlebih dalam hitungan menit dengan alur yang ringkas.",
     icon: HandHeart,
-    image: "/images/how-posting.jpg",
-    imageAlt: "Relawan menyiapkan porsi makanan untuk didonasikan",
-    duration: "± 2 menit",
   },
   {
     number: "02",
     title: "Klaim & Ambil",
     description: "Penerima melihat listing yang aktif, melakukan klaim, lalu mengambil secara offline.",
     icon: Truck,
-    image: "/images/how-pickup.jpg",
-    imageAlt: "Penerima mengambil paket makanan dari titik distribusi",
-    duration: "± 30 menit",
   },
   {
     number: "03",
     title: "Konfirmasi Foto",
     description: "Bukti pengambilan diunggah untuk menjaga transparansi dan kepercayaan antar pihak.",
     icon: Camera,
-    image: "/images/how-confirm.jpg",
-    imageAlt: "Nampan makanan terdokumentasi sebagai bukti distribusi",
-    duration: "± 30 detik",
   },
 ] as const;
 
@@ -69,7 +57,6 @@ type Feature = {
   description: string;
   icon: LucideIcon;
   size?: "large" | "standard" | "wide" | "full";
-  image?: string;
 };
 
 export const features: Feature[] = [
@@ -78,7 +65,6 @@ export const features: Feature[] = [
     description: "Buat listing makanan berlebih dengan informasi yang jelas dan mudah dipahami.",
     icon: UtensilsCrossed,
     size: "large",
-    image: "/images/how-posting.jpg",
   },
   {
     title: "Klaim & Ambil",
@@ -130,7 +116,7 @@ type Testimonial = {
   name: string;
   role: string;
   location: string;
-  avatar: string;
+  initials: string;
   quote: string;
 };
 
@@ -139,7 +125,7 @@ export const testimonials: Testimonial[] = [
     name: "Rina Susanti",
     role: "Donatur",
     location: "Jakarta",
-    avatar: "/images/testimonial-rina.jpg",
+    initials: "RS",
     quote:
       "BagiPangan membuat proses donasi makanan jadi sangat mudah. Saya bisa memastikan makanan berlebih dari restoran saya tidak terbuang sia-sia.",
   },
@@ -147,7 +133,7 @@ export const testimonials: Testimonial[] = [
     name: "Ahmad Fauzi",
     role: "Penerima",
     location: "Bandung",
-    avatar: "/images/testimonial-ahmad.jpg",
+    initials: "AF",
     quote:
       "Sebagai pengelola panti asuhan, platform ini sangat membantu kami mendapatkan makanan berkualitas untuk anak-anak secara rutin.",
   },
@@ -155,7 +141,7 @@ export const testimonials: Testimonial[] = [
     name: "Dewi Lestari",
     role: "Relawan",
     location: "Surabaya",
-    avatar: "/images/testimonial-dewi.jpg",
+    initials: "DL",
     quote:
       "Transparansi dan kemudahan konfirmasi foto membuat saya yakin setiap donasi benar-benar sampai ke tangan yang membutuhkan.",
   },

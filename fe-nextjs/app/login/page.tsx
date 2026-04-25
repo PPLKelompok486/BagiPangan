@@ -1,379 +1,414 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { ArrowRight, Eye, EyeOff, Lock, ShieldCheck, Sparkles, Users } from "lucide-react";
-import { ApiError, apiFetch, saveAuth, type AuthUser } from "@/lib/api";
-import { AuthSidePanel } from "@/app/_components/auth-side-panel";
+import { motion, AnimatePresence } from "framer-motion";
+import { Mail, Lock, ArrowLeft, ArrowRight, Loader2, CheckCircle2, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 
-type LoginForm = { email: string; password: string };
-type LoginErrors = Partial<Record<keyof LoginForm, string>>;
-
-const easeOutQuart: [number, number, number, number] = [0.16, 1, 0.3, 1];
-
-const containerVariants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.15 } },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 24 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, ease: easeOutQuart },
-  },
-};
-
-const loginBenefits = [
-  { icon: Sparkles, text: "Lihat donasi aktif dan klaim terbaru dari dashboard Anda." },
-  { icon: ShieldCheck, text: "Riwayat pengambilan lengkap dengan bukti foto." },
-  { icon: Users, text: "Lanjutkan percakapan dengan donatur & penerima di kota Anda." },
-];
+type AuthMode = "login" | "reset-step1" | "reset-step2";
 
 export default function LoginPage() {
   const router = useRouter();
-  const reducedMotion = useReducedMotion();
-  const rm = reducedMotion ?? false;
-
-  const [form, setForm] = useState<LoginForm>({ email: "", password: "" });
-  const [errors, setErrors] = useState<LoginErrors>({});
-  const [notification, setNotification] = useState("");
-  const [shakeFields, setShakeFields] = useState<Set<string>>(new Set());
+  const [mode, setMode] = useState<AuthMode>("login");
+  const [loading, setLoading] = useState(false);
+  const [notification, setNotification] = useState({ type: "", message: "" });
   const [showPassword, setShowPassword] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [remember, setRemember] = useState(true);
-  const [capsLock, setCapsLock] = useState(false);
 
+  // Lockout States
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockoutUntil, setLockoutUntil] = useState<number | null>(null);
+  const [timeLeft, setTimeLeft] = useState(0);
+
+  // Form States
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const resetNotification = () => setNotification({ type: "", message: "" });
+
+  // Handle Lockout Timer
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const saved = localStorage.getItem("login.rememberedEmail");
-    if (saved) setForm((f) => ({ ...f, email: saved }));
-  }, []);
+    if (!lockoutUntil) return;
 
-  const validate = (): LoginErrors => {
-    const e: LoginErrors = {};
-    if (!form.email) e.email = "Email wajib diisi";
-    else if (!/^\S+@\S+\.\S+$/.test(form.email))
-      e.email = "Format email tidak valid";
-    if (!form.password) e.password = "Password wajib diisi";
-    return e;
-  };
+    const timer = setInterval(() => {
+      const now = Date.now();
+      const remaining = Math.max(0, Math.ceil((lockoutUntil - now) / 1000));
+      
+      if (remaining === 0) {
+        setLockoutUntil(null);
+        setFailedAttempts(0);
+        setTimeLeft(0);
+        clearInterval(timer);
+      } else {
+        setTimeLeft(remaining);
+      }
+    }, 1000);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
-    if (errors[name as keyof LoginErrors]) {
-      setErrors({ ...errors, [name]: undefined });
-    }
-  };
+    return () => clearInterval(timer);
+  }, [lockoutUntil]);
 
-  const handleEmailBlur = () => {
-    if (form.email && !/^\S+@\S+\.\S+$/.test(form.email)) {
-      setErrors((prev) => ({ ...prev, email: "Format email tidak valid" }));
-    }
-  };
-
-  const handlePasswordKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (typeof e.getModifierState === "function") {
-      setCapsLock(e.getModifierState("CapsLock"));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setNotification("");
-    const v = validate();
-    setErrors(v);
-    if (Object.keys(v).length) {
-      setShakeFields(new Set(Object.keys(v)));
-      setTimeout(() => setShakeFields(new Set()), 600);
+    resetNotification();
+
+    // Check Lockout
+    if (lockoutUntil && Date.now() < lockoutUntil) {
+      setNotification({ 
+        type: "error", 
+        message: `Terlalu banyak percobaan. Silakan coba lagi dalam ${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}.` 
+      });
       return;
     }
 
-    setSubmitting(true);
-    try {
-      const res = await apiFetch<{ token: string; user: AuthUser }>("/login", {
-        method: "POST",
-        body: JSON.stringify(form),
-      });
-      saveAuth(res.token, res.user);
-      if (typeof window !== "undefined") {
-        if (remember) localStorage.setItem("login.rememberedEmail", form.email);
-        else localStorage.removeItem("login.rememberedEmail");
+    setLoading(true);
+
+    // Simulate API call
+    setTimeout(() => {
+      setLoading(false);
+      
+      // For demonstration: any password other than "bagipangan123" is wrong
+      if (email === "demo@bagipangan.org" && password === "bagipangan123") {
+        setNotification({ type: "success", message: "Login berhasil! Mengalihkan..." });
+        setFailedAttempts(0);
+        setTimeout(() => router.push("/bagipangan"), 1500);
+      } else {
+        const newAttempts = failedAttempts + 1;
+        setFailedAttempts(newAttempts);
+
+        if (newAttempts >= 3) {
+          const lockoutTime = Date.now() + 2 * 60 * 1000; // 2 minutes
+          setLockoutUntil(lockoutTime);
+          setNotification({ 
+            type: "error", 
+            message: "Akun terkunci sementara. Terlalu banyak kesalahan password (3x). Silakan tunggu 2 menit." 
+          });
+        } else {
+          setNotification({ 
+            type: "error", 
+            message: `Password salah. Sisa percobaan: ${3 - newAttempts}` 
+          });
+        }
       }
-      setNotification("Login berhasil, mengalihkan...");
-      const dest = res.user.role === "penerima" ? "/receiver/dashboard" : "/";
-      setTimeout(() => router.push(dest), 400);
-    } catch (err) {
-      const msg =
-        err instanceof ApiError
-          ? err.message
-          : "Tidak bisa menghubungi server. Periksa koneksi Anda dan coba lagi.";
-      setNotification(msg);
-      setShakeFields(new Set(["email", "password"]));
-      setTimeout(() => setShakeFields(new Set()), 600);
-    } finally {
-      setSubmitting(false);
-    }
+    }, 1500);
   };
 
-  const isSuccess = notification.includes("berhasil");
+  const handleResetStep1 = async (e: React.FormEvent) => {
+    e.preventDefault();
+    resetNotification();
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      if (!email) {
+        setNotification({ type: "error", message: "Masukkan email Anda." });
+        return;
+      }
+      setMode("reset-step2");
+    }, 1000);
+  };
+
+  const handleResetStep2 = async (e: React.FormEvent) => {
+    e.preventDefault();
+    resetNotification();
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      if (newPassword !== confirmPassword) {
+        setNotification({ type: "error", message: "Konfirmasi password tidak cocok." });
+        return;
+      }
+      if (newPassword.length < 8) {
+        setNotification({ type: "error", message: "Password minimal 8 karakter." });
+        return;
+      }
+      setNotification({ type: "success", message: "Password berhasil diperbarui! Silakan login." });
+      setTimeout(() => {
+        setMode("login");
+        resetNotification();
+      }, 2000);
+    }, 1500);
+  };
 
   return (
-    <div className="bagi-theme flex min-h-screen items-stretch bg-[var(--cream)]">
-      <AuthSidePanel
-        eyebrow="Selamat Datang Kembali"
-        title="Lanjutkan dampak Anda — satu porsi, satu keluarga."
-        description="Masuk untuk memantau donasi aktif, melihat klaim terbaru, dan melanjutkan kontribusi di komunitas Anda."
-        benefits={loginBenefits}
-        socialProof="Telah dipercaya 800+ donatur & penerima di 20+ kota"
-        imageSrc="/images/auth-login-hands.jpg"
-      />
+    <div className="min-h-screen flex flex-col relative overflow-hidden bg-[#111412] text-[#e1e3de] font-sans selection:bg-[#ccff80] selection:text-[#213600]">
+      {/* Dynamic Google Fonts Import */}
+      <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+        
+        :root {
+          --brand-primary: #ccff80;
+          --brand-primary-container: #a3e635;
+          --brand-surface: #111412;
+          --brand-on-surface: #e1e3de;
+          --brand-on-surface-variant: #c2cab0;
+          --font-serif: 'Newsreader', serif;
+          --font-sans: 'Plus Jakarta Sans', sans-serif;
+        }
 
-      <div className="flex w-full flex-col justify-center px-6 py-10 sm:px-12 lg:w-1/2 lg:px-20">
-        <motion.div
-          className="mx-auto w-full max-w-lg rounded-3xl border border-[var(--brand-100)] bg-white p-8 shadow-[var(--shadow-soft)] sm:p-12"
-          initial={{ opacity: rm ? 1 : 0, y: rm ? 0 : 30, scale: rm ? 1 : 0.97 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={rm ? { duration: 0 } : { duration: 0.6, ease: easeOutQuart, delay: 0.1 }}
+        .font-serif { font-family: var(--font-serif); }
+        .font-sans { font-family: var(--font-sans); }
+      `}</style>
+
+      {/* Background Image with Overlay */}
+      <div className="absolute inset-0 z-0 opacity-40">
+        <img 
+          alt="Lush organic vegetables" 
+          src="https://lh3.googleusercontent.com/aida-public/AB6AXuBU4ZJEyMsqGdMP9TZtWJCZkGCtpNX9jm0bqwY10t-8KG_VrvIOCmaexYOxfOJ1Ff4K7JLrFXXXWsqqmgWL02ZtuxtyPSj7J7yC9ZUX8kS-JXhYf8wwKBBn7HDYyQo7p7awkSJ3yCX29vpvF8BosGF9L61cDdb6GOXVWopQE-drlQlU7dcM6vI6p8ZTsEg9YUCxtyuNQiMxct8ZKB4nJe5r6PKtbymtLBZpkk60g_AuKQQuC36j6xW2_n3lkIBT7KFQLrpEoTmd7bwT" 
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#111412]/80 via-[#111412]/60 to-[#111412]"></div>
+      </div>
+
+      {/* Main Content */}
+      <main className="flex-grow flex items-center justify-center relative z-10 px-6 py-20 w-full max-w-7xl mx-auto">
+        <motion.div 
+          className="w-full max-w-md bg-[#1d201e]/40 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-10 sm:p-12 shadow-[0_0_60px_rgba(0,0,0,0.5)] overflow-hidden relative"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         >
-          <motion.div className="mb-8" variants={containerVariants} initial="hidden" animate="visible">
-            <motion.span
-              className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--brand-600)]"
-              variants={itemVariants}
-            >
-              Masuk
-            </motion.span>
-            <motion.h2
-              className="bagi-display mt-2 mb-2 text-3xl font-semibold text-[var(--brand-950)]"
-              variants={itemVariants}
-            >
-              Selamat datang kembali
-            </motion.h2>
-            <motion.p className="text-sm text-[var(--text-mid)]" variants={itemVariants}>
-              Masuk untuk melanjutkan berbagi makanan di komunitas Anda.
-            </motion.p>
-          </motion.div>
+          {/* Accent Glow */}
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#ccff80] opacity-10 blur-[80px]"></div>
 
-          <AnimatePresence>
-            {notification && (
+          <AnimatePresence mode="wait">
+            {/* LOGIN MODE */}
+            {mode === "login" && (
               <motion.div
-                key={notification}
-                role={isSuccess ? "status" : "alert"}
-                aria-live={isSuccess ? "polite" : "assertive"}
-                initial={{ opacity: 0, y: -10, height: 0 }}
-                animate={{ opacity: 1, y: 0, height: "auto" }}
-                exit={{ opacity: 0, y: -10, height: 0 }}
-                className={`mb-4 rounded-2xl p-3 text-sm font-medium ${
-                  isSuccess
-                    ? "border border-[var(--brand-100)] bg-[var(--brand-50)] text-[var(--brand-700)]"
-                    : "border border-red-200 bg-red-50 text-red-700"
-                }`}
+                key="login"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.4 }}
               >
-                {notification}
+                <div className="text-center mb-10">
+                  <motion.div 
+                    className="inline-block mb-6"
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    <span className="font-serif text-5xl font-semibold text-[#ccff80] tracking-tighter block">BagiPangan</span>
+                  </motion.div>
+                  <h1 className="font-serif text-3xl text-[#e1e3de] mb-2">Welcome back</h1>
+                  <p className="font-sans text-[#c2cab0] text-sm">Please sign in to continue</p>
+                </div>
+
+                {notification.message && (
+                  <div className={`mb-6 p-4 rounded-2xl text-sm font-semibold border ${
+                    notification.type === "success" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"
+                  }`}>
+                    {notification.message}
+                  </div>
+                )}
+
+                <form onSubmit={handleLogin} className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-[0.2em] text-[#c2cab0] font-bold ml-1">Email Address</label>
+                    <div className="relative group">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#c2cab0]/40 group-focus-within:text-[#ccff80] transition-colors" />
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="hello@bagipangan.org"
+                        className="w-full bg-[#272b28]/50 border border-white/5 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#ccff80]/50 focus:ring-4 focus:ring-[#ccff80]/5 transition-all text-[#e1e3de] placeholder-[#c2cab0]/20"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center ml-1">
+                      <label className="text-[10px] uppercase tracking-[0.2em] text-[#c2cab0] font-bold">Password</label>
+                      <button 
+                        type="button"
+                        onClick={() => setMode("reset-step1")}
+                        className="text-[10px] uppercase tracking-[0.2em] text-[#ccff80] font-bold hover:text-white transition-colors"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
+                    <div className="relative group">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#c2cab0]/40 group-focus-within:text-[#ccff80] transition-colors" />
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full bg-[#272b28]/50 border border-white/5 rounded-2xl py-4 pl-12 pr-12 focus:outline-none focus:border-[#ccff80]/50 focus:ring-4 focus:ring-[#ccff80]/5 transition-all text-[#e1e3de] placeholder-[#c2cab0]/20"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[#c2cab0]/40 hover:text-[#ccff80]"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading || !!lockoutUntil}
+                    className="w-full bg-[#ccff80] hover:bg-[#b2f746] text-[#213600] font-bold py-4 rounded-2xl transition-all hover:shadow-[0_0_30px_rgba(163,230,53,0.3)] flex items-center justify-center gap-2 mt-4 disabled:opacity-50 disabled:cursor-not-allowed group"
+                  >
+                    {loading ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : lockoutUntil ? (
+                      `Terkunci (${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')})`
+                    ) : (
+                      "Login"
+                    )}
+                    {!loading && !lockoutUntil && <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />}
+                  </button>
+                </form>
+
+                <div className="text-center mt-10">
+                  <p className="text-sm text-[#c2cab0]">
+                    Don't have an account?{" "}
+                    <Link href="/register" className="text-[#ccff80] font-bold hover:underline">Sign up</Link>
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
+            {/* RESET PASSWORD STEP 1 */}
+            {mode === "reset-step1" && (
+              <motion.div
+                key="reset1"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.4 }}
+              >
+                <button 
+                  onClick={() => setMode("login")}
+                  className="flex items-center gap-2 text-[#c2cab0] hover:text-[#ccff80] transition-colors mb-10 text-[10px] font-bold uppercase tracking-widest"
+                >
+                  <ArrowLeft className="h-4 w-4" /> Back to login
+                </button>
+
+                <div className="text-center mb-10">
+                  <div className="inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-[#ccff80]/10 text-[#ccff80] mb-6">
+                    <ShieldCheck className="h-8 w-8" />
+                  </div>
+                  <h1 className="font-serif text-4xl text-[#e1e3de] mb-2">Reset Password</h1>
+                  <p className="font-sans text-[#c2cab0] text-sm leading-relaxed">Enter your email to receive a password reset link.</p>
+                </div>
+
+                <form onSubmit={handleResetStep1} className="space-y-8">
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-[0.2em] text-[#c2cab0] font-bold ml-1">Email Address</label>
+                    <div className="relative group">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#c2cab0]/40 group-focus-within:text-[#ccff80] transition-colors" />
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="hello@bagipangan.org"
+                        className="w-full bg-[#272b28]/50 border border-white/5 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#ccff80]/50 focus:ring-4 focus:ring-[#ccff80]/5 transition-all text-[#e1e3de]"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-[#ccff80] text-[#213600] py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 group"
+                  >
+                    {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Send Reset Link"}
+                    {!loading && <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />}
+                  </button>
+                </form>
+              </motion.div>
+            )}
+
+            {/* RESET PASSWORD STEP 2 */}
+            {mode === "reset-step2" && (
+              <motion.div
+                key="reset2"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.4 }}
+              >
+                <div className="text-center mb-10">
+                  <div className="inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-[#ccff80]/10 text-[#ccff80] mb-6">
+                    <Lock className="h-8 w-8" />
+                  </div>
+                  <h1 className="font-serif text-4xl text-[#e1e3de] mb-2">New Password</h1>
+                  <p className="font-sans text-[#c2cab0] text-sm leading-relaxed">Account verified! Create a strong new password.</p>
+                </div>
+
+                {notification.message && (
+                  <div className={`mb-6 p-4 rounded-2xl text-sm font-semibold border ${
+                    notification.type === "success" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"
+                  }`}>
+                    {notification.message}
+                  </div>
+                )}
+
+                <form onSubmit={handleResetStep2} className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-[0.2em] text-[#c2cab0] font-bold ml-1">New Password</label>
+                    <div className="relative group">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#c2cab0]/40 group-focus-within:text-[#ccff80] transition-colors" />
+                      <input
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full bg-[#272b28]/50 border border-white/5 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#ccff80]/50 focus:ring-4 focus:ring-[#ccff80]/5 transition-all text-[#e1e3de]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-[0.2em] text-[#c2cab0] font-bold ml-1">Confirm Password</label>
+                    <div className="relative group">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#c2cab0]/40 group-focus-within:text-[#ccff80] transition-colors" />
+                      <input
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full bg-[#272b28]/50 border border-white/5 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#ccff80]/50 focus:ring-4 focus:ring-[#ccff80]/5 transition-all text-[#e1e3de]"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-[#ccff80] text-[#213600] py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 group mt-4"
+                  >
+                    {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Update Password"}
+                    {!loading && <CheckCircle2 className="h-4 w-4" />}
+                  </button>
+                </form>
               </motion.div>
             )}
           </AnimatePresence>
-
-          <motion.form
-            onSubmit={handleSubmit}
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            noValidate
-          >
-            <motion.div className="mb-4" variants={itemVariants}>
-              <label htmlFor="login-email" className="mb-2 block text-sm font-semibold text-[var(--brand-950)]">
-                Email
-              </label>
-              <motion.input
-                id="login-email"
-                type="email"
-                name="email"
-                autoComplete="email"
-                autoCapitalize="none"
-                spellCheck={false}
-                inputMode="email"
-                value={form.email}
-                onChange={handleChange}
-                onBlur={handleEmailBlur}
-                placeholder="email@contoh.com"
-                aria-invalid={errors.email ? true : undefined}
-                aria-describedby={errors.email ? "login-email-error" : undefined}
-                className={`w-full rounded-xl border p-3 text-[var(--brand-950)] placeholder:text-[var(--text-mid)]/50 transition-all focus:outline-none ${
-                  errors.email
-                    ? "border-red-300 bg-red-50/50 focus:border-red-400 focus:ring-2 focus:ring-red-100"
-                    : "border-[var(--brand-100)] bg-white focus:border-[var(--brand-400)] focus:ring-2 focus:ring-[var(--brand-50)]"
-                }`}
-                animate={shakeFields.has("email") ? { x: [0, -8, 8, -6, 6, -3, 3, 0] } : { x: 0 }}
-                whileFocus={rm ? undefined : { scale: 1.01 }}
-                transition={{ duration: 0.15 }}
-              />
-              <AnimatePresence>
-                {errors.email && (
-                  <motion.div
-                    id="login-email-error"
-                    initial={{ opacity: 0, y: -4, height: 0 }}
-                    animate={{ opacity: 1, y: 0, height: "auto" }}
-                    exit={{ opacity: 0, y: -4, height: 0 }}
-                    className="mt-1.5 flex items-center gap-1 text-sm text-red-600"
-                  >
-                    <span className="inline-block h-1 w-1 rounded-full bg-red-400" />
-                    {errors.email}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-
-            <motion.div className="mb-4" variants={itemVariants}>
-              <div className="mb-2 flex items-center justify-between">
-                <label htmlFor="login-password" className="block text-sm font-semibold text-[var(--brand-950)]">
-                  Password
-                </label>
-                <a
-                  href="/forgot-password"
-                  className="text-xs font-semibold text-[var(--brand-600)] hover:text-[var(--brand-700)] hover:underline"
-                >
-                  Lupa password?
-                </a>
-              </div>
-              <div className="relative">
-                <motion.input
-                  id="login-password"
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  autoComplete="current-password"
-                  value={form.password}
-                  onChange={handleChange}
-                  onKeyDown={handlePasswordKey}
-                  onKeyUp={handlePasswordKey}
-                  placeholder="Password Anda"
-                  aria-invalid={errors.password ? true : undefined}
-                  aria-describedby={
-                    [errors.password ? "login-password-error" : null, capsLock ? "login-caps-hint" : null]
-                      .filter(Boolean)
-                      .join(" ") || undefined
-                  }
-                  className={`w-full rounded-xl border p-3 pr-10 text-[var(--brand-950)] placeholder:text-[var(--text-mid)]/50 transition-all focus:outline-none ${
-                    errors.password
-                      ? "border-red-300 bg-red-50/50 focus:border-red-400 focus:ring-2 focus:ring-red-100"
-                      : "border-[var(--brand-100)] bg-white focus:border-[var(--brand-400)] focus:ring-2 focus:ring-[var(--brand-50)]"
-                  }`}
-                  animate={shakeFields.has("password") ? { x: [0, -8, 8, -6, 6, -3, 3, 0] } : { x: 0 }}
-                  whileFocus={rm ? undefined : { scale: 1.01 }}
-                  transition={{ duration: 0.15 }}
-                />
-                <button
-                  type="button"
-                  aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-mid)] transition-colors hover:text-[var(--brand-600)]"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-              <AnimatePresence>
-                {capsLock && (
-                  <motion.div
-                    id="login-caps-hint"
-                    role="status"
-                    aria-live="polite"
-                    initial={{ opacity: 0, y: -4, height: 0 }}
-                    animate={{ opacity: 1, y: 0, height: "auto" }}
-                    exit={{ opacity: 0, y: -4, height: 0 }}
-                    className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-amber-700"
-                  >
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
-                    Caps Lock aktif
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              <AnimatePresence>
-                {errors.password && (
-                  <motion.div
-                    id="login-password-error"
-                    initial={{ opacity: 0, y: -4, height: 0 }}
-                    animate={{ opacity: 1, y: 0, height: "auto" }}
-                    exit={{ opacity: 0, y: -4, height: 0 }}
-                    className="mt-1.5 flex items-center gap-1 text-sm text-red-600"
-                  >
-                    <span className="inline-block h-1 w-1 rounded-full bg-red-400" />
-                    {errors.password}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-
-            <motion.label
-              variants={itemVariants}
-              className="flex cursor-pointer items-center gap-2.5 text-sm text-[var(--text-mid)] select-none"
-            >
-              <span className="relative flex h-4 w-4 items-center justify-center">
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                  className="peer absolute h-full w-full cursor-pointer appearance-none rounded border border-[var(--brand-300)] bg-white checked:border-[var(--brand-600)] checked:bg-[var(--brand-600)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-50)]"
-                />
-                <svg
-                  viewBox="0 0 12 12"
-                  className="pointer-events-none relative h-2.5 w-2.5 opacity-0 peer-checked:opacity-100"
-                  fill="none"
-                >
-                  <path d="M2 6L5 9L10 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </span>
-              Ingat email saya di perangkat ini
-            </motion.label>
-
-            <motion.div variants={itemVariants} className="mt-6">
-              <motion.button
-                type="submit"
-                disabled={submitting}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--brand-600)] py-3.5 text-base font-bold text-white shadow-[0_12px_30px_rgba(45,122,79,0.2)] disabled:opacity-60"
-                whileHover={rm || submitting ? undefined : { scale: 1.02, y: -2 }}
-                whileTap={rm || submitting ? undefined : { scale: 0.97 }}
-              >
-                {submitting ? (
-                  <>
-                    <motion.span
-                      aria-hidden="true"
-                      className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white"
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
-                    />
-                    Memproses...
-                  </>
-                ) : (
-                  <>
-                    Masuk
-                    <ArrowRight className="h-4 w-4" />
-                  </>
-                )}
-              </motion.button>
-
-              <div className="mt-3 flex items-center justify-center gap-1.5 text-xs text-[var(--text-mid)]">
-                <Lock className="h-3 w-3" />
-                Koneksi aman — data Anda tidak dibagikan ke pihak ketiga.
-              </div>
-            </motion.div>
-          </motion.form>
-
-          <motion.div
-            className="mt-6 text-center text-sm text-[var(--text-mid)]"
-            variants={itemVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            Belum punya akun?{" "}
-            <a href="/register" className="font-semibold text-[var(--brand-600)] hover:underline">
-              Daftar di sini
-            </a>
-          </motion.div>
         </motion.div>
-      </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="w-full py-12 mt-auto bg-[#1A3A32]/40 backdrop-blur-md border-t border-white/5 relative z-10 flex flex-col items-center px-8 gap-6">
+        <div className="flex flex-col md:flex-row justify-between items-center w-full max-w-7xl gap-6">
+          <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-[#c2cab0]/40 text-center md:text-left">
+            © 2024 BagiPangan. Cultivating Community Sustainability.
+          </p>
+          <div className="flex gap-8">
+            {["Privacy Policy", "Terms of Service", "Support"].map((item) => (
+              <Link 
+                key={item} 
+                href="#" 
+                className="font-sans text-[10px] uppercase tracking-[0.3em] text-[#c2cab0]/40 hover:text-[#ccff80] transition-colors"
+              >
+                {item}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

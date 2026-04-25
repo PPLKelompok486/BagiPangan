@@ -13,10 +13,8 @@ class RegisterController extends Controller
         $service = new RegisterService();
         try {
             $user = $service->register($request->all());
-            $token = $user->createToken('api')->plainTextToken;
             return response()->json([
                 'message' => 'Registrasi Berhasil',
-                'token' => $token,
                 'user' => $user,
             ], 201);
         } catch (ValidationException $e) {

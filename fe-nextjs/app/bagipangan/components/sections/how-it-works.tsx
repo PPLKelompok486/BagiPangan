@@ -1,7 +1,6 @@
 "use client";
 
 import { motion, useInView, useReducedMotion, useScroll, useTransform } from "framer-motion";
-import { Clock } from "lucide-react";
 import { useRef } from "react";
 import { steps } from "../../data";
 import { cn } from "../../lib/cn";
@@ -65,7 +64,7 @@ export function HowItWorks() {
               return (
                 <motion.article
                   key={step.number}
-                  className="group relative flex flex-col overflow-hidden rounded-[2rem] border border-[var(--brand-100)] bg-white shadow-[var(--shadow-card)] transition-shadow hover:shadow-[0_24px_60px_rgba(13,43,26,0.12)]"
+                  className="group relative rounded-[2rem] border border-[var(--brand-100)] bg-white p-7 shadow-[var(--shadow-card)] transition-shadow hover:shadow-[0_24px_60px_rgba(13,43,26,0.12)]"
                   variants={createFadeUpVariants(reducedMotion)}
                   whileHover={
                     reducedMotion
@@ -74,21 +73,11 @@ export function HowItWorks() {
                   }
                   transition={{ type: "spring", stiffness: 260, damping: 25 }}
                 >
-                  <div className="relative h-44 overflow-hidden bg-[var(--brand-50)]">
-                    <img
-                      alt={step.imageAlt}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-                      loading="lazy"
-                      src={step.image}
-                    />
-                    <div
-                      aria-hidden="true"
-                      className="absolute inset-0 bg-gradient-to-t from-white/60 via-transparent to-transparent"
-                    />
-                    {/* Step number floats over the image */}
-                    <div className="absolute left-5 top-5">
+                  <div className="flex items-start gap-5">
+                    {/* Pulsing step number */}
+                    <div className="relative">
                       <motion.div
-                        className="flex h-11 w-11 items-center justify-center rounded-full border border-white/40 bg-[var(--brand-900)]/80 text-xs font-bold tracking-[0.12em] text-white backdrop-blur"
+                        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-[var(--brand-300)] text-sm font-bold text-[var(--brand-700)] transition-colors group-hover:border-[var(--brand-600)] group-hover:bg-[var(--brand-600)] group-hover:text-white"
                         initial={{ scale: reducedMotion ? 1 : 0.5, opacity: reducedMotion ? 1 : 0 }}
                         animate={isInView ? { scale: 1, opacity: 1 } : {}}
                         transition={
@@ -104,50 +93,41 @@ export function HowItWorks() {
                       >
                         {step.number}
                       </motion.div>
-                    </div>
-                    {/* Icon chip bottom-right */}
-                    <motion.div
-                      className={cn(
-                        "absolute right-5 bottom-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[var(--brand-700)] shadow-[0_10px_24px_rgba(13,43,26,0.18)] transition-colors",
-                        "group-hover:bg-[var(--brand-600)] group-hover:text-white",
+                      {/* Ripple effect */}
+                      {isInView && !reducedMotion && (
+                        <motion.div
+                          className="absolute inset-0 rounded-full border-2 border-[var(--brand-400)]"
+                          initial={{ scale: 1, opacity: 0.6 }}
+                          animate={{ scale: 1.8, opacity: 0 }}
+                          transition={{
+                            duration: 1,
+                            delay: 0.4 + stepIndex * 0.15,
+                            ease: "easeOut",
+                          }}
+                        />
                       )}
-                      whileHover={reducedMotion ? undefined : { rotate: 10, scale: 1.08 }}
-                      transition={{ type: "spring", stiffness: 300, damping: 15 }}
-                    >
-                      <Icon className="h-5 w-5" />
-                    </motion.div>
-                  </div>
-
-                  <div className="flex flex-1 flex-col gap-3 p-7">
-                    <div className="flex items-start justify-between gap-3">
-                      <h3 className="text-2xl font-semibold text-[var(--brand-900)]">
-                        {step.title}
-                      </h3>
-                      <motion.span
-                        animate={isInView ? { opacity: 1, scale: 1 } : {}}
-                        className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--brand-50)] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--brand-700)]"
-                        initial={{
-                          opacity: reducedMotion ? 1 : 0,
-                          scale: reducedMotion ? 1 : 0.7,
-                        }}
-                        transition={
-                          reducedMotion
-                            ? { duration: 0 }
-                            : {
-                                type: "spring",
-                                stiffness: 300,
-                                damping: 20,
-                                delay: 0.5 + stepIndex * 0.15,
-                              }
-                        }
-                      >
-                        <Clock className="h-3 w-3" strokeWidth={2.6} />
-                        {step.duration}
-                      </motion.span>
                     </div>
-                    <p className="text-base leading-8 text-[var(--text-mid)]">
-                      {step.description}
-                    </p>
+
+                    <div className="space-y-5">
+                      <motion.div
+                        className={cn(
+                          "inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--brand-50)] text-[var(--brand-700)] transition-colors",
+                          "group-hover:bg-[var(--brand-600)] group-hover:text-white",
+                        )}
+                        whileHover={reducedMotion ? undefined : { rotate: 12, scale: 1.12 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                      >
+                        <Icon className="h-6 w-6" />
+                      </motion.div>
+                      <div className="space-y-2">
+                        <h3 className="text-2xl font-semibold text-[var(--brand-900)]">
+                          {step.title}
+                        </h3>
+                        <p className="text-base leading-8 text-[var(--text-mid)]">
+                          {step.description}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </motion.article>
               );

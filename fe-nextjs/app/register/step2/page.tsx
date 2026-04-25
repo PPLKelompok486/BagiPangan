@@ -3,9 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
-import { saveAuth, type AuthUser } from "@/lib/api";
-import { AuthSidePanel } from "@/app/_components/auth-side-panel";
+import { ArrowLeft, Heart, Loader2, CheckCircle2 } from "lucide-react";
 
 const containerVariants = {
   hidden: {},
@@ -25,6 +23,12 @@ const itemVariants = {
     transition: { duration: 0.5, ease: easeOutQuart },
   },
 };
+
+const floatVariants = [
+  { y: [0, -12, 0], duration: 5.2 },
+  { y: [0, -8, 0], duration: 4.6 },
+  { y: [0, -10, 0], duration: 5.8 },
+];
 
 export default function RegisterStep2() {
   const router = useRouter();
@@ -101,19 +105,9 @@ export default function RegisterStep2() {
 
       if (res.ok) {
         setSubmitState("success");
+        setNotification("Registrasi berhasil! Silakan login.");
         sessionStorage.removeItem("registerStep1");
-        if (data.token && data.user) {
-          saveAuth(data.token, data.user as AuthUser);
-          setNotification("Registrasi berhasil! Mengalihkan...");
-          const dest =
-            (data.user as AuthUser).role === "penerima"
-              ? "/receiver/dashboard"
-              : "/";
-          setTimeout(() => router.push(dest), 1200);
-        } else {
-          setNotification("Registrasi berhasil! Silakan login.");
-          setTimeout(() => router.push("/login"), 1500);
-        }
+        setTimeout(() => router.push("/login"), 2000);
       } else {
         setSubmitState("idle");
         if (res.status === 422 && data.errors) {
@@ -135,12 +129,82 @@ export default function RegisterStep2() {
   };
 
   return (
-    <div className="bagi-theme flex min-h-screen items-stretch bg-[var(--cream)]">
-      <AuthSidePanel
-        eyebrow="Langkah Terakhir"
-        title="Sedikit info, lalu Anda siap berbagi."
-        description="Kami memerlukan kontak dan kota Anda untuk menghubungkan donasi dengan penerima terdekat."
-      />
+    <div className="bagi-theme min-h-screen flex items-stretch bg-[var(--cream)]">
+      {/* Left Panel */}
+      <motion.div
+        className="hidden w-1/2 flex-col justify-center items-center bg-[var(--brand-900)] p-12 relative overflow-hidden lg:flex"
+        initial={{ opacity: rm ? 1 : 0, x: rm ? 0 : -40 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={rm ? { duration: 0 } : { duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+      >
+        {/* Background blobs */}
+        <motion.div
+          className="absolute left-[-10%] top-[15%] h-72 w-72 rounded-full bg-[var(--brand-600)] opacity-15 blur-3xl"
+          animate={rm ? undefined : { scale: [1, 1.1, 1], x: [0, 20, 0] }}
+          transition={rm ? { duration: 0 } : { duration: 12, repeat: Infinity, repeatType: "mirror" }}
+        />
+        <motion.div
+          className="absolute right-[-8%] bottom-[20%] h-64 w-64 rounded-full bg-[var(--lime)] opacity-10 blur-3xl"
+          animate={rm ? undefined : { scale: [1, 1.15, 1], y: [0, -15, 0] }}
+          transition={rm ? { duration: 0 } : { duration: 10, repeat: Infinity, repeatType: "mirror" }}
+        />
+
+        <div className="relative z-10 flex flex-col items-center max-w-md">
+          <motion.div
+            className="bg-[var(--brand-600)] rounded-2xl w-20 h-20 flex items-center justify-center mb-6 shadow-lg"
+            initial={{ scale: rm ? 1 : 0, rotate: rm ? 0 : -12 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={rm ? { duration: 0 } : { type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
+          >
+            <span className="text-white text-3xl font-bold">BP</span>
+          </motion.div>
+
+          <motion.h1
+            className="text-2xl font-bold mb-2 text-white"
+            initial={{ opacity: rm ? 1 : 0, y: rm ? 0 : 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={rm ? { duration: 0 } : { duration: 0.5, delay: 0.3 }}
+          >
+            Bagi Pangan
+          </motion.h1>
+
+          <motion.p
+            className="text-white/60 mb-8 text-center"
+            initial={{ opacity: rm ? 1 : 0 }}
+            animate={{ opacity: 1 }}
+            transition={rm ? { duration: 0 } : { duration: 0.5, delay: 0.4 }}
+          >
+            Satu langkah lagi untuk mulai berbagi.
+          </motion.p>
+
+          <div className="space-y-3 w-full">
+            {[
+              { text: "Donatur mengunggah makanan, admin memoderasi, penerima melacak status.", icon: "heart" },
+              { text: "Frontend Next.js dan backend Laravel berjalan sebagai satu pengalaman.", icon: "code" },
+              { text: "Misi sosial dengan dashboard operasional yang rapi dan modern.", icon: "plant" },
+            ].map((item, i) => (
+              <motion.div
+                key={item.text}
+                className="flex items-center gap-3 bg-white/8 border border-white/10 rounded-2xl p-4 backdrop-blur-sm"
+                initial={{ opacity: rm ? 1 : 0, x: rm ? 0 : -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={rm ? { duration: 0 } : { duration: 0.5, delay: 0.5 + i * 0.1 }}
+              >
+                <motion.div
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--brand-600)] text-white"
+                  animate={rm ? undefined : { y: floatVariants[i].y }}
+                  transition={rm ? { duration: 0 } : { duration: floatVariants[i].duration, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  {item.icon === "heart" && <Heart className="h-4 w-4" />}
+                  {item.icon === "code" && <span className="text-sm font-bold">&lt;/&gt;</span>}
+                  {item.icon === "plant" && <span className="text-lg">🌱</span>}
+                </motion.div>
+                <span className="text-white/80 text-sm leading-relaxed">{item.text}</span>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.div>
 
       {/* Right Panel (Form Step 2) */}
       <div className="w-full flex flex-col justify-center px-6 sm:px-12 lg:w-1/2 lg:px-20">
@@ -157,13 +221,13 @@ export default function RegisterStep2() {
             animate="visible"
           >
             <motion.span
-              className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--brand-600)]"
+              className="text-xs tracking-[0.24em] text-[var(--brand-600)] font-semibold uppercase"
               variants={itemVariants}
             >
-              Registrasi — Langkah 2 dari 2
+              Registrasi
             </motion.span>
             <motion.h2
-              className="bagi-display mt-2 mb-4 text-3xl font-semibold text-[var(--brand-950)]"
+              className="text-3xl font-bold mt-2 mb-4 text-[var(--brand-950)]"
               variants={itemVariants}
             >
               Lengkapi data diri Anda
