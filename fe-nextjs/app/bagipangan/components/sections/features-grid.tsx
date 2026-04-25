@@ -128,6 +128,26 @@ export function FeaturesGrid() {
                 variants={createFadeUpVariants(reducedMotion)}
                 spotlightColor={spotlightColor}
               >
+                {isLarge && feature.image && (
+                  <>
+                    <img
+                      alt=""
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.28] transition-opacity duration-500 group-hover:opacity-[0.38]"
+                      loading="lazy"
+                      src={feature.image}
+                    />
+                    <div
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,var(--brand-900)/70_0%,var(--brand-900)/40_60%,var(--brand-800)/20_100%)]"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, rgba(7,23,16,0.85) 0%, rgba(13,43,26,0.55) 55%, rgba(26,71,49,0.2) 100%)",
+                      }}
+                    />
+                  </>
+                )}
+
                 <div
                   className={cn(
                     "relative z-20 flex h-full flex-col",

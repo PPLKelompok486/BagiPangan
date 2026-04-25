@@ -16,11 +16,28 @@ export function CtaBanner() {
   return (
     <section
       aria-labelledby="cta-heading"
-      className="bagi-noise relative isolate overflow-hidden bg-[linear-gradient(135deg,var(--brand-900)_0%,var(--brand-700)_100%)] px-4 py-24 text-white sm:px-6 lg:px-10 lg:py-32"
+      className="bagi-noise relative isolate overflow-hidden bg-[var(--brand-900)] px-4 py-24 text-white sm:px-6 lg:px-10 lg:py-32"
       id="cta"
       ref={ref}
     >
-      {/* Radial glow behind content */}
+      {/* Background photograph */}
+      <img
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.22]"
+        loading="lazy"
+        src="/images/cta-community.jpg"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,var(--brand-900)_0%,var(--brand-800)_55%,var(--brand-700)_100%)] mix-blend-multiply"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,var(--brand-900)_80%)]"
+      />
+
+      {/* Radial glow accent */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 flex items-center justify-center"
@@ -29,9 +46,9 @@ export function CtaBanner() {
           animate={
             rm
               ? undefined
-              : { scale: [1, 1.15, 1], opacity: [0.08, 0.15, 0.08] }
+              : { scale: [1, 1.15, 1], opacity: [0.06, 0.12, 0.06] }
           }
-          className="h-[700px] w-[700px] rounded-full bg-[var(--brand-500)] blur-3xl"
+          className="h-[680px] w-[680px] rounded-full bg-[var(--lime)] blur-3xl"
           transition={
             rm
               ? { duration: 0 }
@@ -44,16 +61,6 @@ export function CtaBanner() {
           }
         />
       </div>
-
-      {/* Decorative corner blobs */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute left-[-8%] top-[-20%] h-72 w-72 rounded-full bg-[var(--lime)] opacity-5 blur-3xl"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute bottom-[-18%] right-[-6%] h-80 w-80 rounded-full bg-[var(--brand-400)] opacity-6 blur-3xl"
-      />
 
       <motion.div
         animate={isInView ? "visible" : "hidden"}

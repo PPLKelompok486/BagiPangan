@@ -2,6 +2,7 @@ import { CtaBanner } from "./components/sections/cta-banner";
 import { DashboardPreview } from "./components/sections/dashboard-preview";
 import { FAQ } from "./components/sections/faq";
 import { FeaturesGrid } from "./components/sections/features-grid";
+import { FoodMarquee } from "./components/sections/food-marquee";
 import { Footer } from "./components/sections/footer";
 import { Hero } from "./components/sections/hero";
 import { HowItWorks } from "./components/sections/how-it-works";
@@ -11,6 +12,7 @@ import { ProblemStatement } from "./components/sections/problem-statement";
 import { ImpactStats } from "./components/sections/stats";
 import { Testimonials } from "./components/sections/testimonials";
 import { ScrollProgress } from "./components/ui/scroll-progress";
+import { ScrollToTop } from "./components/ui/scroll-to-top";
 
 export default function BagiPanganPage() {
   return (
@@ -20,6 +22,7 @@ export default function BagiPanganPage() {
       <Hero />
       <ProblemStatement />
       <ImpactStats />
+      <FoodMarquee />
       <HowItWorks />
       <FeaturesGrid />
       <DashboardPreview />
@@ -28,6 +31,7 @@ export default function BagiPanganPage() {
       <FAQ />
       <CtaBanner />
       <Footer />
+      <ScrollToTop />
     </main>
   );
 }

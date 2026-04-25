@@ -2,58 +2,37 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
+#[Fillable([
+    'donor_id', 'receiver_id', 'title', 'description', 'quantity',
+    'pickup_address', 'pickup_time', 'status', 'claimed_at',
+])]
 class Donation extends Model
 {
-    use HasFactory;
-
-    public const STATUS_PENDING = 'pending';
-    public const STATUS_APPROVED = 'approved';
-    public const STATUS_REJECTED = 'rejected';
-    public const STATUS_CLAIMED = 'claimed';
-    public const STATUS_COMPLETED = 'completed';
-    public const STATUS_CANCELLED = 'cancelled';
-
-    protected $fillable = [
-        'user_id',
-        'category_id',
-        'title',
-        'description',
-        'location_city',
-        'location_address',
-        'available_from',
-        'available_until',
-        'portion_count',
-        'status',
-        'approved_by',
-        'approved_at',
-        'rejected_reason',
-    ];
-
     protected function casts(): array
     {
         return [
-            'available_from' => 'datetime',
-            'available_until' => 'datetime',
-            'approved_at' => 'datetime',
-            'portion_count' => 'integer',
+            'pickup_time' => 'datetime',
+            'claimed_at' => 'datetime',
         ];
     }
 
-    public function donor()
+    public function donor(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'donor_id');
     }
 
-    public function category()
+    public function receiver(): BelongsTo
     {
-        return $this->belongsTo(DonationCategory::class, 'category_id');
+        return $this->belongsTo(User::class, 'receiver_id');
     }
 
-    public function approver()
+    public function proof(): HasOne
     {
-        return $this->belongsTo(User::class, 'approved_by');
+        return $this->hasOne(Proof::class);
     }
 }

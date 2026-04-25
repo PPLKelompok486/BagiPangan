@@ -52,6 +52,5 @@ coverage/
 *.tsbuildinfo
 next-env.d.ts
 
+# MCP (contains API keys — keep local only)
 .mcp.json
-
-context/

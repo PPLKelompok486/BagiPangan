@@ -7,28 +7,16 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable([
-    'role',
-    'is_admin',
-    'is_active',
-    'deactivated_at',
-    'name',
-    'email',
-    'password',
-    'phone',
-    'city',
-    'organization',
-    'job',
-])]
+#[Fillable(['role', 'name', 'email', 'password', 'phone', 'city', 'organization', 'job'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * Get the attributes that should be cast.
@@ -40,39 +28,6 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'is_admin' => 'boolean',
-            'is_active' => 'boolean',
-            'deactivated_at' => 'datetime',
         ];
-    }
-
-    public function isAdmin(): bool
-    {
-        return $this->is_admin || $this->role === 'admin';
-    }
-
-    public function scopeActive($query)
-    {
-        return $query->where('is_active', true);
-    }
-
-    public function donations(): HasMany
-    {
-        return $this->hasMany(Donation::class, 'user_id');
-    }
-
-    public function approvedDonations(): HasMany
-    {
-        return $this->hasMany(Donation::class, 'approved_by');
-    }
-
-    public function claims(): HasMany
-    {
-        return $this->hasMany(Claim::class, 'receiver_id');
-    }
-
-    public function activityLogs(): HasMany
-    {
-        return $this->hasMany(ActivityLog::class, 'actor_user_id');
     }
 }
