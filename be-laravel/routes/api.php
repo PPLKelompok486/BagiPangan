@@ -4,10 +4,22 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ModerationController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\UserManagementController;
+use App\Http\Controllers\DonationController;
+use App\Http\Controllers\LoginController;
 use App\Http\Controllers\RegisterController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [RegisterController::class, 'register']);
+Route::post('/login', [LoginController::class, 'login']);
+
+Route::get('/donations', [DonationController::class, 'index']);
+Route::get('/donations/{id}', [DonationController::class, 'show'])->whereNumber('id');
+
+Route::middleware('token.auth')->group(function () {
+    Route::post('/logout', [LoginController::class, 'logout']);
+    Route::get('/donations/mine', [DonationController::class, 'mine']);
+    Route::post('/donations/{id}/claim', [DonationController::class, 'claim'])->whereNumber('id');
+});
 
 Route::prefix('admin')->middleware(['auth:web', 'admin'])->group(function () {
     Route::get('/dashboard/summary', [DashboardController::class, 'summary']);

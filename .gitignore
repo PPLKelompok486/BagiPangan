@@ -1,5 +1,7 @@
 # Assistant
 .agents/
+.claude/
+.trae/
 
 # Dependencies
 node_modules/

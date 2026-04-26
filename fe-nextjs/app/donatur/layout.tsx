@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { LogOut, Package, ListChecks, Map as MapIcon } from "lucide-react";
+import { LogOut, LayoutGrid, Package, PlusCircle } from "lucide-react";
 import "../bagipangan/landing.css";
 import { apiFetch, clearAuth, getUser, type AuthUser } from "@/lib/api";
 
-export default function ReceiverLayout({ children }: { children: React.ReactNode }) {
+export default function DonaturLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -18,8 +18,8 @@ export default function ReceiverLayout({ children }: { children: React.ReactNode
       router.replace("/login");
       return;
     }
-    if (u.role !== "penerima") {
-      router.replace("/");
+    if (u.role !== "donatur") {
+      router.replace("/receiver/dashboard");
       return;
     }
     setUser(u);
@@ -29,7 +29,7 @@ export default function ReceiverLayout({ children }: { children: React.ReactNode
     try {
       await apiFetch("/logout", { method: "POST" });
     } catch {
-      // ignore — we'll clear locally anyway
+      // ignore — clear locally regardless
     }
     clearAuth();
     router.replace("/login");
@@ -38,16 +38,16 @@ export default function ReceiverLayout({ children }: { children: React.ReactNode
   if (!user) return null;
 
   const navItems = [
-    { href: "/receiver/dashboard", label: "Donasi tersedia", icon: Package },
-    { href: "/receiver/map", label: "Peta donasi", icon: MapIcon },
-    { href: "/receiver/my-claims", label: "Klaim saya", icon: ListChecks },
+    { href: "/donatur/dashboard", label: "Dashboard", icon: LayoutGrid },
+    { href: "/donatur/donations", label: "Donasi saya", icon: Package },
+    { href: "/donatur/donations/new", label: "Buat donasi", icon: PlusCircle },
   ];
 
   return (
     <div className="bagi-theme min-h-screen bg-[var(--cream)]">
       <header className="bg-white border-b border-[var(--brand-100)] sticky top-0 z-20">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
-          <Link href="/receiver/dashboard" className="flex items-center gap-2">
+          <Link href="/donatur/dashboard" className="flex items-center gap-2">
             <span className="bg-[var(--brand-600)] text-white font-bold rounded-xl px-2.5 py-1 text-sm">
               BP
             </span>
@@ -78,7 +78,7 @@ export default function ReceiverLayout({ children }: { children: React.ReactNode
           <div className="flex items-center gap-3">
             <div className="text-right hidden sm:block">
               <div className="text-sm font-semibold text-[var(--brand-950)]">{user.name}</div>
-              <div className="text-xs text-[var(--text-mid)]">Penerima</div>
+              <div className="text-xs text-[var(--text-mid)]">Donatur</div>
             </div>
             <button
               onClick={handleLogout}

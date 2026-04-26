@@ -270,7 +270,7 @@ export function Hero() {
           </motion.div>
 
           <motion.div
-            className="mt-8 inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/6 px-4 py-2.5 text-sm font-medium text-white/85 shadow-[0_10px_30px_rgba(0,0,0,0.18)] backdrop-blur"
+            className="mt-8 inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/8 px-4 py-2.5 text-sm font-medium text-white/85 shadow-[0_10px_30px_rgba(0,0,0,0.22)] backdrop-blur ring-1 ring-inset ring-white/5"
             variants={createFadeUpVariants(reducedMotion, 0.3)}
           >
             <span className="relative flex h-2.5 w-2.5">
@@ -293,6 +293,10 @@ export function Hero() {
               />
               <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--lime)]" />
             </span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--lime)]/90">
+              Live
+            </span>
+            <span className="h-3 w-px bg-white/15" aria-hidden />
             <span className="font-semibold text-white">12 porsi</span>
             <span className="text-white/65">tersalurkan · 1 jam terakhir</span>
           </motion.div>
@@ -336,7 +340,7 @@ export function Hero() {
           }}
         >
           <motion.div
-            className="relative rounded-[2rem] border border-white/12 bg-white/6 p-3 shadow-[0_24px_80px_rgba(5,12,8,0.35)] backdrop-blur-sm"
+            className="relative rounded-[2rem] border border-white/12 bg-white/6 p-3 shadow-[0_30px_90px_-20px_rgba(5,12,8,0.55)] backdrop-blur-sm"
             style={
               reducedMotion
                 ? undefined
@@ -347,6 +351,10 @@ export function Hero() {
                   }
             }
           >
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-6 top-0 h-px rounded-full bg-gradient-to-r from-transparent via-white/40 to-transparent"
+            />
             <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[1.5rem]">
               <HeroMealPhoto />
             </div>
