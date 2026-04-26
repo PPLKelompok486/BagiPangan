@@ -310,7 +310,7 @@ export default function RegisterPage() {
                       >
                         {role === "donatur" ? "Donatur" : "Penerima"}
                       </span>
-                      <span className="text-xs text-[var(--text-mid)] mt-0.5">
+                      <span className="text-xs text-[var(--brand-950)] mt-0.5">
                         {role === "donatur"
                           ? "Saya ingin mendonasikan makanan"
                           : "Saya ingin menerima donasi makanan"}
@@ -427,7 +427,7 @@ export default function RegisterPage() {
           </motion.form>
 
           <motion.div
-            className="mt-6 text-center text-[var(--text-mid)] text-sm"
+            className="mt-6 text-center text-[var(--brand-950)] text-sm"
             variants={itemVariants}
             initial="hidden"
             animate="visible"
