@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\DonationController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegisterController;
 use Illuminate\Support\Facades\Route;
 
@@ -16,6 +17,11 @@ Route::get('/donations', [DonationController::class, 'index']);
 Route::get('/donations/{id}', [DonationController::class, 'show'])->whereNumber('id');
 
 Route::middleware('token.auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'index']);
+    Route::post('/profile', [ProfileController::class, 'store']);
+    Route::put('/profile', [ProfileController::class, 'update']);
+    Route::delete('/profile', [ProfileController::class, 'destroy']);
+
     Route::post('/logout', [LoginController::class, 'logout']);
     Route::get('/donations/mine', [DonationController::class, 'mine']);
     Route::post('/donations/{id}/claim', [DonationController::class, 'claim'])->whereNumber('id');

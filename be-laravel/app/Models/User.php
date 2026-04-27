@@ -23,6 +23,7 @@ use Illuminate\Notifications\Notifiable;
     'city',
     'organization',
     'job',
+    'avatar',
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
