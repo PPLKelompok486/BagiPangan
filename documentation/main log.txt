@@ -1,0 +1,378 @@
+AFIF@afif MINGW64 ~/Documents/GitHub/BagiPangan (main)
+$ git log
+commit 803ac96fdb81c650c685204144bec078f7cf0fd4 (HEAD -> main, origin/main, origin/HEAD)
+Author: afifnursena <afifnursena21@gmail.com>
+Date:   Mon Apr 27 19:23:13 2026 +0700
+
+    SCRUM-71 Adding architectural documentations and context in the project
+
+commit f606793936681359e67d587f8b9a61eeca365334
+Author: yonathan <stghezron@gmail.com>
+Date:   Mon Apr 27 02:16:59 2026 +0700
+
+    Remove donor dashboard prompt md
+
+commit bbe63c8d8446ba9d56797a97f07b525a41cbef2d
+Author: yonathan <stghezron@gmail.com>
+Date:   Mon Apr 27 02:15:08 2026 +0700
+
+    Add donor dashboard, polish receiver, untrack assistant configs
+
+    - Add /donatur/dashboard with hero, KPI cards, donation management
+      (search/filter/status), activity timeline, receiver engagement
+      preview, empty/loading states, and mock donor data isolated for
+      later backend wiring.
+    - Add /donatur layout with auth guard and donor nav (matches
+      existing receiver protection pattern); placeholder pages for
+      /donatur/donations and /donatur/donations/new.
+    - Update login redirect: donatur -> /donatur/dashboard, penerima
+      unchanged.
+    - Extend proxy.ts middleware matcher to also protect /donatur/:path*.
+    - Receiver layout: explicitly import bagipangan/landing.css to
+      guarantee shared CSS variables regardless of nav order.
+    - Untrack .claude/ and .trae/ and add them to .gitignore alongside
+      .agents/.
+
+commit f408dc9881f91724d4e955be2c340a69c8bda076 (SCRUM-50-As-a-user-I-can-view-donation-map-visualization)
+Author: yonathan <stghezron@gmail.com>
+Date:   Sun Apr 26 22:41:41 2026 +0700
+
+    Restore missing landing page images
+
+    Hero, how-it-works step images, and testimonial avatars were
+    referenced by the landing page but the image files were lost
+    when SCRUM-67 was rebased. Restored from commit 41cd211
+    (yonathan-root) which still had them.
+
+commit cef23ddbc1fbddee523ab05a0a18af1b45685468
+Author: yonathan <stghezron@gmail.com>
+Date:   Sun Apr 26 22:40:23 2026 +0700
+
+    Restore missing food-marquee.tsx imported by landing page
+
+    The component was referenced by app/bagipangan/page.tsx but the file
+    was lost when SCRUM-67 was rebased onto the new base. Restored from
+    commit 41cd211 (yonathan-root) which still had it.
+
+commit 07afbd6685fc22d866c496c910618db3a646f54f
+Merge: 9eba389 d143d17
+Author: yonathan <stghezron@gmail.com>
+Date:   Sun Apr 26 21:58:28 2026 +0700
+
+    Merge remote-tracking branch 'origin/main' into SCRUM-50-As-a-user-I-can-view-donation-map-visualization
+
+    # Conflicts:
+    #       fe-nextjs/app/globals.css
+
+commit 9eba3895d636432444f020cceb539a647542e7c3
+Merge: 1766d4b 7f63b6a
+Author: miralami <afifnursena21@gmail.com>
+Date:   Sat Apr 25 20:31:59 2026 +0700
+
+    Merge branch 'SCRUM-67-Improve-landing-page-UI' of https://github.com/PPLKelompok486/BagiPangan into SCRUM-50-As-a-user-I-can-view-donation-map-visualization
+
+commit 1766d4be199a96cc9761d2dd560615b704ba8112
+Author: yonathan <stghezron@gmail.com>
+Date:   Sat Apr 25 19:35:07 2026 +0700
+
+    SCRUM-50 Receiver can view donation map visualization
+
+    Frontend (Next.js):
+    - New /receiver/map page that fetches GET /donations and plots all
+      available donations on an interactive Leaflet map.
+    - Geocodes pickup_address client-side via Nominatim (1.1s spacing to
+      respect rate limit) with progress indicator and cancellation on unmount.
+    - Custom divIcon markers: brand-green for normal, red with pulsing ring
+      for urgent (<6h until pickup).
+    - Marker popup shows title, quantity, donor + city, pickup time, and a
+      "Lihat detail" link to /receiver/donations/:id.
+    - Auto fits map bounds to all geocoded markers.
+    - Loading skeleton, empty state, "all locations failed" warning, refresh
+      button, and brand-styled progress bar.
+    - LeafletMap component imported via next/dynamic with ssr:false to avoid
+      window/document access on the server.
+
+    Layout:
+    - "Peta donasi" nav item added to receiver layout (Map icon from lucide,
+      imported as MapIcon to avoid shadowing JS Map type).
+
+    Dependencies:
+    - Add react-leaflet, leaflet, @types/leaflet.
+
+commit 7f63b6acf651c0935fc38adecf2b26d0e3694326
+Author: yonathan <stghezron@gmail.com>
+Date:   Sat Apr 25 19:28:17 2026 +0700
+
+    SCRUM-67 Improve landing page UI with new polish and motion
+
+    - Add floating scroll-to-top button with circular scroll progress ring
+    - Add shine sweep hover effect on CTA buttons
+    - Add trending indicators and period labels to impact stats
+    - Add duration badges (est. time) to How It Works steps
+    - Add live impact ticker pill in hero (porsi tersalurkan)
+
+commit d143d173b205a973db0900864d90165bcf3311ec
+Author: miralami <afifnursena21@gmail.com>
+Date:   Sat Apr 25 17:32:08 2026 +0700
+
+    Revert "Take SCRUM-67 changes"
+
+    This reverts commit e29d0e33ea4e6ae66b1200a11b594244847694bb.
+
+commit e29d0e33ea4e6ae66b1200a11b594244847694bb
+Author: miralami <afifnursena21@gmail.com>
+Date:   Sat Apr 25 17:29:53 2026 +0700
+
+    Take SCRUM-67 changes
+
+commit aff2c80be39576039c8351d2d57baef207fdc9ca
+Author: Afif Nur Sena <86998574+miralami@users.noreply.github.com>
+Date:   Sat Apr 25 17:10:03 2026 +0700
+
+    Add project title to README
+
+commit dcded37e0eaa98c75f941eb43dae6d21714879c2
+Merge: a8a25ce 5f46514
+Author: Afif Nur Sena <86998574+miralami@users.noreply.github.com>
+Date:   Thu Apr 23 16:32:58 2026 +0700
+
+    Merge pull request #10 from PPLKelompok486/SCRUM-21-As-a-user-I-can-log-in-to-the-system
+
+    SCRUM-24 Implement account lockout after multiple failed login attempts
+
+    Acc
+
+commit 5f465144f3b8812946007279ca3cb34ad8947ff4
+Author: Muhammad Rayfan Pashya <m.rayfanpashya00@gmail.com>
+Date:   Thu Apr 23 16:28:46 2026 +0700
+
+    SCRUM-24 Implement account lockout after multiple failed login attempts
+
+commit a8a25ce12752c868b594351c105cb8aaf96c4451
+Author: nikennaa <nikensuhisman@gmail.com>
+Date:   Thu Apr 23 14:37:03 2026 +0700
+
+    SCRUM-58 Fix final
+
+    Fix final front-end
+
+commit fd62a65b4e62a7216f6d3e7f0f155834645d6608
+Merge: 384b4c5 7cefb3d
+Author: Afif Nur Sena <86998574+miralami@users.noreply.github.com>
+Date:   Thu Apr 23 02:52:08 2026 +0700
+
+    Merge pull request #9 from PPLKelompok486/SCRUM-68-Make-the-Admin-Panel
+
+    SCRUM-68 Admin panel made. Check on admin route
+
+commit 7cefb3d6831ca6043bbfa62281df8bc31e71a2db (SCRUM-68-Make-the-Admin-Panel)
+Author: miralami <afifnursena21@gmail.com>
+Date:   Thu Apr 23 00:39:14 2026 +0700
+
+    SCRUM-68 Added a vertical sliced admin section
+
+    Implemented the first end-to-end admin foundation slice across backend and frontend: admin domain schema, guarded admin APIs, initial feature test, and a new branded admin dashboard shell that consumes proxied API endpoints.
+
+commit f6ced9af0169281156e9239a72685b9849303bb2
+Author: miralami <afifnursena21@gmail.com>
+Date:   Wed Apr 22 01:46:17 2026 +0700
+
+    SCRUM-68 Admin Panel inprogress, unfinished, added plan.md for progress and future plan of this implementation
+
+commit ec765cfefb8ee4e4c25677a473499f2c0d557e8a (SCRUM-45-As-a-receiver-I-can-claim-a-donation)
+Author: yonathan <stghezron@gmail.com>
+Date:   Tue Apr 21 19:09:51 2026 +0700
+
+    SCRUM-45: Receiver can browse and claim donations
+
+    - Receiver dashboard with filter chips (Semua/Mendesak/Hari ini), live urgency counts, sticky search, refresh, and count-up hero
+    - Donation detail page with hero image, urgency pulse, and claim flow
+    - My Claims page listing active/completed claims with motion
+    - Shared receiver layout with nav (dashboard, my-claims, logout)
+    - lib/api.ts (authed fetch, auth helpers) and lib/donations.ts (Donation type, image mapping, pickup time formatter)
+    - proxy.ts for backend API routing
+    - Food imagery for donation cards (6 Unsplash photos)
+    - Fix: globals.css dark-mode canvas bleed (color-scheme: light + explicit html/body background)
+
+    Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
+
+commit 384b4c55e75ac301b3c83e03833bc3da9c6bdef2
+Merge: 4213879 cd792fc
+Author: Afif Nur Sena <86998574+miralami@users.noreply.github.com>
+Date:   Tue Apr 21 16:30:53 2026 +0700
+
+    Merge pull request #6 from PPLKelompok486/SCRUM-58-Text-on-register-is-not-visible---Niken
+
+    SCRUM-58. Acc to merrge into main.
+
+commit cd792fc3684d5e702eca4467e3046e9ac93dec9d
+Merge: 4213879 76b75e2
+Author: Niken Citra Suhisman <nikensuhisman@gmail.com>
+Date:   Tue Apr 21 16:28:04 2026 +0700
+
+    Merge pull request #5 from PPLKelompok486
+
+    SCRUM-58 Merge branch
+
+commit 76b75e2828f3204e7f3b1446f825801910bd16f2
+Author: bellawidia <bp227921@gmail.com>
+Date:   Fri Apr 17 15:06:22 2026 +0700
+
+    SCRUM-66 Fix bug register flow
+
+    - stats: gate CountUp render on isInView so react-countup no longer
+      crashes with "target is null" when enableScrollSpy has no DOM target
+    - hero: replace Math.random() sparkle positions with deterministic
+      values to eliminate SSR/CSR hydration mismatch
+    - register: use tween transition for the 3-keyframe role-button pulse
+      (spring only supports 2 keyframes)
+
+commit 91d0025c05b75497095357c80dfe10ef1a3dc7ea (SCRUM-20-Membuat-Landing-Page)
+Author: bellawidia <bp227921@gmail.com>
+Date:   Fri Apr 17 07:41:20 2026 +0700
+
+    SCRUM-20 Membuat landing page dan memperbaiki alur registrasi
+
+    - Landing page BagiPangan: hero, stats, how-it-works, features, testimonials, FAQ, CTA
+    - Scroll progress indicator
+    - Perbaikan scroll mobile: skip Lenis pada touch device, matikan syncTouch
+    - Perbaikan alur registrasi: posisi checkmark role card, animasi shake field, layout responsif step 2
+
+commit 421387919450c5e97a838a4208ecdbfe5a4b32bc
+Author: miralami <afifnursena21@gmail.com>
+Date:   Fri Apr 17 01:47:22 2026 +0700
+
+    Update database connection settings in .env files to use PostgreSQL instead of the default.
+
+commit d6ebcb80c3d05cf94ba8af389b21be61f3a89b8e
+Author: miralami <afifnursena21@gmail.com>
+Date:   Fri Apr 17 01:20:41 2026 +0700
+
+    Adding skills for code simplification and frontend design, and updating .gitignore and mcp.json for project configuration.
+
+commit 4281b9f32ea4bcdf08b2602d6b60328fb43b6a85
+Author: yonathan <stghezron@gmail.com>
+Date:   Thu Apr 16 19:53:07 2026 +0700
+
+    Update project
+
+commit 28004b0b37207257eec6cfda050739bfe826a296
+Author: nikennaa <nikensuhisman@gmail.com>
+Date:   Tue Apr 14 17:49:58 2026 +0700
+
+    SCRUM-1 Membuat fitur registrasi akun
+
+    SCRUM-1 Membuat fitur registrasi akun
+
+    - Membuat halaman kedua form registrasi
+    - Menghubungkan FE dan BE registrasi menggunakan API
+
+commit af410475b24be6b4bf1efa210d7430dc1af4ff7a
+Author: nikennaa <nikensuhisman@gmail.com>
+Date:   Tue Apr 14 16:39:20 2026 +0700
+
+    SCRUM-1 Membuat fitur registrasi akun
+
+    SCRUM-1 Membuat fitur registrasi akun
+
+    Membuat halaman pertama form registrasi akun (FE dan BE)
+
+commit c4ad0e74f54bd68ab0f862790b7b65b3ab19fc4c
+Author: nikennaa <nikensuhisman@gmail.com>
+Date:   Tue Apr 14 13:21:59 2026 +0700
+
+    SETUP DI LOKAL
+
+commit 5f21344930f42b0dcfabdb1044d3ab64e6004a50
+Merge: 0692f68 fc9e69a
+Author: Muhammad Rayfan Pashya <m.rayfanpashya00@gmail.com>
+Date:   Mon Apr 13 12:49:10 2026 +0700
+
+    Merge pull request #2 from PPLKelompok486/SCRUM-16-melakuakn-setup-next-js-dan-laravel
+
+    docs: add project setup guide for local development environment
+
+commit fc9e69a7dd43ddbc01b582139dfd401b3ebef3d2
+Author: ryfnpshy <m.rayfanpashya00@gmail.com>
+Date:   Mon Apr 13 12:46:12 2026 +0700
+
+    docs: add project setup guide for local development environment
+
+commit 0692f684faa0b527d90461324a3c385bba1d7813
+Merge: 4e26d2f d0091ed
+Author: Muhammad Rayfan Pashya <m.rayfanpashya00@gmail.com>
+Date:   Mon Apr 13 12:39:08 2026 +0700
+
+    Merge pull request #1 from PPLKelompok486/SCRUM-16-melakuakn-setup-next-js-dan-laravel
+
+    Scrum 16 melakuakn setup next js dan laravel
+
+commit d0091edb1ee68261583a78762a26de3ec810204f
+Author: ryfnpshy <m.rayfanpashya00@gmail.com>
+Date:   Mon Apr 13 12:33:21 2026 +0700
+
+    chore: initialize project dependencies with composer.json and composer.lock
+
+commit b2ba22e5f8bfa4af98ad9102f49f73f2beebb285
+Author: ryfnpshy <m.rayfanpashya00@gmail.com>
+Date:   Fri Apr 10 23:48:59 2026 +0700
+
+    feat: initialize monorepo structure with Laravel backend and Next.js frontend projects
+
+commit 4e26d2f186cde77532e70c55a4479fa7840b6bbf
+Author: ryfnpshy <m.rayfanpashya00@gmail.com>
+Date:   Thu Apr 9 09:56:45 2026 +0700
+
+    Setup Environtment
+
+commit f91a8b4383d1faae65e69326fc5c37fd8143372a
+Author: Afif Nur Sena <86998574+miralami@users.noreply.github.com>
+Date:   Thu Apr 9 09:16:07 2026 +0700
+
+    Initial commit
+ ESC
+Author: ryfnpshy <m.rayfanpashya00@gmail.com>
+Date:   Mon Apr 13 12:33:21 2026 +0700
+
+    chore: initialize project dependencies with composer.json and composer.lock
+
+commit b2ba22e5f8bfa4af98ad9102f49f73f2beebb285
+Author: ryfnpshy <m.rayfanpashya00@gmail.com>
+Date:   Fri Apr 10 23:48:59 2026 +0700
+
+    feat: initialize monorepo structure with Laravel backend and Next.js frontend projects
+
+commit 4e26d2f186cde77532e70c55a4479fa7840b6bbf
+Author: ryfnpshy <m.rayfanpashya00@gmail.com>
+Date:   Thu Apr 9 09:56:45 2026 +0700
+
+    Setup Environtment
+
+commit f91a8b4383d1faae65e69326fc5c37fd8143372a
+Author: Afif Nur Sena <86998574+miralami@users.noreply.github.com>
+Date:   Thu Apr 9 09:16:07 2026 +0700
+
+    Initial commit
+(END)
+Author: ryfnpshy <m.rayfanpashya00@gmail.com>
+Date:   Mon Apr 13 12:33:21 2026 +0700
+
+    chore: initialize project dependencies with composer.json and composer.lock
+
+commit b2ba22e5f8bfa4af98ad9102f49f73f2beebb285
+Author: ryfnpshy <m.rayfanpashya00@gmail.com>
+Date:   Fri Apr 10 23:48:59 2026 +0700
+
+    feat: initialize monorepo structure with Laravel backend and Next.js frontend projects
+
+commit 4e26d2f186cde77532e70c55a4479fa7840b6bbf
+Author: ryfnpshy <m.rayfanpashya00@gmail.com>
+Date:   Thu Apr 9 09:56:45 2026 +0700
+
+    Setup Environtment
+
+commit f91a8b4383d1faae65e69326fc5c37fd8143372a
+Author: Afif Nur Sena <86998574+miralami@users.noreply.github.com>
+Date:   Thu Apr 9 09:16:07 2026 +0700
+
+    Initial commit
