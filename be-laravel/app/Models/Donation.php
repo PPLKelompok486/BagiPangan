@@ -15,22 +15,29 @@ class Donation extends Model
     public const STATUS_CANCELLED = 'cancelled';
 
     protected $fillable = [
-        'donor_id',
+        'user_id',
         'receiver_id',
+        'category_id',
         'title',
         'description',
-        'quantity',
-        'pickup_address',
-        'pickup_time',
+        'location_city',
+        'location_address',
+        'available_from',
+        'available_until',
+        'portion_count',
+        'food_photo_url',
         'status',
-        'claimed_at',
+        'approved_by',
+        'approved_at',
+        'rejected_reason',
     ];
 
     protected function casts(): array
     {
         return [
-            'pickup_time' => 'datetime',
-            'claimed_at' => 'datetime',
+            'available_from' => 'datetime',
+            'available_until' => 'datetime',
+            'approved_at' => 'datetime',
         ];
     }
 

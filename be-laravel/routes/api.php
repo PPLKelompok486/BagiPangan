@@ -13,17 +13,20 @@ use Illuminate\Support\Facades\Route;
 Route::post('/register', [RegisterController::class, 'register']);
 Route::post('/login', [LoginController::class, 'login']);
 
-Route::get('/donations', [DonationController::class, 'index']);
-Route::get('/donations/{id}', [DonationController::class, 'show'])->whereNumber('id');
 
-Route::middleware('token.auth')->group(function () {
+// CRUD Donasi Donatur
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/donations', [DonationController::class, 'index']);
+    Route::get('/donations/{id}', [DonationController::class, 'show'])->whereNumber('id');
+    Route::post('/donations', [DonationController::class, 'store']);
+    Route::put('/donations/{id}', [DonationController::class, 'update'])->whereNumber('id');
+    Route::delete('/donations/{id}', [DonationController::class, 'destroy'])->whereNumber('id');
     Route::get('/profile', [ProfileController::class, 'index']);
     Route::post('/profile', [ProfileController::class, 'store']);
     Route::put('/profile', [ProfileController::class, 'update']);
     Route::delete('/profile', [ProfileController::class, 'destroy']);
 
     Route::post('/logout', [LoginController::class, 'logout']);
-    Route::get('/donations/mine', [DonationController::class, 'mine']);
     Route::post('/donations/{id}/claim', [DonationController::class, 'claim'])->whereNumber('id');
 });
 
