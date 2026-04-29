@@ -77,134 +77,30 @@ const chips: Array<{
   },
 ];
 
-const sparkleSeeds = [
-  [0.12, 0.74, 0.33, 0.81, 0.45],
-  [0.63, 0.18, 0.57, 0.29, 0.92],
-  [0.41, 0.86, 0.09, 0.66, 0.23],
-  [0.78, 0.35, 0.72, 0.14, 0.58],
-  [0.27, 0.51, 0.88, 0.47, 0.16],
-  [0.95, 0.62, 0.21, 0.83, 0.39],
-  [0.08, 0.44, 0.67, 0.32, 0.75],
-  [0.56, 0.29, 0.48, 0.91, 0.11],
-];
-
-const sparkles = sparkleSeeds.map(([a, b, c, d, e], i) => ({
-  id: i,
-  left: `${15 + a * 70}%`,
-  top: `${10 + b * 80}%`,
-  size: 2 + c * 3,
-  delay: d * 3,
-  duration: 2 + e * 2,
-}));
-
-function FoodBowlIllustration() {
+function HeroMealPhoto() {
   return (
-    <svg
-      aria-hidden="true"
-      className="h-full w-full"
-      fill="none"
-      viewBox="0 0 500 500"
-    >
-      <defs>
-        <linearGradient id="bowlBase" x1="86" x2="414" y1="220" y2="390">
-          <stop offset="0%" stopColor="var(--brand-700)" />
-          <stop offset="100%" stopColor="var(--brand-900)" />
-        </linearGradient>
-        <linearGradient id="bowlInner" x1="150" x2="352" y1="110" y2="240">
-          <stop offset="0%" stopColor="rgba(255,255,255,0.94)" />
-          <stop offset="100%" stopColor="rgba(240,251,244,0.88)" />
-        </linearGradient>
-      </defs>
-
-      <path
-        d="M138 254C150 328 195 383 250 383c55 0 100-55 112-129H138Z"
-        fill="url(#bowlBase)"
+    <>
+      <img
+        alt="Seorang anak tersenyum saat menerima semangkuk makanan"
+        className="h-full w-full rounded-[1.5rem] object-cover"
+        loading="eager"
+        src="/images/hero-meal.jpg"
+        style={{ objectPosition: "50% 35%" }}
       />
-      <path
-        d="M134 248c0-18 14-32 32-32h168c18 0 32 14 32 32H134Z"
-        fill="var(--brand-800)"
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 rounded-[1.5rem] bg-gradient-to-t from-[var(--brand-900)]/75 via-[var(--brand-900)]/15 to-transparent"
       />
-      <ellipse cx="250" cy="222" fill="url(#bowlInner)" rx="112" ry="48" />
-      {[
-        [176, 198],
-        [213, 182],
-        [250, 194],
-        [291, 178],
-        [329, 198],
-        [207, 220],
-        [254, 224],
-        [302, 214],
-        [170, 225],
-        [338, 222],
-      ].map(([cx, cy], index) => (
-        <ellipse
-          key={`${cx}-${cy}`}
-          cx={cx}
-          cy={cy}
-          fill={index % 3 === 0 ? "var(--lime)" : "white"}
-          opacity={index % 3 === 0 ? 0.92 : 0.96}
-          rx={index % 2 === 0 ? 18 : 14}
-          ry={index % 2 === 0 ? 12 : 10}
-        />
-      ))}
-      <path
-        d="M188 166c17-24 43-36 71-36 34 0 64 17 83 47"
-        stroke="var(--brand-300)"
-        strokeLinecap="round"
-        strokeWidth="10"
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 rounded-[1.5rem] ring-1 ring-inset ring-white/12"
       />
-      <path
-        d="M306 147c8-20 23-32 44-36"
-        stroke="var(--lime)"
-        strokeLinecap="round"
-        strokeWidth="9"
-      />
-      <path
-        d="M176 174c-8-18-23-29-42-33"
-        stroke="var(--brand-400)"
-        strokeLinecap="round"
-        strokeWidth="8"
-      />
-      <path
-        d="M250 110c0-20 12-34 12-50"
-        stroke="rgba(255,255,255,0.9)"
-        strokeLinecap="round"
-        strokeWidth="5"
-      >
-        <animate
-          attributeName="d"
-          dur="3.2s"
-          repeatCount="indefinite"
-          values="M250 110c0-20 12-34 12-50;M252 110c0-18 7-34 5-50;M250 110c0-20 12-34 12-50"
-        />
-      </path>
-      <path
-        d="M288 118c0-16 10-28 8-43"
-        stroke="rgba(255,255,255,0.76)"
-        strokeLinecap="round"
-        strokeWidth="4"
-      >
-        <animate
-          attributeName="d"
-          dur="2.8s"
-          repeatCount="indefinite"
-          values="M288 118c0-16 10-28 8-43;M286 118c0-15 5-27 2-43;M288 118c0-16 10-28 8-43"
-        />
-      </path>
-      <path
-        d="M214 118c0-18 9-31 6-47"
-        stroke="rgba(255,255,255,0.68)"
-        strokeLinecap="round"
-        strokeWidth="4"
-      >
-        <animate
-          attributeName="d"
-          dur="3s"
-          repeatCount="indefinite"
-          values="M214 118c0-18 9-31 6-47;M216 118c0-15 4-31 0-47;M214 118c0-18 9-31 6-47"
-        />
-      </path>
-    </svg>
+      {/* Caption pinned bottom-left over the gradient */}
+      <div className="absolute bottom-5 left-5 right-5 flex items-center gap-2.5 text-xs font-medium tracking-wide text-white/85">
+        <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[var(--lime)]" />
+        Setiap porsi adalah harapan yang tersalurkan
+      </div>
+    </>
   );
 }
 
@@ -372,6 +268,59 @@ export function Hero() {
               Lihat Donasi
             </Button>
           </motion.div>
+
+          <motion.div
+            className="mt-8 inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/8 px-4 py-2.5 text-sm font-medium text-white/85 shadow-[0_10px_30px_rgba(0,0,0,0.22)] backdrop-blur ring-1 ring-inset ring-white/5"
+            variants={createFadeUpVariants(reducedMotion, 0.3)}
+          >
+            <span className="relative flex h-2.5 w-2.5">
+              <motion.span
+                animate={
+                  reducedMotion
+                    ? undefined
+                    : { scale: [1, 2.2, 2.2], opacity: [0.6, 0, 0] }
+                }
+                className="absolute inline-flex h-full w-full rounded-full bg-[var(--lime)]"
+                transition={
+                  reducedMotion
+                    ? { duration: 0 }
+                    : {
+                        duration: 2,
+                        ease: "easeOut",
+                        repeat: Number.POSITIVE_INFINITY,
+                      }
+                }
+              />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--lime)]" />
+            </span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--lime)]/90">
+              Live
+            </span>
+            <span className="h-3 w-px bg-white/15" aria-hidden />
+            <span className="font-semibold text-white">12 porsi</span>
+            <span className="text-white/65">tersalurkan · 1 jam terakhir</span>
+          </motion.div>
+
+          <motion.div
+            className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-white/65"
+            variants={createFadeUpVariants(reducedMotion, 0.36)}
+          >
+            <span className="inline-flex items-center gap-2">
+              <span className="bagi-display text-xl font-semibold text-[var(--lime)]">
+                1 donasi
+              </span>
+              <span className="text-white/50">≈</span>
+              <span className="bagi-display text-xl font-semibold text-white">
+                12 porsi
+              </span>
+              <span className="text-white/65">tersalurkan</span>
+            </span>
+            <span aria-hidden="true" className="hidden h-4 w-px bg-white/20 sm:block" />
+            <span className="inline-flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-[var(--lime)]" />
+              Tanpa biaya — selamanya gratis
+            </span>
+          </motion.div>
         </motion.div>
 
         {/* Interactive bowl with 3D tilt */}
@@ -391,7 +340,7 @@ export function Hero() {
           }}
         >
           <motion.div
-            className="relative rounded-[2rem] border border-white/12 bg-white/6 px-5 py-7 shadow-[0_24px_80px_rgba(5,12,8,0.28)] backdrop-blur-sm sm:px-8"
+            className="relative rounded-[2rem] border border-white/12 bg-white/6 p-3 shadow-[0_30px_90px_-20px_rgba(5,12,8,0.55)] backdrop-blur-sm"
             style={
               reducedMotion
                 ? undefined
@@ -402,69 +351,19 @@ export function Hero() {
                   }
             }
           >
-            <motion.div
-              animate={reducedMotion ? undefined : { rotate: 360 }}
-              className="bagi-ring left-[18%] top-[12%] h-56 w-56"
-              transition={{
-                duration: reducedMotion ? 0 : 28,
-                ease: "linear",
-                repeat: Number.POSITIVE_INFINITY,
-              }}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-6 top-0 h-px rounded-full bg-gradient-to-r from-transparent via-white/40 to-transparent"
             />
-            <motion.div
-              animate={reducedMotion ? undefined : { rotate: -360 }}
-              className="bagi-ring right-[10%] top-[18%] h-80 w-80"
-              transition={{
-                duration: reducedMotion ? 0 : 36,
-                ease: "linear",
-                repeat: Number.POSITIVE_INFINITY,
-              }}
-            />
-
-            {/* Sparkle particles */}
-            {!reducedMotion &&
-              sparkles.map((sparkle) => (
-                <motion.div
-                  key={sparkle.id}
-                  className="absolute rounded-full bg-white/60"
-                  style={{
-                    left: sparkle.left,
-                    top: sparkle.top,
-                    width: sparkle.size,
-                    height: sparkle.size,
-                  }}
-                  animate={{
-                    opacity: [0, 1, 0],
-                    scale: [0, 1, 0],
-                    y: [0, -20, -40],
-                  }}
-                  transition={{
-                    duration: sparkle.duration,
-                    delay: sparkle.delay,
-                    repeat: Number.POSITIVE_INFINITY,
-                    ease: "easeOut",
-                  }}
-                />
-              ))}
-
-            <motion.div
-              animate={reducedMotion ? undefined : { y: [0, -14, 0] }}
-              className="relative z-10 mx-auto aspect-square max-w-md"
-              transition={{
-                duration: reducedMotion ? 0 : 4.8,
-                ease: "easeInOut",
-                repeat: Number.POSITIVE_INFINITY,
-                repeatType: "mirror",
-              }}
-            >
-              <FoodBowlIllustration />
-            </motion.div>
+            <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[1.5rem]">
+              <HeroMealPhoto />
+            </div>
 
             {chips.map((chip) => (
               <motion.div
                 key={chip.label}
                 animate={reducedMotion ? undefined : { y: chip.y }}
-                className={`absolute ${chip.className} rounded-full border border-white/12 bg-white/10 px-4 py-2 text-sm font-semibold text-white shadow-[0_18px_34px_rgba(0,0,0,0.16)] backdrop-blur`}
+                className={`absolute ${chip.className} rounded-full border border-white/20 bg-[var(--brand-900)]/70 px-4 py-2 text-sm font-semibold text-white shadow-[0_18px_34px_rgba(0,0,0,0.24)] backdrop-blur-md`}
                 transition={{
                   duration: reducedMotion ? 0 : chip.duration,
                   ease: "easeInOut",
@@ -473,7 +372,7 @@ export function Hero() {
                 whileHover={
                   reducedMotion
                     ? undefined
-                    : { scale: 1.1, borderColor: "rgba(168, 230, 61, 0.4)" }
+                    : { scale: 1.08, borderColor: "rgba(168, 230, 61, 0.5)" }
                 }
               >
                 {chip.label}

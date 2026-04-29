@@ -4,14 +4,29 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ModerationController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\UserManagementController;
+use App\Http\Controllers\DonationController;
+use App\Http\Controllers\LoginController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [RegisterController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
-Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+Route::post('/login', [LoginController::class, 'login']);
+
+Route::get('/donations', [DonationController::class, 'index']);
+Route::get('/donations/{id}', [DonationController::class, 'show'])->whereNumber('id');
+
+Route::middleware('token.auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'index']);
+    Route::post('/profile', [ProfileController::class, 'store']);
+    Route::put('/profile', [ProfileController::class, 'update']);
+    Route::delete('/profile', [ProfileController::class, 'destroy']);
+
+    Route::post('/logout', [LoginController::class, 'logout']);
+    Route::get('/donations/mine', [DonationController::class, 'mine']);
+    Route::post('/donations/{id}/claim', [DonationController::class, 'claim'])->whereNumber('id');
+});
 
 Route::prefix('admin')->middleware(['auth:web', 'admin'])->group(function () {
     Route::get('/dashboard/summary', [DashboardController::class, 'summary']);

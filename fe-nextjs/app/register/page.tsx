@@ -114,6 +114,18 @@ export default function RegisterPage() {
         animate={{ opacity: 1, x: 0 }}
         transition={rm ? { duration: 0 } : { duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
       >
+        {/* Background photo with overlay */}
+        <div className="absolute inset-0 z-0">
+          <img
+            alt="Berbagi semangkuk hangat — komunitas Bagi Pangan"
+            src="/images/auth/mealtime-share.jpg"
+            className="w-full h-full object-cover opacity-30"
+            style={{ objectPosition: "50% 35%" }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-[var(--brand-900)]/85 via-[var(--brand-900)]/70 to-[var(--brand-950)]/95" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(204,255,128,0.12),transparent_55%)]" />
+        </div>
+
         {/* Background blobs */}
         <motion.div
           className="absolute left-[-10%] top-[15%] h-72 w-72 rounded-full bg-[var(--brand-600)] opacity-15 blur-3xl"
@@ -127,14 +139,26 @@ export default function RegisterPage() {
         />
 
         <div className="relative z-10 flex flex-col items-center max-w-md">
-          <motion.div
-            className="bg-[var(--brand-600)] rounded-2xl w-20 h-20 flex items-center justify-center mb-6 shadow-lg"
-            initial={{ scale: rm ? 1 : 0, rotate: rm ? 0 : -12 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={rm ? { duration: 0 } : { type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
+          <div className="relative">
+            <div className="absolute inset-0 -m-6 rounded-full bg-[var(--lime)]/20 blur-3xl" aria-hidden />
+            <motion.div
+              className="relative bg-[var(--brand-600)] rounded-2xl w-20 h-20 flex items-center justify-center mb-6 shadow-[0_8px_32px_rgba(34,197,94,0.45)] ring-1 ring-white/15"
+              initial={{ scale: rm ? 1 : 0, rotate: rm ? 0 : -12 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={rm ? { duration: 0 } : { type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
+            >
+              <span className="text-white text-3xl font-bold">BP</span>
+            </motion.div>
+          </div>
+
+          <motion.span
+            className="text-[10px] tracking-[0.32em] uppercase text-[var(--lime)]/80 font-bold mb-3"
+            initial={{ opacity: rm ? 1 : 0, y: rm ? 0 : 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={rm ? { duration: 0 } : { duration: 0.5, delay: 0.25 }}
           >
-            <span className="text-white text-3xl font-bold">BP</span>
-          </motion.div>
+            Bergabung dengan komunitas
+          </motion.span>
 
           <motion.h1
             className="text-2xl font-bold mb-2 text-white"
@@ -268,10 +292,10 @@ export default function RegisterPage() {
                       key={role}
                       type="button"
                       onClick={() => handleRoleChange(role)}
-                      className={`relative flex-1 flex flex-col items-start border-2 rounded-2xl p-4 transition-colors ${
+                      className={`relative flex-1 flex flex-col items-start border-2 rounded-2xl p-4 transition-colors overflow-hidden ${
                         isActive
-                          ? "border-[var(--brand-600)] bg-[var(--brand-50)]"
-                          : "border-[var(--brand-100)] bg-white hover:border-[var(--brand-300)]"
+                          ? "border-[var(--brand-600)] bg-[var(--brand-50)] shadow-[0_10px_24px_-12px_rgba(45,122,79,0.35)]"
+                          : "border-[var(--brand-100)] bg-white hover:border-[var(--brand-300)] hover:shadow-[0_6px_16px_-8px_rgba(45,122,79,0.18)]"
                       }`}
                       whileHover={rm ? undefined : { y: -2 }}
                       whileTap={rm ? undefined : { scale: 0.97 }}

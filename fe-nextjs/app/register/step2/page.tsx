@@ -138,6 +138,18 @@ export default function RegisterStep2() {
         animate={{ opacity: 1, x: 0 }}
         transition={rm ? { duration: 0 } : { duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
       >
+        {/* Background photo with overlay */}
+        <div className="absolute inset-0 z-0">
+          <img
+            alt="Tangan menyajikan makanan untuk yang membutuhkan"
+            src="/images/auth/serving-warmth.jpg"
+            className="w-full h-full object-cover opacity-30"
+            style={{ objectPosition: "50% 45%" }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-[var(--brand-900)]/85 via-[var(--brand-900)]/70 to-[var(--brand-950)]/95" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(204,255,128,0.12),transparent_55%)]" />
+        </div>
+
         {/* Background blobs */}
         <motion.div
           className="absolute left-[-10%] top-[15%] h-72 w-72 rounded-full bg-[var(--brand-600)] opacity-15 blur-3xl"

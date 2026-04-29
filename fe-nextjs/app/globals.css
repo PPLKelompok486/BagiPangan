@@ -20,8 +20,9 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  color-scheme: light;
   --shadow-soft: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-  
+
   /* CSS variable aliases for component usage */
   --brand-50: #f0fdf4;
   --brand-100: #dcfce7;
@@ -34,16 +35,21 @@
   --brand-800: #166534;
   --brand-900: #14532d;
   --brand-950: #0f2818;
-  
+
   --cream: #fefef8;
   --lime: #dcfce7;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  background: var(--background);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
 }
 
 body {

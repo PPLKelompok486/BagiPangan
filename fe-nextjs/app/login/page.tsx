@@ -1,15 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Lock, ArrowLeft, ArrowRight, Loader2, CheckCircle2, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import Link from "next/link";
+import { saveAuth, type AuthUser } from "@/lib/api";
+
+const ROLE_LANDING: Record<AuthUser["role"], string> = {
+  penerima: "/receiver/dashboard",
+  donatur: "/donatur/dashboard",
+};
 
 type AuthMode = "login" | "reset-step1" | "reset-step2";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [mode, setMode] = useState<AuthMode>("login");
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState({ type: "", message: "" });
@@ -68,11 +75,10 @@ export default function LoginPage() {
     e.preventDefault();
     resetNotification();
 
-    // Check Lockout
     if (lockoutUntil && Date.now() < lockoutUntil) {
-      setNotification({ 
-        type: "error", 
-        message: `Terlalu banyak percobaan. Silakan coba lagi dalam ${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}.` 
+      setNotification({
+        type: "error",
+        message: `Terlalu banyak percobaan. Silakan coba lagi dalam ${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}.`,
       });
       return;
     }
@@ -85,49 +91,55 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Panggil API Laravel via Next.js Proxy
       const res = await fetch("/api/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({ email, password }),
       });
-
       const data = await res.json();
-      setLoading(false);
 
-      if (!res.ok) {
-        // Hitung percobaan gagal dan terapkan lockout jika perlu
-        const newAttempts = failedAttempts + 1;
-        setFailedAttempts(newAttempts);
+      if (res.ok && data.token && data.user) {
+        saveAuth(data.token, data.user as AuthUser);
+        setFailedAttempts(0);
+        setNotification({ type: "success", message: "Login berhasil! Mengalihkan..." });
 
-        if (newAttempts >= 3) {
-          const lockoutTime = Date.now() + 2 * 60 * 1000; // 2 menit
-          setLockoutUntil(lockoutTime);
-          setNotification({ 
-            type: "error", 
-            message: "Akun terkunci sementara. Terlalu banyak kesalahan password (3x). Silakan tunggu 2 menit." 
-          });
-        } else {
-          setNotification({ 
-            type: "error", 
-            message: data.message || "Email atau password salah."
-          });
-        }
+        const role = (data.user as AuthUser).role;
+        const fromParam = searchParams.get("from");
+        const target =
+          (fromParam && fromParam.startsWith("/") ? fromParam : null) ??
+          ROLE_LANDING[role] ??
+          "/";
+
+        setTimeout(() => router.replace(target), 800);
         return;
       }
 
-      // Login Berhasil
-      if (data.user) {
-        setFailedAttempts(0);
-        // Simpan data user ke localStorage (Session sederhana)
-        localStorage.setItem("user", JSON.stringify(data.user));
-        
-        setNotification({ type: "success", message: "Login berhasil! Mengalihkan..." });
-        setTimeout(() => router.push("/bagipangan"), 1500);
+      const newAttempts = failedAttempts + 1;
+      setFailedAttempts(newAttempts);
+
+      if (res.status === 401) {
+        if (newAttempts >= 3) {
+          setLockoutUntil(Date.now() + 2 * 60 * 1000);
+          setNotification({
+            type: "error",
+            message: "Akun terkunci sementara. Terlalu banyak kesalahan password (3x). Silakan tunggu 2 menit.",
+          });
+        } else {
+          setNotification({
+            type: "error",
+            message: `Email atau password salah. Sisa percobaan: ${3 - newAttempts}`,
+          });
+        }
+      } else {
+        setNotification({
+          type: "error",
+          message: data.message || data.error || `Login gagal (${res.status})`,
+        });
       }
     } catch (err) {
+      setNotification({ type: "error", message: `Tidak bisa menghubungi server: ${String(err)}` });
+    } finally {
       setLoading(false);
-      setNotification({ type: "error", message: "Terjadi kesalahan koneksi. Silakan coba lagi." });
     }
   };
 
@@ -239,25 +251,30 @@ export default function LoginPage() {
       `}</style>
 
       {/* Background Image with Overlay */}
-      <div className="absolute inset-0 z-0 opacity-40">
-        <img 
-          alt="Lush organic vegetables" 
-          src="https://lh3.googleusercontent.com/aida-public/AB6AXuBU4ZJEyMsqGdMP9TZtWJCZkGCtpNX9jm0bqwY10t-8KG_VrvIOCmaexYOxfOJ1Ff4K7JLrFXXXWsqqmgWL02ZtuxtyPSj7J7yC9ZUX8kS-JXhYf8wwKBBn7HDYyQo7p7awkSJ3yCX29vpvF8BosGF9L61cDdb6GOXVWopQE-drlQlU7dcM6vI6p8ZTsEg9YUCxtyuNQiMxct8ZKB4nJe5r6PKtbymtLBZpkk60g_AuKQQuC36j6xW2_n3lkIBT7KFQLrpEoTmd7bwT" 
-          className="w-full h-full object-cover"
+      <div className="absolute inset-0 z-0 opacity-55">
+        <img
+          alt="Relawan menyalurkan donasi pangan kepada komunitas"
+          src="/images/auth/helping-community.jpg"
+          className="w-full h-full object-cover scale-105"
+          style={{ objectPosition: "50% 40%" }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#111412]/80 via-[#111412]/60 to-[#111412]"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-[#111412]/90 via-[#111412]/70 to-[#111412]"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-[#111412]/50 via-transparent to-[#111412]/50"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(204,255,128,0.10),transparent_55%)]"></div>
       </div>
 
       {/* Main Content */}
       <main className="flex-grow flex items-center justify-center relative z-10 px-6 py-20 w-full max-w-7xl mx-auto">
-        <motion.div 
-          className="w-full max-w-md bg-[#1d201e]/40 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-10 sm:p-12 shadow-[0_0_60px_rgba(0,0,0,0.5)] overflow-hidden relative"
+        <motion.div
+          className="w-full max-w-md bg-[#1d201e]/45 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-10 sm:p-12 shadow-[0_30px_90px_-20px_rgba(0,0,0,0.7)] overflow-hidden relative ring-1 ring-white/5"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         >
-          {/* Accent Glow */}
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#ccff80] opacity-10 blur-[80px]"></div>
+          {/* Accent Glows */}
+          <div className="absolute -top-24 -right-24 w-56 h-56 bg-[#ccff80] opacity-15 blur-[90px]"></div>
+          <div className="absolute -bottom-32 -left-24 w-56 h-56 bg-[#a3e635] opacity-8 blur-[100px]"></div>
+          <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#ccff80]/40 to-transparent"></div>
 
           <AnimatePresence mode="wait">
             {/* LOGIN MODE */}
@@ -270,14 +287,17 @@ export default function LoginPage() {
                 transition={{ duration: 0.4 }}
               >
                 <div className="text-center mb-10">
-                  <motion.div 
-                    className="inline-block mb-6"
-                    whileHover={{ scale: 1.05 }}
+                  <motion.div
+                    className="relative inline-flex items-center justify-center mb-6"
+                    whileHover={{ scale: 1.04 }}
                   >
-                    <span className="font-serif text-5xl font-semibold text-[#ccff80] tracking-tighter block">BagiPangan</span>
+                    <div className="absolute inset-0 -m-6 rounded-full bg-[#ccff80]/15 blur-3xl" aria-hidden />
+                    <span className="relative font-serif text-5xl font-semibold text-[#ccff80] tracking-tighter">
+                      BagiPangan
+                    </span>
                   </motion.div>
-                  <h1 className="font-serif text-3xl text-[#e1e3de] mb-2">Welcome back</h1>
-                  <p className="font-sans text-[#c2cab0] text-sm">Please sign in to continue</p>
+                  <h1 className="font-serif text-3xl text-[#e1e3de] mb-2">Selamat datang kembali</h1>
+                  <p className="font-sans text-[#c2cab0] text-sm">Lanjutkan misi mengurangi food waste hari ini</p>
                 </div>
 
                 {notification.message && (
@@ -349,10 +369,35 @@ export default function LoginPage() {
                   </button>
                 </form>
 
-                <div className="text-center mt-10">
-                  <p className="text-sm text-[#c2cab0]">
-                    Don't have an account?{" "}
-                    <Link href="/register" className="text-[#ccff80] font-bold hover:underline">Sign up</Link>
+                <div className="mt-8 pt-6 border-t border-white/5">
+                  <div className="grid grid-cols-3 gap-2 mb-6">
+                    {[
+                      { value: "4.5K+", label: "Porsi tersalur" },
+                      { value: "320+", label: "Donatur aktif" },
+                      { value: "12 Kota", label: "Jangkauan" },
+                    ].map((stat, i) => (
+                      <div
+                        key={stat.label}
+                        className={`text-center px-1 ${i !== 0 ? "border-l border-white/5" : ""}`}
+                      >
+                        <div className="font-serif text-xl text-[#ccff80] font-bold leading-none">{stat.value}</div>
+                        <div className="text-[9px] uppercase tracking-[0.18em] text-[#c2cab0]/65 font-bold mt-1.5">
+                          {stat.label}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    <ShieldCheck className="h-3.5 w-3.5 text-[#ccff80]/70" />
+                    <span className="text-[10px] uppercase tracking-[0.22em] text-[#c2cab0]/60 font-bold">
+                      Koneksi aman & terenkripsi
+                    </span>
+                  </div>
+
+                  <p className="text-center text-sm text-[#c2cab0]">
+                    Belum punya akun?{" "}
+                    <Link href="/register" className="text-[#ccff80] font-bold hover:underline">Daftar di sini</Link>
                   </p>
                 </div>
               </motion.div>
