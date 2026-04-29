@@ -32,6 +32,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [resetToken, setResetToken] = useState<string | null>(null);
 
   const resetNotification = () => setNotification({ type: "", message: "" });
 
@@ -56,6 +57,20 @@ export default function LoginPage() {
     return () => clearInterval(timer);
   }, [lockoutUntil]);
 
+  // Handle Recovery Link Detection (from URL params, e.g. email link)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const modeParam = params.get("mode");
+    const tokenParam = params.get("token") || window.location.hash.split("token=")[1]?.split("&")[0];
+    const emailParam = params.get("email");
+
+    if ((modeParam === "reset" || tokenParam) && tokenParam) {
+      setMode("reset-step2");
+      setResetToken(tokenParam);
+      if (emailParam) setEmail(emailParam);
+    }
+  }, []);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     resetNotification();
@@ -65,6 +80,11 @@ export default function LoginPage() {
         type: "error",
         message: `Terlalu banyak percobaan. Silakan coba lagi dalam ${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}.`,
       });
+      return;
+    }
+
+    if (!email || !password) {
+      setNotification({ type: "error", message: "Email dan password wajib diisi." });
       return;
     }
 
@@ -126,37 +146,88 @@ export default function LoginPage() {
   const handleResetStep1 = async (e: React.FormEvent) => {
     e.preventDefault();
     resetNotification();
+
+    if (!email) {
+      setNotification({ type: "error", message: "Masukkan email Anda." });
+      return;
+    }
+
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
       setLoading(false);
-      if (!email) {
-        setNotification({ type: "error", message: "Masukkan email Anda." });
-        return;
+
+      if (res.ok) {
+        // Simpan token dan langsung lanjut ke step 2
+        setResetToken(data.debug_token);
+        setNotification({
+          type: "success",
+          message: "Verifikasi berhasil! Silakan buat password baru.",
+        });
+        setMode("reset-step2");
+      } else {
+        setNotification({ type: "error", message: data.message || "Gagal mengirim link reset." });
       }
-      setMode("reset-step2");
-    }, 1000);
+    } catch {
+      setLoading(false);
+      setNotification({ type: "error", message: "Terjadi kesalahan koneksi." });
+    }
   };
 
   const handleResetStep2 = async (e: React.FormEvent) => {
     e.preventDefault();
     resetNotification();
+
+    if (newPassword !== confirmPassword) {
+      setNotification({ type: "error", message: "Konfirmasi password tidak cocok." });
+      return;
+    }
+    
+    // Gunakan token dari state (dari step1) atau fallback ke URL params
+    const params = new URLSearchParams(window.location.search);
+    const token = resetToken || params.get("token") || window.location.hash.split("token=")[1]?.split("&")[0];
+
+    if (!token) {
+      setNotification({ type: "error", message: "Token tidak ditemukan. Silakan ulangi proses reset password." });
+      return;
+    }
+
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          email, 
+          token, 
+          password: newPassword, 
+          password_confirmation: confirmPassword 
+        }),
+      });
+      const data = await res.json();
       setLoading(false);
-      if (newPassword !== confirmPassword) {
-        setNotification({ type: "error", message: "Konfirmasi password tidak cocok." });
-        return;
+
+      if (res.ok) {
+        setResetToken(null);
+        setNotification({ type: "success", message: "Password berhasil diperbarui! Silakan login." });
+        setTimeout(() => {
+          setMode("login");
+          setNewPassword("");
+          setConfirmPassword("");
+          resetNotification();
+        }, 2000);
+      } else {
+        setNotification({ type: "error", message: data.message || "Gagal memperbarui password." });
       }
-      if (newPassword.length < 8) {
-        setNotification({ type: "error", message: "Password minimal 8 karakter." });
-        return;
-      }
-      setNotification({ type: "success", message: "Password berhasil diperbarui! Silakan login." });
-      setTimeout(() => {
-        setMode("login");
-        resetNotification();
-      }, 2000);
-    }, 1500);
+    } catch {
+      setLoading(false);
+      setNotification({ type: "error", message: "Terjadi kesalahan koneksi." });
+    }
   };
 
   return (
@@ -355,6 +426,14 @@ export default function LoginPage() {
                   <h1 className="font-serif text-4xl text-[#e1e3de] mb-2">Reset Password</h1>
                   <p className="font-sans text-[#c2cab0] text-sm leading-relaxed">Enter your email to receive a password reset link.</p>
                 </div>
+
+                {notification.message && (
+                  <div className={`mb-6 p-4 rounded-2xl text-sm font-semibold border ${
+                    notification.type === "success" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"
+                  }`}>
+                    {notification.message}
+                  </div>
+                )}
 
                 <form onSubmit={handleResetStep1} className="space-y-8">
                   <div className="space-y-2">

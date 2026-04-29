@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ArrowLeft, Heart, Loader2, CheckCircle2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 const containerVariants = {
   hidden: {},
