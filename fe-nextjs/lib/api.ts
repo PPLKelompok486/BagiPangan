@@ -2,7 +2,7 @@ export type AuthUser = {
   id: number;
   name: string;
   email: string;
-  role: "donatur" | "penerima";
+  role: "donatur" | "penerima" | "admin";
   city?: string | null;
   phone?: string | null;
 };

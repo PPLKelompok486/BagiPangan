@@ -10,6 +10,7 @@ import { saveAuth, type AuthUser } from "@/lib/api";
 const ROLE_LANDING: Record<AuthUser["role"], string> = {
   penerima: "/receiver/dashboard",
   donatur: "/donatur/dashboard",
+  admin: "/admin",
 };
 
 type AuthMode = "login" | "reset-step1" | "reset-step2";
@@ -99,11 +100,30 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok && data.token && data.user) {
-        saveAuth(data.token, data.user as AuthUser);
+        const user = data.user as AuthUser;
+
+        if (user.role === "admin") {
+          const adminRes = await fetch("/api/admin/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Accept: "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+
+          if (!adminRes.ok) {
+            const adminData = await adminRes.json().catch(() => null);
+            setNotification({
+              type: "error",
+              message: adminData?.message || "Login admin gagal.",
+            });
+            return;
+          }
+        }
+
+        saveAuth(data.token, user);
         setFailedAttempts(0);
         setNotification({ type: "success", message: "Login berhasil! Mengalihkan..." });
 
-        const role = (data.user as AuthUser).role;
+        const role = user.role;
         const fromParam = searchParams.get("from");
         const target =
           (fromParam && fromParam.startsWith("/") ? fromParam : null) ??

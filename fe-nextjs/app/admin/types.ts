@@ -25,7 +25,7 @@ export type UsersResponse = {
       id: number;
       name: string;
       email: string;
-      role: "donatur" | "penerima";
+      role: "donatur" | "penerima" | "admin";
       is_admin: boolean;
       is_active: boolean;
       city?: string | null;

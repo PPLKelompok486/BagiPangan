@@ -18,6 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => EnsureAdminRole::class,
             'token.auth' => TokenAuth::class,
         ]);
+
+        $middleware->validateCsrfTokens(except: [
+            'api/admin/login',
+            'api/admin/logout',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

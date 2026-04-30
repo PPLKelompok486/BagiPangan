@@ -24,6 +24,16 @@ use Illuminate\Notifications\Notifiable;
     'organization',
     'job',
     'avatar',
+    'company_name',
+    'company_address',
+    'address',
+    'neighborhood',
+    'district',
+    'postal_code',
+    'need_category',
+    'need_description',
+    'is_verified_receiver',
+    'verification_date',
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
@@ -44,6 +54,8 @@ class User extends Authenticatable
             'is_admin' => 'boolean',
             'is_active' => 'boolean',
             'deactivated_at' => 'datetime',
+            'is_verified_receiver' => 'boolean',
+            'verification_date' => 'datetime',
         ];
     }
 
