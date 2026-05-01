@@ -36,6 +36,7 @@ class TokenAuth
 
         Log::info('User authenticated successfully', ['user_id' => $user->id]);
         $request->setUserResolver(fn () => $user);
+        \Illuminate\Support\Facades\Auth::setUser($user);
         return $next($request);
     }
 }

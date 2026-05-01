@@ -14,8 +14,9 @@ use Illuminate\Support\Facades\Route;
 Route::post('/register', [RegisterController::class, 'register']);
 Route::post('/login', [LoginController::class, 'login']);
 
-Route::get('/donations', [DonationController::class, 'index']);
-Route::get('/donations/{id}', [DonationController::class, 'show'])->whereNumber('id');
+    Route::get('/donations', [DonationController::class, 'index']);
+    Route::get('/donations/categories', [DonationController::class, 'categories']);
+    Route::get('/donations/{id}', [DonationController::class, 'show'])->whereNumber('id');
 
 Route::middleware('token.auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'index']);
@@ -25,6 +26,9 @@ Route::middleware('token.auth')->group(function () {
 
     Route::post('/logout', [LoginController::class, 'logout']);
     Route::get('/donations/mine', [DonationController::class, 'mine']);
+    Route::post('/donations', [DonationController::class, 'store']);
+    Route::put('/donations/{id}', [DonationController::class, 'update']);
+    Route::delete('/donations/{id}', [DonationController::class, 'cancel']);
     Route::post('/donations/{id}/claim', [DonationController::class, 'claim'])->whereNumber('id');
 });
 
@@ -39,4 +43,13 @@ Route::prefix('admin')->middleware(['auth:web', 'admin'])->group(function () {
     Route::patch('/users/{user}', [UserManagementController::class, 'update']);
 
     Route::get('/reports/export/csv', [ReportController::class, 'exportCsv']);
+});
+
+Route::middleware('token.auth')->group(function () {
+    Route::apiResource('fund-donations', \App\Http\Controllers\Api\FundDonationController::class);
+    Route::post('fund-donations/{fund_donation}/cancel', [\App\Http\Controllers\Api\FundDonationController::class, 'cancel']);
+});
+
+Route::prefix('admin')->middleware(['token.auth', 'admin'])->group(function () {
+    Route::get('/fund-donations/monitoring', [\App\Http\Controllers\Api\FundDonationController::class, 'index']);
 });

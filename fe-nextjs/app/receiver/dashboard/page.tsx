@@ -1,14 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence, useMotionValue, useTransform, animate } from "framer-motion";
+import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Clock, Package, ArrowRight, Flame, Search, Filter, X, RefreshCw } from "lucide-react";
+import useSWR from "swr";
 import { ApiError, apiFetch, getUser, type AuthUser } from "@/lib/api";
 import { type Donation, formatPickupTime, imageForDonation } from "@/lib/donations";
+import { CountUp } from "@/lib/count-up";
 
 const URGENT_WINDOW_HOURS = 6;
 const EASE_OUT_QUART: [number, number, number, number] = [0.16, 1, 0.3, 1];
+
+// SWR fetcher — apiFetch already throws ApiError on non-OK
+const fetcher = (path: string) => apiFetch<{ data: Donation[] }>(path).then((r) => r.data);
 
 type FilterKey = "all" | "urgent" | "today";
 
@@ -28,45 +34,45 @@ function urgencyLabel(iso: string): { label: string; tone: "hot" | "warm" | null
 }
 
 export default function ReceiverDashboard() {
-  const [donations, setDonations] = useState<Donation[] | null>(null);
-  const [error, setError] = useState<string>("");
-  const [user, setUser] = useState<AuthUser | null>(null);
+  // ---------------------------------------------------------------------------
+  // Auth (client-only, read once)
+  // ---------------------------------------------------------------------------
+  const user: AuthUser | null = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    return getUser();
+  }, []);
+
+  // ---------------------------------------------------------------------------
+  // Data — SWR with background refresh every 60 s (replaces setInterval + setTick)
+  // No full component re-render: only the parts that use `data` will update.
+  // ---------------------------------------------------------------------------
+  const {
+    data: donations,
+    error: swrError,
+    isLoading,
+    mutate,
+    isValidating,
+  } = useSWR<Donation[]>("/donations", fetcher, {
+    refreshInterval: 60_000,      // background poll — no re-render tsunami
+    revalidateOnFocus: false,     // don't refetch when user tabs back in
+    dedupingInterval: 30_000,
+    keepPreviousData: true,       // show stale data while refreshing
+    onError: () => {},            // errors handled via swrError below
+  });
+
   const [query, setQuery] = useState("");
   const [filterKey, setFilterKey] = useState<FilterKey>("all");
-  const [refreshing, setRefreshing] = useState(false);
-  const [_tick, setTick] = useState(0);
 
-  useEffect(() => {
-    setUser(getUser());
-  }, []);
+  const error =
+    swrError instanceof ApiError
+      ? swrError.message
+      : swrError
+      ? "Gagal memuat donasi"
+      : "";
 
-  const fetchDonations = useCallback(async () => {
-    try {
-      const res = await apiFetch<{ data: Donation[] }>("/donations");
-      setDonations(res.data);
-      setError("");
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Gagal memuat donasi");
-      setDonations([]);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchDonations();
-  }, [fetchDonations]);
-
-  useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 60_000);
-    return () => clearInterval(id);
-  }, []);
-
-  const handleRefresh = useCallback(async () => {
-    if (refreshing) return;
-    setRefreshing(true);
-    await fetchDonations();
-    setTimeout(() => setRefreshing(false), 600);
-  }, [refreshing, fetchDonations]);
-
+  // ---------------------------------------------------------------------------
+  // Derived stats (memoised — only recomputes when donations changes)
+  // ---------------------------------------------------------------------------
   const stats = useMemo(() => {
     if (!donations) return { total: 0, endingToday: 0, urgent: 0 };
     const now = Date.now();
@@ -121,20 +127,24 @@ export default function ReceiverDashboard() {
 
   return (
     <div>
+      {/* ------------------------------------------------------------------ */}
+      {/* HERO BANNER                                                          */}
+      {/* ------------------------------------------------------------------ */}
       <motion.section
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.55, ease: EASE_OUT_QUART }}
         className="relative overflow-hidden rounded-3xl mb-8 border border-[var(--brand-100)]"
       >
-        <motion.img
+        {/* Next.js Image: WebP auto-conversion, lazy, properly sized */}
+        <Image
           src="/images/receiver-dashboard-banner.jpg"
           alt=""
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-          initial={{ scale: 1.08 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 1.4, ease: EASE_OUT_QUART }}
+          fill
+          priority
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1152px"
+          className="pointer-events-none object-cover"
         />
         <div
           aria-hidden="true"
@@ -179,6 +189,9 @@ export default function ReceiverDashboard() {
         </div>
       </motion.section>
 
+      {/* ------------------------------------------------------------------ */}
+      {/* SEARCH / FILTER BAR                                                 */}
+      {/* ------------------------------------------------------------------ */}
       {donations && donations.length > 0 && (
         <div className="mb-5 sticky top-[72px] z-10 -mx-2 px-2 py-3 bg-[var(--cream)]/85 backdrop-blur rounded-2xl">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -225,17 +238,22 @@ export default function ReceiverDashboard() {
               >
                 Hari ini
               </FilterChip>
+              {/* Manual refresh button — SWR mutate, no full re-render */}
               <motion.button
                 type="button"
-                onClick={handleRefresh}
-                disabled={refreshing}
+                onClick={() => mutate()}
+                disabled={isValidating}
                 aria-label="Muat ulang daftar donasi"
                 whileTap={{ scale: 0.9 }}
                 className="ml-1 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--brand-100)] bg-white text-[var(--brand-700)] hover:border-[var(--brand-300)] disabled:opacity-60"
               >
                 <motion.span
-                  animate={refreshing ? { rotate: 360 } : { rotate: 0 }}
-                  transition={refreshing ? { duration: 0.8, ease: "linear", repeat: Infinity } : { duration: 0.3 }}
+                  animate={isValidating ? { rotate: 360 } : { rotate: 0 }}
+                  transition={
+                    isValidating
+                      ? { duration: 0.8, ease: "linear", repeat: Infinity }
+                      : { duration: 0.3 }
+                  }
                   className="flex"
                 >
                   <RefreshCw className="h-4 w-4" />
@@ -259,6 +277,9 @@ export default function ReceiverDashboard() {
         </div>
       )}
 
+      {/* ------------------------------------------------------------------ */}
+      {/* ERROR                                                                */}
+      {/* ------------------------------------------------------------------ */}
       {error && (
         <div
           role="alert"
@@ -269,7 +290,10 @@ export default function ReceiverDashboard() {
         </div>
       )}
 
-      {donations === null && <SkeletonGrid />}
+      {/* ------------------------------------------------------------------ */}
+      {/* STATES                                                               */}
+      {/* ------------------------------------------------------------------ */}
+      {isLoading && !donations && <SkeletonGrid />}
 
       {donations && donations.length === 0 && !error && (
         <EmptyState
@@ -299,11 +323,11 @@ export default function ReceiverDashboard() {
         />
       )}
 
+      {/* ------------------------------------------------------------------ */}
+      {/* DONATION GRID                                                        */}
+      {/* ------------------------------------------------------------------ */}
       {filtered && filtered.length > 0 && (
-        <motion.div
-          layout
-          className="grid gap-5 md:grid-cols-2 lg:grid-cols-3"
-        >
+        <motion.div layout className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           <AnimatePresence mode="popLayout">
             {filtered.map((d, i) => (
               <DonationCard key={d.id} donation={d} index={i} />
@@ -314,6 +338,10 @@ export default function ReceiverDashboard() {
     </div>
   );
 }
+
+/* ============================================================ */
+/* COMPONENTS                                                    */
+/* ============================================================ */
 
 function DonationCard({ donation, index }: { donation: Donation; index: number }) {
   const urg = urgencyLabel(donation.pickup_time);
@@ -335,9 +363,7 @@ function DonationCard({ donation, index }: { donation: Donation; index: number }
           alt={donation.title}
           loading="lazy"
           className="h-full w-full object-cover"
-          variants={{
-            hover: { scale: 1.06 },
-          }}
+          variants={{ hover: { scale: 1.06 } }}
           transition={{ duration: 0.5, ease: EASE_OUT_QUART }}
         />
         <div
@@ -374,9 +400,7 @@ function DonationCard({ donation, index }: { donation: Donation; index: number }
         <h3 className="font-bold text-[var(--brand-950)] leading-tight mb-2 line-clamp-1">
           {donation.title}
         </h3>
-        <p className="text-sm text-[var(--text-mid)] line-clamp-2 mb-4">
-          {donation.description}
-        </p>
+        <p className="text-sm text-[var(--text-mid)] line-clamp-2 mb-4">{donation.description}</p>
         <div className="space-y-2 text-sm text-[var(--brand-950)] mb-4">
           <div className="flex items-start gap-2">
             <Clock className="h-4 w-4 text-[var(--brand-600)] mt-0.5 shrink-0" />
@@ -399,27 +423,13 @@ function DonationCard({ donation, index }: { donation: Donation; index: number }
           className="mt-auto inline-flex items-center justify-center gap-2 bg-[var(--brand-600)] text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-[var(--brand-700)] transition-all group-hover:gap-3"
         >
           Lihat detail
-          <motion.span
-            variants={{ hover: { x: 3 } }}
-            transition={{ duration: 0.25 }}
-            className="inline-flex"
-          >
+          <motion.span variants={{ hover: { x: 3 } }} transition={{ duration: 0.25 }} className="inline-flex">
             <ArrowRight className="h-4 w-4" />
           </motion.span>
         </Link>
       </div>
     </motion.article>
   );
-}
-
-function CountUp({ value }: { value: number }) {
-  const mv = useMotionValue(0);
-  const rounded = useTransform(mv, (v) => Math.round(v).toString());
-  useEffect(() => {
-    const controls = animate(mv, value, { duration: 0.9, ease: [0.16, 1, 0.3, 1] });
-    return () => controls.stop();
-  }, [mv, value]);
-  return <motion.span aria-label={String(value)}>{rounded}</motion.span>;
 }
 
 function FilterChip({

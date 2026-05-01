@@ -2,45 +2,50 @@
 
 namespace App\Models;
 
+use App\Traits\HasAuditTrail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Donation extends Model
 {
-    use HasFactory;
-
-    public const STATUS_AVAILABLE = 'available';
-    public const STATUS_CLAIMED = 'claimed';
-    public const STATUS_COMPLETED = 'completed';
-    public const STATUS_CANCELLED = 'cancelled';
+    use HasFactory, HasAuditTrail;
 
     protected $fillable = [
-        'donor_id',
-        'receiver_id',
+        'user_id',
+        'category_id',
         'title',
         'description',
-        'quantity',
-        'pickup_address',
-        'pickup_time',
+        'location_city',
+        'location_address',
+        'available_from',
+        'available_until',
+        'portion_count',
         'status',
-        'claimed_at',
+        'approved_by',
+        'approved_at',
+        'rejected_reason',
     ];
 
-    protected function casts(): array
+    protected $casts = [
+        'available_from' => 'datetime',
+        'available_until' => 'datetime',
+        'approved_at' => 'datetime',
+        'portion_count' => 'integer',
+    ];
+
+    public function user(): BelongsTo
     {
-        return [
-            'pickup_time' => 'datetime',
-            'claimed_at' => 'datetime',
-        ];
+        return $this->belongsTo(User::class);
     }
 
-    public function donor()
+    public function category(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'donor_id');
+        return $this->belongsTo(DonationCategory::class, 'category_id');
     }
 
-    public function receiver()
+    public function approver(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'receiver_id');
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }

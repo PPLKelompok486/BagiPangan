@@ -141,7 +141,11 @@ function TestimonialCard({
               : { type: "spring", stiffness: 300, damping: 15, delay: 0.3 + cardIndex * 0.1 }
           }
         >
-          {t.initials}
+          {t.name
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase()}
         </motion.div>
         <div>
           <p className="font-semibold text-[var(--brand-900)]">{t.name}</p>

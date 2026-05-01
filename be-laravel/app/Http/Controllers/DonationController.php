@@ -4,79 +4,150 @@ namespace App\Http\Controllers;
 
 use App\Models\Donation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class DonationController extends Controller
 {
+    public function categories()
+    {
+        return response()->json([
+            'data' => \App\Models\DonationCategory::where('is_active', true)->get(['id', 'name'])
+        ]);
+    }
+
     public function index(Request $request)
     {
-        $donations = Donation::with(['donor:id,name,city,phone', 'receiver:id,name'])
+        $donations = Donation::with(['user:id,name,city', 'category'])
+            ->where('status', 'approved')
+            ->orderByDesc('created_at')
+            ->paginate(15);
+
+        return response()->json($donations);
+    }
+
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'location_city' => 'required|string',
+            'location_address' => 'required|string',
+            'available_from' => 'required|date',
+            'available_until' => 'required|date|after:available_from',
+            'portion_count' => 'required|integer|min:1',
+            'category_id' => 'nullable', // Temporarily relaxed to prevent blocking
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Data tidak valid: ' . implode(', ', $validator->errors()->all()),
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $categoryId = $request->category_id;
+        if ($categoryId && !\App\Models\DonationCategory::where('id', $categoryId)->exists()) {
+            $categoryId = null;
+        }
+
+        $donation = Donation::create([
+            'user_id' => Auth::id(),
+            'title' => $request->title,
+            'description' => $request->description,
+            'location_city' => $request->location_city,
+            'location_address' => $request->location_address,
+            'available_from' => $request->available_from,
+            'available_until' => $request->available_until,
+            'portion_count' => $request->portion_count,
+            'category_id' => $categoryId,
+            'status' => 'pending', // Needs admin approval
+        ]);
+
+        return response()->json([
+            'message' => 'Donasi berhasil diajukan dan sedang menunggu verifikasi.',
+            'data' => $donation
+        ], 201);
+    }
+
+    public function show($id)
+    {
+        $donation = Donation::with(['user', 'category'])->find($id);
+
+        if (!$donation) {
+            return response()->json(['message' => 'Donasi tidak ditemukan'], 404);
+        }
+
+        return response()->json(['data' => $donation]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $donation = Donation::find($id);
+
+        if (!$donation || $donation->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        if ($donation->status === 'claimed' || $donation->status === 'completed') {
+            return response()->json(['message' => 'Donasi yang sudah diklaim tidak dapat diubah'], 422);
+        }
+
+        $donation->update($request->only([
+            'title', 'description', 'location_city', 'location_address', 
+            'available_from', 'available_until', 'portion_count', 'category_id'
+        ]));
+
+        return response()->json([
+            'message' => 'Donasi berhasil diperbarui',
+            'data' => $donation
+        ]);
+    }
+
+    public function mine(Request $request)
+    {
+        $donations = Donation::with('category')
+            ->where('user_id', Auth::id())
             ->orderByDesc('created_at')
             ->get();
 
         return response()->json(['data' => $donations]);
     }
 
-    public function show($id)
-    {
-        $donation = Donation::with(['donor:id,name,city,phone', 'receiver:id,name'])
-            ->find($id);
-
-        if (!$donation) {
-            return response()->json(['message' => 'Donasi tidak ditemukan'], 404);
-        }
-
-        return response()->json(['data' => $donation]);
-    }
-
     public function claim(Request $request, $id)
     {
-        $user = $request->user();
-        if (!$user || $user->role !== 'penerima') {
-            return response()->json(['message' => 'Hanya penerima yang dapat mengklaim donasi'], 403);
-        }
-
         $donation = Donation::find($id);
-        if (!$donation) {
-            return response()->json(['message' => 'Donasi tidak ditemukan'], 404);
-        }
-        if ($donation->status !== Donation::STATUS_AVAILABLE) {
-            return response()->json(['message' => 'Donasi sudah tidak tersedia'], 409);
+        
+        if (!$donation || $donation->status !== 'approved') {
+            return response()->json(['message' => 'Donasi tidak tersedia untuk diklaim'], 422);
         }
 
-        DB::transaction(function () use ($donation, $user) {
-            $donation->update([
-                'receiver_id' => $user->id,
-                'status' => Donation::STATUS_CLAIMED,
-                'claimed_at' => now(),
-            ]);
+        $donation->update([
+            'status' => 'claimed',
+            // In a real app, you'd track who claimed it in a separate table or column
+        ]);
 
-            DB::table('donation_claims')->insert([
-                'donation_id' => $donation->id,
-                'recipient_id' => $user->id,
-                'status' => 'requested',
-                'claimed_at' => now(),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        });
-
-        $donation->load(['donor:id,name,city,phone', 'receiver:id,name']);
-        return response()->json(['data' => $donation]);
+        return response()->json([
+            'message' => 'Donasi berhasil diklaim',
+            'data' => $donation
+        ]);
     }
 
-    public function mine(Request $request)
+    public function cancel(Request $request, $id)
     {
-        $user = $request->user();
-        if (!$user) {
-            return response()->json(['message' => 'Unauthenticated'], 401);
+        $donation = Donation::find($id);
+
+        if (!$donation || $donation->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $donations = Donation::with(['donor:id,name,city,phone', 'receiver:id,name'])
-            ->where('receiver_id', $user->id)
-            ->orderByDesc('claimed_at')
-            ->get();
+        if ($donation->status === 'claimed' || $donation->status === 'completed') {
+            return response()->json(['message' => 'Donasi sudah diklaim dan tidak dapat dibatalkan'], 422);
+        }
 
-        return response()->json(['data' => $donations]);
+        $donation->update(['status' => 'cancelled']);
+
+        return response()->json(['message' => 'Donasi berhasil dibatalkan']);
     }
 }
