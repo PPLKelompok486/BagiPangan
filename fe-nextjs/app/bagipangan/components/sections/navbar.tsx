@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, User, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { navLinks } from "../../data";
 import { cn } from "../../lib/cn";
 import { useSmoothScroll } from "../../providers/smooth-scroll-provider";
 import { BrandMark } from "../ui/brand-mark";
 import { Button } from "../ui/button";
+import { getUser, type AuthUser } from "@/lib/api";
 
 export function Navbar() {
   const reducedMotion = useReducedMotion();
@@ -16,6 +17,7 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>("");
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const navItemsRef = useRef<(HTMLButtonElement | null)[]>([]);
   const [hoverRect, setHoverRect] = useState<{ left: number; width: number } | null>(null);
@@ -30,6 +32,10 @@ export function Navbar() {
     window.addEventListener("scroll", onScroll, { passive: true });
 
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    setUser(getUser());
   }, []);
 
   // Track active section via IntersectionObserver
@@ -79,6 +85,14 @@ export function Navbar() {
     setOpen(false);
     scrollTo(href);
   };
+
+  const dashboardHref = user
+    ? user.role === "admin"
+      ? "/admin"
+      : user.role === "donatur"
+        ? "/donatur/dashboard"
+        : "/receiver/dashboard"
+    : null;
 
   return (
     <>
@@ -169,18 +183,40 @@ export function Navbar() {
           </div>
 
           <div className="hidden items-center gap-3 lg:flex">
-            <Link
-              className={cn(
-                "rounded-full px-4 py-2 text-sm font-semibold transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-300)]",
-                scrolled ? "text-[var(--brand-900)]" : "text-white",
-              )}
-              href="/login"
-            >
-              Masuk
-            </Link>
-            <Button className="px-5 py-2.5" href="/register">
-              Daftar
-            </Button>
+            {user && dashboardHref ? (
+              <>
+                <Button className="px-5 py-2.5" href={dashboardHref}>
+                  Go to dashboard
+                </Button>
+                <Link
+                  aria-label="Profil"
+                  className={cn(
+                    "inline-flex h-10 w-10 items-center justify-center rounded-full border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-300)]",
+                    scrolled
+                      ? "border-[var(--brand-100)] bg-white text-[var(--brand-700)]"
+                      : "border-white/40 bg-white/10 text-white",
+                  )}
+                  href="/profile"
+                >
+                  <User className="h-5 w-5" />
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  className={cn(
+                    "rounded-full px-4 py-2 text-sm font-semibold transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-300)]",
+                    scrolled ? "text-[var(--brand-900)]" : "text-white",
+                  )}
+                  href="/login"
+                >
+                  Masuk
+                </Link>
+                <Button className="px-5 py-2.5" href="/register">
+                  Daftar
+                </Button>
+              </>
+            )}
           </div>
 
           <button
@@ -266,12 +302,33 @@ export function Navbar() {
               ))}
             </motion.div>
             <div className="mt-5 grid grid-cols-2 gap-3">
-              <Button className="w-full justify-center border border-[var(--brand-100)] bg-white text-[var(--brand-900)]" href="/login" variant="ghost">
-                Masuk
-              </Button>
-              <Button className="w-full justify-center" href="/register">
-                Daftar
-              </Button>
+              {user && dashboardHref ? (
+                <>
+                  <Button className="w-full justify-center" href={dashboardHref}>
+                    Go to dashboard
+                  </Button>
+                  <Button
+                    className="w-full justify-center border border-[var(--brand-100)] bg-white text-[var(--brand-900)]"
+                    href="/profile"
+                    variant="ghost"
+                  >
+                    Profil
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    className="w-full justify-center border border-[var(--brand-100)] bg-white text-[var(--brand-900)]"
+                    href="/login"
+                    variant="ghost"
+                  >
+                    Masuk
+                  </Button>
+                  <Button className="w-full justify-center" href="/register">
+                    Daftar
+                  </Button>
+                </>
+              )}
             </div>
           </motion.div>
         ) : null}
