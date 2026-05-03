@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, MapPin, Package, RefreshCw, AlertTriangle } from "lucide-react";
 
 import { ApiError, apiFetch } from "@/lib/api";
-import { type Donation } from "@/lib/donations";
+import { type ApiDonation, type Donation, mapApiDonation } from "@/lib/donations";
 
 const EASE_OUT_QUART: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
@@ -48,10 +48,10 @@ export default function DonationMapPage() {
   const [geocodedCount, setGeocodedCount] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchDonations = useCallback(async () => {
+  const loadDonations = useCallback(async () => {
     try {
-      const res = await apiFetch<{ data: Donation[] }>("/donations");
-      setDonations(res.data);
+      const res = await apiFetch<{ data: ApiDonation[] }>("/donations");
+      setDonations(res.data.map(mapApiDonation));
       setError("");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Gagal memuat donasi");
@@ -59,13 +59,15 @@ export default function DonationMapPage() {
     }
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
-    fetchDonations();
-  }, [fetchDonations]);
+    void loadDonations();
+  }, [loadDonations]);
 
   useEffect(() => {
     if (!donations || donations.length === 0) {
-      setGeocodingState(donations && donations.length === 0 ? "done" : "idle");
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setGeocodingState(donations?.length === 0 ? "done" : "idle");
       setGeoMap(new Map());
       setGeocodedCount(0);
       return;
@@ -111,9 +113,9 @@ export default function DonationMapPage() {
     setDonations(null);
     setGeoMap(new Map());
     setGeocodingState("idle");
-    await fetchDonations();
+    await loadDonations();
     setTimeout(() => setRefreshing(false), 600);
-  }, [refreshing, fetchDonations]);
+  }, [refreshing, loadDonations]);
 
   const allFailed =
     geocodingState === "done" && total > 0 && foundCount === 0;

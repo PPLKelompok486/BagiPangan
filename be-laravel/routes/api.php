@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ModerationController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\UserManagementController;
+use App\Http\Controllers\ClaimController;
 use App\Http\Controllers\DonationController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ProfileController;
@@ -30,6 +31,8 @@ Route::middleware('token.auth')->group(function () {
     Route::put('/donations/{id}', [DonationController::class, 'update']);
     Route::delete('/donations/{id}', [DonationController::class, 'cancel']);
     Route::post('/donations/{id}/claim', [DonationController::class, 'claim'])->whereNumber('id');
+    Route::get('/claims/mine', [ClaimController::class, 'mine']);
+    Route::post('/claims/{claim}/proof', [ClaimController::class, 'uploadProof'])->whereNumber('claim');
 });
 
 Route::prefix('admin')->middleware(['auth:web', 'admin'])->group(function () {

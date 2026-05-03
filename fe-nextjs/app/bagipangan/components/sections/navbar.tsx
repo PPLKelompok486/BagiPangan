@@ -17,8 +17,10 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>("");
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [user] = useState<AuthUser | null>(() => {
+    if (typeof window === "undefined") return null;
+    return getUser();
+  });
   const navItemsRef = useRef<(HTMLButtonElement | null)[]>([]);
   const [hoverRect, setHoverRect] = useState<{ left: number; width: number } | null>(null);
   const navContainerRef = useRef<HTMLDivElement>(null);
@@ -32,10 +34,6 @@ export function Navbar() {
     window.addEventListener("scroll", onScroll, { passive: true });
 
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  useEffect(() => {
-    setUser(getUser());
   }, []);
 
   // Track active section via IntersectionObserver
@@ -63,12 +61,10 @@ export function Navbar() {
   }, []);
 
   // Update hover pill position
-  useEffect(() => {
-    if (hoveredIndex === null || !navContainerRef.current) {
-      setHoverRect(null);
-      return;
-    }
-    const btn = navItemsRef.current[hoveredIndex];
+  const handleNavHover = (index: number) => {
+    setHoveredIndex(index);
+    if (!navContainerRef.current) return;
+    const btn = navItemsRef.current[index];
     const container = navContainerRef.current;
     if (!btn || !container) return;
 
@@ -78,7 +74,12 @@ export function Navbar() {
       left: btnRect.left - containerRect.left,
       width: btnRect.width,
     });
-  }, [hoveredIndex]);
+  };
+
+  const handleNavLeave = () => {
+    setHoveredIndex(null);
+    setHoverRect(null);
+  };
 
   const handleAnchorClick = (href: string) => (event: React.MouseEvent) => {
     event.preventDefault();
@@ -116,7 +117,7 @@ export function Navbar() {
           <div
             ref={navContainerRef}
             className="relative hidden items-center gap-1 rounded-full border border-white/10 px-2 py-1 lg:flex"
-            onMouseLeave={() => setHoveredIndex(null)}
+            onMouseLeave={handleNavLeave}
           >
             {/* Animated hover pill */}
             <AnimatePresence>
@@ -158,7 +159,7 @@ export function Navbar() {
                       : "text-white/90",
                   )}
                   onClick={handleAnchorClick(link.href)}
-                  onMouseEnter={() => setHoveredIndex(index)}
+                  onMouseEnter={() => handleNavHover(index)}
                   type="button"
                 >
                   {link.label}

@@ -7,14 +7,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Clock, Package, ArrowRight, Flame, Search, Filter, X, RefreshCw } from "lucide-react";
 import useSWR from "swr";
 import { ApiError, apiFetch, getUser, type AuthUser } from "@/lib/api";
-import { type Donation, formatPickupTime, imageForDonation } from "@/lib/donations";
+import { type ApiDonation, type Donation, formatPickupTime, imageForDonation, mapApiDonation } from "@/lib/donations";
 import { CountUp } from "@/lib/count-up";
 
 const URGENT_WINDOW_HOURS = 6;
 const EASE_OUT_QUART: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
 // SWR fetcher — apiFetch already throws ApiError on non-OK
-const fetcher = (path: string) => apiFetch<{ data: Donation[] }>(path).then((r) => r.data);
+const fetcher = (path: string) =>
+  apiFetch<{ data: ApiDonation[] }>(path).then((r) => r.data.map(mapApiDonation));
 
 type FilterKey = "all" | "urgent" | "today";
 
@@ -70,14 +71,25 @@ export default function ReceiverDashboard() {
       ? "Gagal memuat donasi"
       : "";
 
+  // Capture current time once — for time-dependent filtering
+  // We rely on hoursUntil() to call Date.now() fresh on each render,
+  // which allows real-time urgency calculations.
+  // For stats/filtered, we accept a time snapshot per render.
+  // Note: We use useMemo with empty deps to capture once, but we mark Date.now() as intentional
+  // since it's wrapped in the useMemo factory function
+  const now = typeof window === "undefined" ? 0 : Date.now();
+  const endOfDay = useMemo(() => {
+    if (typeof window === "undefined") return new Date(0);
+    const d = new Date();
+    d.setHours(23, 59, 59, 999);
+    return d;
+  }, []);
+
   // ---------------------------------------------------------------------------
   // Derived stats (memoised — only recomputes when donations changes)
   // ---------------------------------------------------------------------------
   const stats = useMemo(() => {
     if (!donations) return { total: 0, endingToday: 0, urgent: 0 };
-    const now = Date.now();
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
     let endingToday = 0;
     let urgent = 0;
     for (const d of donations) {
@@ -88,14 +100,11 @@ export default function ReceiverDashboard() {
       if (hrs >= 0 && hrs < URGENT_WINDOW_HOURS) urgent += 1;
     }
     return { total: donations.length, endingToday, urgent };
-  }, [donations]);
+  }, [donations, now, endOfDay]);
 
   const filtered = useMemo(() => {
     if (!donations) return null;
     const q = query.trim().toLowerCase();
-    const now = Date.now();
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
     return donations.filter((d) => {
       if (q) {
         const hay = [d.title, d.description, d.pickup_address, d.donor?.name ?? "", d.donor?.city ?? ""]
@@ -112,7 +121,7 @@ export default function ReceiverDashboard() {
       }
       return true;
     });
-  }, [donations, query, filterKey]);
+  }, [donations, query, filterKey, now, endOfDay]);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();

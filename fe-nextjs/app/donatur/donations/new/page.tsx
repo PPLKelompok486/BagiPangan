@@ -60,18 +60,23 @@ export default function CreateDonationPage() {
     setLoading(true);
     setError("");
 
-    console.log("Submitting donation:", formData);
-
     try {
-      const res = await apiFetch("/donations", {
+      const payload = {
+        ...formData,
+        portion_count: Number(formData.portion_count) || 1,
+        category_id: formData.category_id ? Number(formData.category_id) : null,
+      };
+
+      await apiFetch("/donations", {
         method: "POST",
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       setSuccess(true);
       setTimeout(() => router.push("/donatur/dashboard"), 2000);
-    } catch (err: any) {
-      setError(err.message || "Gagal membuat donasi. Periksa kembali data Anda.");
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err.message : "Gagal membuat donasi. Periksa kembali data Anda.";
+      setError(error);
     } finally {
       setLoading(false);
     }

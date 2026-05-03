@@ -18,9 +18,11 @@ import {
 } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
 import {
+  type ApiDonation,
   type Donation,
   formatPickupTime,
   imageForDonation,
+  mapApiDonation,
   STATUS_LABEL,
   STATUS_TONE,
 } from "@/lib/donations";
@@ -66,8 +68,8 @@ export default function DonationDetailPage({ params }: Props) {
 
   const load = async () => {
     try {
-      const res = await apiFetch<{ data: Donation }>(`/donations/${id}`);
-      setDonation(res.data);
+      const res = await apiFetch<{ data: ApiDonation }>(`/donations/${id}`);
+      setDonation(mapApiDonation(res.data));
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Gagal memuat donasi");
     }
@@ -123,7 +125,7 @@ export default function DonationDetailPage({ params }: Props) {
     );
   }
 
-  const canClaim = donation.status === "available";
+  const canClaim = donation.status === "approved";
   const isSuccess = notification.includes("berhasil");
   const heroImage = imageForDonation(donation);
   const hoursLeft = (Date.parse(donation.pickup_time) - Date.now()) / 3_600_000;
