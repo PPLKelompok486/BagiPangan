@@ -77,7 +77,7 @@ export async function PUT(req: NextRequest) {
     }
 
     const formData = await req.formData();
-    const body: any = {};
+    const body: Record<string, FormDataEntryValue> = {};
     formData.forEach((value, key) => {
       body[key] = value;
     });

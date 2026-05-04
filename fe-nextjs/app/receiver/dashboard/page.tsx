@@ -7,14 +7,22 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Clock, Package, ArrowRight, Flame, Search, Filter, X, RefreshCw } from "lucide-react";
 import useSWR from "swr";
 import { ApiError, apiFetch, getUser, type AuthUser } from "@/lib/api";
-import { type Donation, formatPickupTime, imageForDonation } from "@/lib/donations";
+import { type ApiDonation, type Donation, formatPickupTime, imageForDonation, mapApiDonation } from "@/lib/donations";
 import { CountUp } from "@/lib/count-up";
 
 const URGENT_WINDOW_HOURS = 6;
 const EASE_OUT_QUART: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
+type DonationsPayload = {
+  list: Donation[];
+  fetchedAt: number;
+};
+
 // SWR fetcher — apiFetch already throws ApiError on non-OK
-const fetcher = (path: string) => apiFetch<{ data: Donation[] }>(path).then((r) => r.data);
+const fetcher = async (path: string): Promise<DonationsPayload> => {
+  const res = await apiFetch<{ data: ApiDonation[] }>(path);
+  return { list: res.data.map(mapApiDonation), fetchedAt: Date.now() };
+};
 
 type FilterKey = "all" | "urgent" | "today";
 
@@ -47,12 +55,12 @@ export default function ReceiverDashboard() {
   // No full component re-render: only the parts that use `data` will update.
   // ---------------------------------------------------------------------------
   const {
-    data: donations,
+    data: donationsPayload,
     error: swrError,
     isLoading,
     mutate,
     isValidating,
-  } = useSWR<Donation[]>("/donations", fetcher, {
+  } = useSWR<DonationsPayload>("/donations", fetcher, {
     refreshInterval: 60_000,      // background poll — no re-render tsunami
     revalidateOnFocus: false,     // don't refetch when user tabs back in
     dedupingInterval: 30_000,
@@ -63,6 +71,9 @@ export default function ReceiverDashboard() {
   const [query, setQuery] = useState("");
   const [filterKey, setFilterKey] = useState<FilterKey>("all");
 
+  const donations = donationsPayload?.list ?? null;
+  const fetchedAt = donationsPayload?.fetchedAt ?? 0;
+
   const error =
     swrError instanceof ApiError
       ? swrError.message
@@ -70,32 +81,34 @@ export default function ReceiverDashboard() {
       ? "Gagal memuat donasi"
       : "";
 
+  // Capture time snapshot from SWR fetch to keep render pure.
+  const endOfDay = useMemo(() => {
+    if (!fetchedAt) return new Date(0);
+    const d = new Date(fetchedAt);
+    d.setHours(23, 59, 59, 999);
+    return d;
+  }, [fetchedAt]);
+
   // ---------------------------------------------------------------------------
   // Derived stats (memoised — only recomputes when donations changes)
   // ---------------------------------------------------------------------------
   const stats = useMemo(() => {
-    if (!donations) return { total: 0, endingToday: 0, urgent: 0 };
-    const now = Date.now();
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
+    if (!donations || !fetchedAt) return { total: 0, endingToday: 0, urgent: 0 };
     let endingToday = 0;
     let urgent = 0;
     for (const d of donations) {
       const t = Date.parse(d.pickup_time);
       if (Number.isNaN(t)) continue;
-      if (t >= now && t <= endOfDay.getTime()) endingToday += 1;
-      const hrs = (t - now) / (1000 * 60 * 60);
+      if (t >= fetchedAt && t <= endOfDay.getTime()) endingToday += 1;
+      const hrs = (t - fetchedAt) / (1000 * 60 * 60);
       if (hrs >= 0 && hrs < URGENT_WINDOW_HOURS) urgent += 1;
     }
     return { total: donations.length, endingToday, urgent };
-  }, [donations]);
+  }, [donations, fetchedAt, endOfDay]);
 
   const filtered = useMemo(() => {
     if (!donations) return null;
     const q = query.trim().toLowerCase();
-    const now = Date.now();
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
     return donations.filter((d) => {
       if (q) {
         const hay = [d.title, d.description, d.pickup_address, d.donor?.name ?? "", d.donor?.city ?? ""]
@@ -108,11 +121,11 @@ export default function ReceiverDashboard() {
         if (h === null || h < 0 || h >= URGENT_WINDOW_HOURS) return false;
       } else if (filterKey === "today") {
         const t = Date.parse(d.pickup_time);
-        if (Number.isNaN(t) || t < now || t > endOfDay.getTime()) return false;
+        if (Number.isNaN(t) || t < fetchedAt || t > endOfDay.getTime()) return false;
       }
       return true;
     });
-  }, [donations, query, filterKey]);
+  }, [donations, query, filterKey, fetchedAt, endOfDay]);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();

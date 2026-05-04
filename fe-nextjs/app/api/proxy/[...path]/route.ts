@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const BACKEND_BASE = process.env.LARAVEL_API_BASE ?? "http://localhost:8000/api";
+const BACKEND_BASE_URL = process.env.BAGIPANGAN_BACKEND_URL ?? "http://localhost:8000";
+const API_BASE = BACKEND_BASE_URL.endsWith("/api")
+  ? BACKEND_BASE_URL
+  : `${BACKEND_BASE_URL}/api`;
 
 const PASSTHROUGH_HEADERS = ["authorization", "content-type", "accept"] as const;
 
 async function forward(req: NextRequest, segments: string[]) {
   const path = "/" + segments.map(encodeURIComponent).join("/");
   const search = req.nextUrl.search;
-  const target = `${BACKEND_BASE}${path}${search}`;
+  const target = `${API_BASE}${path}${search}`;
 
   const headers = new Headers();
   for (const name of PASSTHROUGH_HEADERS) {
@@ -20,7 +23,7 @@ async function forward(req: NextRequest, segments: string[]) {
   const init: RequestInit = { method, headers, redirect: "manual" };
 
   if (method !== "GET" && method !== "HEAD") {
-    init.body = await req.text();
+    init.body = await req.arrayBuffer();
   }
 
   try {

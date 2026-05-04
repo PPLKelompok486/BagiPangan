@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Claim;
 use App\Models\Donation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -117,21 +118,51 @@ class DonationController extends Controller
 
     public function claim(Request $request, $id)
     {
-        $donation = Donation::find($id);
-        
-        if (!$donation || $donation->status !== 'approved') {
-            return response()->json(['message' => 'Donasi tidak tersedia untuk diklaim'], 422);
-        }
+        $receiverId = Auth::id();
 
-        $donation->update([
-            'status' => 'claimed',
-            // In a real app, you'd track who claimed it in a separate table or column
-        ]);
+        return DB::transaction(function () use ($id, $receiverId) {
+            $donation = Donation::lockForUpdate()->find($id);
 
-        return response()->json([
-            'message' => 'Donasi berhasil diklaim',
-            'data' => $donation
-        ]);
+            if (!$donation) {
+                return response()->json(['message' => 'Donasi tidak ditemukan'], 404);
+            }
+
+            if ($donation->user_id === $receiverId) {
+                return response()->json(['message' => 'Donatur tidak dapat mengklaim donasi sendiri'], 403);
+            }
+
+            if ($donation->status !== Donation::STATUS_APPROVED) {
+                return response()->json(['message' => 'Donasi tidak tersedia untuk diklaim'], 409);
+            }
+
+            $existingClaim = Claim::where('donation_id', $donation->id)
+                ->whereIn('status', [
+                    Claim::STATUS_REQUESTED,
+                    Claim::STATUS_APPROVED,
+                    Claim::STATUS_COMPLETED,
+                ])
+                ->first();
+
+            if ($existingClaim) {
+                return response()->json(['message' => 'Donasi sudah diklaim'], 409);
+            }
+
+            Claim::create([
+                'donation_id' => $donation->id,
+                'receiver_id' => $receiverId,
+                'status' => Claim::STATUS_REQUESTED,
+                'claimed_at' => now(),
+            ]);
+
+            $donation->update([
+                'status' => Donation::STATUS_CLAIMED,
+            ]);
+
+            return response()->json([
+                'message' => 'Donasi berhasil diklaim',
+                'data' => $donation,
+            ]);
+        });
     }
 
     public function cancel(Request $request, $id)

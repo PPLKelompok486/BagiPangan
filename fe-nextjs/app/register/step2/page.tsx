@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ArrowLeft, Heart, Loader2, CheckCircle2 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 
 const containerVariants = {
   hidden: {},
@@ -35,31 +34,50 @@ export default function RegisterStep2() {
   const router = useRouter();
   const reducedMotion = useReducedMotion();
   const rm = reducedMotion ?? false;
-  const [step1, setStep1] = useState<any>(null);
-  const [form, setForm] = useState({
+
+  interface Step1Data {
+    email: string;
+    password: string;
+    name: string;
+    role: string;
+  }
+
+  interface FormState {
+    phone: string;
+    city: string;
+    organization: string;
+    job: string;
+  }
+
+  interface FormErrors {
+    phone?: string;
+    city?: string;
+  }
+
+  const [step1] = useState<Step1Data | null>(() => {
+    if (typeof window === "undefined") return null;
+    const s1 = sessionStorage.getItem("registerStep1");
+    return s1 ? JSON.parse(s1) : null;
+  });
+  const [form, setForm] = useState<FormState>({
     phone: "",
     city: "",
     organization: "",
     job: "",
   });
-  const [errors, setErrors] = useState<any>({});
+  const [errors, setErrors] = useState<FormErrors>({});
   const [notification, setNotification] = useState("");
   const [shakeFields, setShakeFields] = useState<Set<string>>(new Set());
   const [submitState, setSubmitState] = useState<"idle" | "loading" | "success">("idle");
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const s1 = sessionStorage.getItem("registerStep1");
-      if (s1) {
-        setStep1(JSON.parse(s1));
-      } else {
-        router.replace("/register");
-      }
+    if (!step1) {
+      router.replace("/register");
     }
-  }, [router]);
+  }, [step1, router]);
 
   const validate = () => {
-    const newErrors: any = {};
+    const newErrors: FormErrors = {};
     if (!form.phone) newErrors.phone = "Nomor telepon wajib diisi";
     else if (!/^\d+$/.test(form.phone))
       newErrors.phone = "Nomor telepon harus berupa angka";
@@ -70,8 +88,10 @@ export default function RegisterStep2() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: undefined });
+    if (name === "phone" || name === "city") {
+      if (errors[name]) {
+        setErrors({ ...errors, [name]: undefined });
+      }
     }
   };
 
@@ -114,7 +134,7 @@ export default function RegisterStep2() {
         if (res.status === 422 && data.errors) {
           const errorMessages = Object.entries(data.errors)
             .map(
-              ([key, messages]: any) =>
+              ([key, messages]: [string, unknown]) =>
                 `${key}: ${Array.isArray(messages) ? messages[0] : messages}`,
             )
             .join(", ");

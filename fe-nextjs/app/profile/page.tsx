@@ -68,10 +68,6 @@ export default function ProfilePage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
   const fetchProfile = async () => {
     try {
       const res = await fetch("/api/profile");
@@ -99,12 +95,17 @@ export default function ProfilePage() {
         });
         setAvatarUrl(data.user.avatar || "");
       }
-    } catch (error) {
+    } catch {
       setNotification("Gagal memuat profil");
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const validate = (): ProfileErrors => {
     const newErrors: ProfileErrors = {};
@@ -190,7 +191,7 @@ export default function ProfilePage() {
         setSubmitState("idle");
         if (res.status === 422 && data.errors) {
           const errorMessages = Object.entries(data.errors)
-            .map(([key, messages]: any) => `${key}: ${Array.isArray(messages) ? messages[0] : messages}`)
+            .map(([key, messages]: [string, unknown]) => `${key}: ${Array.isArray(messages) ? messages[0] : messages}`)
             .join(", ");
           setNotification(errorMessages);
         } else {

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useInView, useReducedMotion } from "framer-motion";
+import { motion, useInView, useReducedMotion, type Variants } from "framer-motion";
 import { useCallback, useRef, useState } from "react";
 import { features } from "../../data";
 import { cn } from "../../lib/cn";
@@ -24,7 +24,7 @@ function TiltCard({
   children: React.ReactNode;
   className: string;
   reducedMotion: boolean | null;
-  variants: any;
+  variants: Variants;
   spotlightColor: string;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);

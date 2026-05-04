@@ -42,7 +42,7 @@ export default function NewFundDonationPage() {
     setError("");
 
     try {
-      const res = await apiFetch("/fund-donations", {
+      await apiFetch("/fund-donations", {
         method: "POST",
         body: JSON.stringify(formData),
       });
@@ -52,8 +52,9 @@ export default function NewFundDonationPage() {
       setTimeout(() => {
         router.push("/donatur/fund-donations");
       }, 2000);
-    } catch (err: any) {
-      setError(err.message || "Gagal membuat donasi. Silakan coba lagi.");
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err.message : "Gagal membuat donasi. Silakan coba lagi.";
+      setError(error);
     } finally {
       setLoading(false);
     }

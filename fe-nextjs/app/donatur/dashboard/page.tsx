@@ -21,12 +21,13 @@ import {
   Eye,
   ShieldCheck,
 } from "lucide-react";
-import { getUser, type AuthUser } from "@/lib/api";
+import { ApiError, apiFetch, getUser, type AuthUser } from "@/lib/api";
 import {
-  MOCK_DONOR_DONATIONS,
-  MOCK_IMPACT_EVENTS,
+  buildImpactEvents,
+  mapApiDonationToDonor,
   STATUS_LABEL,
   STATUS_TONE,
+  type ApiDonation,
   type DonorDonation,
   type DonorDonationStatus,
   type ImpactEvent,
@@ -38,28 +39,45 @@ type FilterKey = "all" | DonorDonationStatus;
 
 const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "all", label: "Semua" },
-  { key: "active", label: "Aktif" },
+  { key: "approved", label: "Aktif" },
   { key: "claimed", label: "Diklaim" },
-  { key: "waiting_review", label: "Menunggu" },
-  { key: "draft", label: "Draft" },
+  { key: "pending", label: "Menunggu" },
+  { key: "rejected", label: "Ditolak" },
   { key: "completed", label: "Selesai" },
+  { key: "cancelled", label: "Dibatalkan" },
 ];
 
 export default function DonaturDashboard() {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user] = useState<AuthUser | null>(() => getUser());
   const [donations, setDonations] = useState<DonorDonation[] | null>(null);
   const [events, setEvents] = useState<ImpactEvent[] | null>(null);
   const [query, setQuery] = useState("");
+  const [error, setError] = useState("");
   const [filterKey, setFilterKey] = useState<FilterKey>("all");
 
   useEffect(() => {
-    setUser(getUser());
-    // Simulate brief load to show skeleton states once.
-    const t = setTimeout(() => {
-      setDonations(MOCK_DONOR_DONATIONS);
-      setEvents(MOCK_IMPACT_EVENTS);
-    }, 350);
-    return () => clearTimeout(t);
+    let active = true;
+
+    const fetchDonations = async () => {
+      try {
+        const res = await apiFetch<{ data: ApiDonation[] }>("/donations/mine");
+        if (!active) return;
+        const mapped = res.data.map(mapApiDonationToDonor);
+        setDonations(mapped);
+        setEvents(buildImpactEvents(res.data));
+      } catch (err) {
+        if (!active) return;
+        const message = err instanceof ApiError ? err.message : "Gagal memuat donasi";
+        setError(message);
+        setDonations([]);
+        setEvents([]);
+      }
+    };
+
+    void fetchDonations();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const greeting = useMemo(() => {
@@ -74,7 +92,7 @@ export default function DonaturDashboard() {
     const list = donations ?? [];
     return {
       total: list.length,
-      active: list.filter((d) => d.status === "active" || d.status === "waiting_review").length,
+      active: list.filter((d) => d.status === "approved" || d.status === "pending").length,
       completed: list.filter((d) => d.status === "completed").length,
       meals: list.reduce((sum, d) => sum + (d.estimated_meals || 0), 0),
     };
@@ -269,6 +287,12 @@ export default function DonaturDashboard() {
             </div>
           </div>
 
+          {error && (
+            <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
           {donations === null && <DonationListSkeleton />}
 
           {isFirstTime && <DonorEmptyState />}
@@ -458,14 +482,13 @@ function DonationRow({ donation, index }: { donation: DonorDonation; index: numb
       )}
 
       <div className="mt-4 flex items-center justify-between gap-2">
-        <button
-          type="button"
+        <Link
+          href="/donatur/donations"
           className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--brand-700)] hover:text-[var(--brand-800)]"
-          title="Aksi backend belum siap — placeholder"
         >
           <Eye className="h-3.5 w-3.5" />
-          Lihat detail
-        </button>
+          Lihat daftar
+        </Link>
         <span className="text-[10px] uppercase tracking-[0.18em] text-[var(--text-mid)]/70">
           {timeAgo(donation.created_at)}
         </span>

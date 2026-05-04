@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { getUser, type AuthUser } from "@/lib/api";
 
@@ -12,11 +12,12 @@ const ROLE_REDIRECT: Record<AuthUser["role"], string> = {
 
 export default function AdminAuthGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [ready, setReady] = useState(false);
+  const user = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    return getUser();
+  }, []);
 
   useEffect(() => {
-    const user = getUser();
-
     if (!user) {
       router.replace("/login?from=/admin");
       return;
@@ -27,10 +28,9 @@ export default function AdminAuthGate({ children }: { children: React.ReactNode 
       return;
     }
 
-    setReady(true);
-  }, [router]);
+  }, [router, user]);
 
-  if (!ready) return null;
-
+  // Return children on server & initial client render to avoid hydration mismatch
+  // Client-side redirect will happen in useEffect if auth fails
   return <>{children}</>;
 }

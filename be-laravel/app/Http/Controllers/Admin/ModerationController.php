@@ -12,9 +12,12 @@ class ModerationController extends Controller
     public function queue(Request $request)
     {
         $status = $request->query('status', Donation::STATUS_PENDING);
+        if ($status === 'all') {
+            $status = null;
+        }
 
         $donations = Donation::query()
-            ->with(['donor:id,name,email', 'category:id,name'])
+            ->with(['user:id,name,email', 'category:id,name'])
             ->when($status, fn ($query) => $query->where('status', $status))
             ->latest()
             ->paginate(10);
