@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Models\DonationCategory;
 
 class DonationCategorySeeder extends Seeder
 {
@@ -21,12 +21,12 @@ class DonationCategorySeeder extends Seeder
         ];
 
         foreach ($categories as $cat) {
-            DB::table('donation_categories')->insert([
-                'name' => $cat['name'],
+            DonationCategory::updateOrCreate([
                 'slug' => Str::slug($cat['name']),
+            ], [
+                'name' => $cat['name'],
                 'description' => $cat['description'],
-                'created_at' => now(),
-                'updated_at' => now(),
+                'is_active' => true,
             ]);
         }
     }

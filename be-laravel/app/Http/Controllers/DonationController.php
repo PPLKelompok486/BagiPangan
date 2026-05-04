@@ -34,6 +34,9 @@ class DonationController extends Controller
             'description' => 'required|string',
             'location_city' => 'required|string',
             'location_address' => 'required|string',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'address_detail' => 'nullable|string',
             'available_from' => 'required|date',
             'available_until' => 'required|date|after:available_from',
             'portion_count' => 'required|integer|min:1',
@@ -58,6 +61,9 @@ class DonationController extends Controller
             'description' => $request->description,
             'location_city' => $request->location_city,
             'location_address' => $request->location_address,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+            'address_detail' => $request->address_detail,
             'available_from' => $request->available_from,
             'available_until' => $request->available_until,
             'portion_count' => $request->portion_count,
@@ -95,7 +101,8 @@ class DonationController extends Controller
         }
 
         $donation->update($request->only([
-            'title', 'description', 'location_city', 'location_address', 
+            'title', 'description', 'location_city', 'location_address',
+            'latitude', 'longitude', 'address_detail',
             'available_from', 'available_until', 'portion_count', 'category_id'
         ]));
 
