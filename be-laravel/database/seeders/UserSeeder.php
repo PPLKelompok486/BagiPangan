@@ -75,5 +75,15 @@ class UserSeeder extends Seeder
                 'is_active' => true,
             ],
         );
+
+        User::factory()
+            ->count(5)
+            ->state(fn () => [
+                'role' => fake()->randomElement(['donatur', 'penerima']),
+                'is_admin' => false,
+                'is_active' => true,
+                'city' => fake()->city(),
+            ])
+            ->create();
     }
 }

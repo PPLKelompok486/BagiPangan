@@ -41,7 +41,7 @@ Route::middleware('token.auth')->group(function () {
     Route::post('/claims/{claim}/cancel', [ClaimController::class, 'cancel'])->whereNumber('claim');
 });
 
-Route::prefix('admin')->middleware(['auth:web', 'admin'])->group(function () {
+Route::prefix('admin')->middleware(['web', 'auth:web', 'admin'])->group(function () {
     Route::get('/dashboard/summary', [DashboardController::class, 'summary']);
 
     Route::get('/moderation/queue', [ModerationController::class, 'queue']);
