@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DonationManagementController;
 use App\Http\Controllers\Admin\ModerationController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\UserManagementController;
@@ -47,6 +48,11 @@ Route::prefix('admin')->middleware(['web', 'auth:web', 'admin'])->group(function
     Route::get('/moderation/queue', [ModerationController::class, 'queue']);
     Route::patch('/moderation/{donation}/approve', [ModerationController::class, 'approve']);
     Route::patch('/moderation/{donation}/reject', [ModerationController::class, 'reject']);
+
+    Route::post('/donations', [DonationManagementController::class, 'store']);
+    Route::get('/donations/{donation}', [DonationManagementController::class, 'show'])->whereNumber('donation');
+    Route::patch('/donations/{donation}', [DonationManagementController::class, 'update'])->whereNumber('donation');
+    Route::delete('/donations/{donation}', [DonationManagementController::class, 'destroy'])->whereNumber('donation');
 
     Route::get('/users', [UserManagementController::class, 'index']);
     Route::patch('/users/{user}', [UserManagementController::class, 'update']);

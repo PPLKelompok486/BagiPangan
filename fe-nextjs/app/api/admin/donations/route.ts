@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        Accept: "application/json",
         cookie: request.headers.get("cookie") ?? "",
       },
       cache: "no-store",
@@ -39,6 +40,36 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     return NextResponse.json(
       { message: "Gagal mengambil daftar donasi", error: String(error) },
+      { status: 500 },
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+
+    const res = await fetch(`${API_BASE}/admin/donations`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        cookie: request.headers.get("cookie") ?? "",
+      },
+      body: JSON.stringify(body),
+    });
+
+    let data: unknown = null;
+    try {
+      data = await res.json();
+    } catch {
+      data = { message: "Invalid response" };
+    }
+
+    return NextResponse.json(data, { status: res.status });
+  } catch (error) {
+    return NextResponse.json(
+      { message: "Gagal membuat donasi", error: String(error) },
       { status: 500 },
     );
   }
