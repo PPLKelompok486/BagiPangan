@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { MapPin, Clock, ListChecks, ArrowRight, AlarmClock, CheckCircle2 } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
 import {
+  type ApiClaim,
+  type Claim,
   type Donation,
   formatPickupTime,
   imageForDonation,
+  mapApiClaim,
   STATUS_LABEL,
   STATUS_TONE,
 } from "@/lib/donations";
@@ -30,45 +33,69 @@ function pickupCountdown(iso: string): string {
 }
 
 const STEPS: { key: Donation["status"]; label: string }[] = [
-  { key: "available", label: "Terbuka" },
   { key: "claimed", label: "Diklaim" },
   { key: "completed", label: "Selesai" },
 ];
 
 export default function MyClaimsPage() {
-  const [donations, setDonations] = useState<Donation[] | null>(null);
+  const [claims, setClaims] = useState<Claim[] | null>(null);
   const [error, setError] = useState("");
+  const [uploadError, setUploadError] = useState("");
+  const [uploadNotice, setUploadNotice] = useState("");
+  const [uploadingId, setUploadingId] = useState<number | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await apiFetch<{ data: Donation[] }>("/donations/mine");
-        if (!cancelled) setDonations(res.data);
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof ApiError ? err.message : "Gagal memuat klaim");
-          setDonations([]);
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+  const loadClaims = useCallback(async () => {
+    try {
+      const res = await apiFetch<{ data: ApiClaim[] }>("/claims/mine");
+      setClaims(res.data.map(mapApiClaim));
+      setError("");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Gagal memuat klaim");
+      setClaims([]);
+    }
   }, []);
 
+  useEffect(() => {
+    loadClaims();
+  }, [loadClaims]);
+
+  const handleUploadProof = useCallback(
+    async (claimId: number, file: File) => {
+      setUploadError("");
+      setUploadNotice("");
+      setUploadingId(claimId);
+      const body = new FormData();
+      body.append("proof", file);
+      try {
+        const res = await apiFetch<{ data: ApiClaim }>(`/claims/${claimId}/proof`, {
+          method: "POST",
+          body,
+        });
+        setClaims((prev) =>
+          prev ? prev.map((c) => (c.id === claimId ? mapApiClaim(res.data) : c)) : prev,
+        );
+        setUploadNotice("Bukti berhasil diunggah.");
+      } catch (err) {
+        setUploadError(err instanceof ApiError ? err.message : "Gagal mengunggah bukti");
+      } finally {
+        setUploadingId(null);
+      }
+    },
+    [],
+  );
+
   const { active, past, next } = useMemo(() => {
-    if (!donations) return { active: [], past: [], next: null as Donation | null };
-    const active = donations.filter((d) => d.status === "claimed");
-    const past = donations.filter((d) => d.status !== "claimed");
+    if (!claims) return { active: [], past: [], next: null as Claim | null };
+    const active = claims.filter((c) => c.donation.status === "claimed");
+    const past = claims.filter((c) => c.donation.status !== "claimed");
     const upcoming = [...active]
-      .filter((d) => {
-        const h = hoursUntil(d.pickup_time);
+      .filter((c) => {
+        const h = hoursUntil(c.donation.pickup_time);
         return h !== null && h >= -1;
       })
-      .sort((a, b) => Date.parse(a.pickup_time) - Date.parse(b.pickup_time));
+      .sort((a, b) => Date.parse(a.donation.pickup_time) - Date.parse(b.donation.pickup_time));
     return { active, past, next: upcoming[0] ?? null };
-  }, [donations]);
+  }, [claims]);
 
   return (
     <div>
@@ -97,7 +124,27 @@ export default function MyClaimsPage() {
         </div>
       )}
 
-      {donations === null && (
+      {uploadNotice && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="mb-4 p-3 rounded-2xl text-sm font-medium bg-[var(--brand-50)] text-[var(--brand-700)] border border-[var(--brand-100)]"
+        >
+          {uploadNotice}
+        </div>
+      )}
+
+      {uploadError && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="mb-4 p-3 rounded-2xl text-sm font-medium bg-red-50 text-red-700 border border-red-200"
+        >
+          {uploadError}
+        </div>
+      )}
+
+      {claims === null && (
         <div className="grid gap-4 md:grid-cols-2">
           {Array.from({ length: 4 }).map((_, i) => (
             <div
@@ -121,23 +168,23 @@ export default function MyClaimsPage() {
                 <AlarmClock className="h-3.5 w-3.5" />
                 Jemput berikutnya
               </div>
-              <h2 className="mt-2 text-xl font-bold text-[var(--brand-950)]">{next.title}</h2>
+              <h2 className="mt-2 text-xl font-bold text-[var(--brand-950)]">{next.donation.title}</h2>
               <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-[var(--brand-950)]">
                 <span className="flex items-center gap-1.5">
                   <Clock className="h-4 w-4 text-[var(--brand-600)]" />
-                  {formatPickupTime(next.pickup_time)}
+                  {formatPickupTime(next.donation.pickup_time)}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <MapPin className="h-4 w-4 text-[var(--brand-600)]" />
-                  {next.pickup_address}
+                  {next.donation.pickup_address}
                 </span>
               </div>
               <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-[var(--brand-700)] border border-[var(--brand-200)]">
-                {pickupCountdown(next.pickup_time)}
+                {pickupCountdown(next.donation.pickup_time)}
               </div>
             </div>
             <Link
-              href={`/receiver/donations/${next.id}`}
+              href={`/receiver/donations/${next.donation.id}`}
               className="inline-flex items-center gap-2 bg-[var(--brand-600)] text-white px-4 py-2.5 rounded-xl font-semibold text-sm hover:bg-[var(--brand-700)]"
             >
               Lihat detail
@@ -147,7 +194,7 @@ export default function MyClaimsPage() {
         </motion.aside>
       )}
 
-      {donations && donations.length === 0 && !error && (
+      {claims && claims.length === 0 && !error && (
         <div className="bg-white border border-[var(--brand-100)] rounded-3xl p-12 text-center">
           <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--brand-50)] text-[var(--brand-600)] mb-4">
             <ListChecks className="h-6 w-6" />
@@ -174,8 +221,15 @@ export default function MyClaimsPage() {
             Aktif ({active.length})
           </h3>
           <div className="grid gap-4 md:grid-cols-2">
-            {active.map((d, i) => (
-              <ClaimCard key={d.id} donation={d} index={i} active />
+            {active.map((claim, i) => (
+              <ClaimCard
+                key={claim.id}
+                claim={claim}
+                index={i}
+                active
+                uploading={uploadingId === claim.id}
+                onUploadProof={handleUploadProof}
+              />
             ))}
           </div>
         </section>
@@ -187,8 +241,8 @@ export default function MyClaimsPage() {
             Riwayat ({past.length})
           </h3>
           <div className="grid gap-4 md:grid-cols-2">
-            {past.map((d, i) => (
-              <ClaimCard key={d.id} donation={d} index={i} />
+            {past.map((claim, i) => (
+              <ClaimCard key={claim.id} claim={claim} index={i} />
             ))}
           </div>
         </section>
@@ -198,14 +252,20 @@ export default function MyClaimsPage() {
 }
 
 function ClaimCard({
-  donation: d,
+  claim,
   index,
   active,
+  onUploadProof,
+  uploading,
 }: {
-  donation: Donation;
+  claim: Claim;
   index: number;
   active?: boolean;
+  onUploadProof?: (claimId: number, file: File) => void;
+  uploading?: boolean;
 }) {
+  const d = claim.donation;
+  const inputId = `proof-${claim.id}`;
   return (
     <motion.article
       initial={{ opacity: 0, y: 16 }}
@@ -264,6 +324,48 @@ function ClaimCard({
 
       {active && <ClaimProgress status={d.status} />}
 
+      {active && onUploadProof && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <input
+            id={inputId}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            disabled={uploading}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) onUploadProof(claim.id, file);
+              event.target.value = "";
+            }}
+          />
+          <label
+            htmlFor={inputId}
+            className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${
+              uploading
+                ? "bg-[var(--brand-50)] text-[var(--brand-400)] border-[var(--brand-100)]"
+                : "bg-white text-[var(--brand-700)] border-[var(--brand-200)] hover:border-[var(--brand-400)]"
+            }`}
+          >
+            {uploading ? "Mengunggah..." : "Unggah bukti"}
+          </label>
+          <span className="text-[11px] text-[var(--text-mid)]">JPEG/PNG, maks 4MB</span>
+        </div>
+      )}
+
+      {!active && claim.proof_image_url && (
+        <div className="mt-3 text-xs text-[var(--text-mid)]">
+          Bukti: {" "}
+          <a
+            href={claim.proof_image_url}
+            target="_blank"
+            rel="noreferrer"
+            className="font-semibold text-[var(--brand-700)] hover:text-[var(--brand-800)]"
+          >
+            Lihat foto
+          </a>
+        </div>
+      )}
+
       <Link
         href={`/receiver/donations/${d.id}`}
         className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[var(--brand-700)] hover:text-[var(--brand-800)]"
@@ -276,7 +378,7 @@ function ClaimCard({
 }
 
 function ClaimProgress({ status }: { status: Donation["status"] }) {
-  const currentIdx = status === "completed" ? 2 : status === "claimed" ? 1 : 0;
+  const currentIdx = status === "completed" ? 1 : 0;
   return (
     <div aria-label="Progress klaim" className="mb-2">
       <div className="flex items-center gap-1.5">

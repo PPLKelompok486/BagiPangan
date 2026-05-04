@@ -1,4 +1,4 @@
-import type { MotionValue, Transition, Variants } from "framer-motion";
+import type { Transition, Variants } from "framer-motion";
 
 const easeOut: [number, number, number, number] = [0.16, 1, 0.3, 1];
 

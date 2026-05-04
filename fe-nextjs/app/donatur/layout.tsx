@@ -10,24 +10,16 @@ import { apiFetch, clearAuth, getUser, type AuthUser } from "@/lib/api";
 export default function DonaturLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = useState<AuthUser | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string>("");
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  useEffect(() => {
+  const [user] = useState<AuthUser | null>(() => {
     const u = getUser();
-    if (!u) {
-      router.replace("/login");
-      return;
+    if (u?.role !== "donatur") {
+      return null;
     }
-    if (u.role !== "donatur") {
-      router.replace("/receiver/dashboard");
-      return;
-    }
-    setUser(u);
-    // Fetch avatar
-    fetchAvatar();
-  }, [router]);
+    return u;
+  });
 
   const fetchAvatar = async () => {
     try {
@@ -42,6 +34,20 @@ export default function DonaturLayout({ children }: { children: React.ReactNode 
       console.error("Failed to fetch avatar:", error);
     }
   };
+
+  useEffect(() => {
+    const u = getUser();
+    if (!u) {
+      router.replace("/login");
+      return;
+    }
+    if (u.role !== "donatur") {
+      router.replace("/receiver/dashboard");
+      return;
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchAvatar();
+  }, [router]);
 
   const handleLogout = async () => {
     setShowLogoutConfirm(true);
