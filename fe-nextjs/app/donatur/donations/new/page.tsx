@@ -17,6 +17,20 @@ import {
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 
+type DonationFormData = {
+  title: string;
+  description: string;
+  location_city: string;
+  location_address: string;
+  latitude: string;
+  longitude: string;
+  address_detail: string;
+  available_from: string;
+  available_until: string;
+  portion_count: number | "";
+  category_id: string;
+};
+
 export default function CreateDonationPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -24,11 +38,14 @@ export default function CreateDonationPage() {
   const [success, setSuccess] = useState(false);
   const [categories, setCategories] = useState<{id: number, name: string}[]>([]);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<DonationFormData>({
     title: "",
     description: "",
     location_city: "",
     location_address: "",
+    latitude: "",
+    longitude: "",
+    address_detail: "",
     available_from: "",
     available_until: "",
     portion_count: "1",
@@ -216,6 +233,46 @@ export default function CreateDonationPage() {
                 className="w-full bg-[var(--brand-50)]/30 border border-[var(--brand-100)] rounded-2xl px-5 py-4 focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white outline-none transition-all min-h-[80px]"
                 placeholder="Sebutkan jalan, nomor rumah, atau patokan..."
               />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-[var(--brand-900)] ml-1">Detail Patokan</label>
+              <input
+                type="text"
+                value={formData.address_detail}
+                onChange={(e) => setFormData({ ...formData, address_detail: e.target.value })}
+                className="w-full bg-[var(--brand-50)]/30 border border-[var(--brand-100)] rounded-2xl px-5 py-4 focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white outline-none transition-all"
+                placeholder="Contoh: lobi utama, dekat pos satpam"
+              />
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-[var(--brand-900)] ml-1">Latitude</label>
+                <input
+                  type="number"
+                  step="0.0000001"
+                  min="-90"
+                  max="90"
+                  value={formData.latitude}
+                  onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
+                  className="w-full bg-[var(--brand-50)]/30 border border-[var(--brand-100)] rounded-2xl px-5 py-4 focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white outline-none transition-all"
+                  placeholder="-6.2088000"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-[var(--brand-900)] ml-1">Longitude</label>
+                <input
+                  type="number"
+                  step="0.0000001"
+                  min="-180"
+                  max="180"
+                  value={formData.longitude}
+                  onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
+                  className="w-full bg-[var(--brand-50)]/30 border border-[var(--brand-100)] rounded-2xl px-5 py-4 focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white outline-none transition-all"
+                  placeholder="106.8456000"
+                />
+              </div>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-6">

@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\ClaimController;
 use App\Http\Controllers\DonationController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\MapController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\AuthController;
@@ -26,6 +27,10 @@ Route::middleware('token.auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy']);
 
     Route::post('/logout', [LoginController::class, 'logout']);
+    Route::middleware('throttle:60,1')->group(function () {
+        Route::get('/donations/map', [MapController::class, 'index']);
+        Route::get('/donations/{id}/map-detail', [MapController::class, 'detail'])->whereNumber('id');
+    });
     Route::get('/donations/mine', [DonationController::class, 'mine']);
     Route::post('/donations', [DonationController::class, 'store']);
     Route::put('/donations/{id}', [DonationController::class, 'update']);

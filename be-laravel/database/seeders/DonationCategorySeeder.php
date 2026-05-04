@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Models\DonationCategory;
 
 class DonationCategorySeeder extends Seeder
 {
@@ -20,22 +20,14 @@ class DonationCategorySeeder extends Seeder
             ['name' => 'Roti & Kue', 'description' => 'Produk bakery dan camilan'],
         ];
 
-        $now = now();
-        $rows = array_map(
-            fn (array $cat) => [
-                'name' => $cat['name'],
+        foreach ($categories as $cat) {
+            DonationCategory::updateOrCreate([
                 'slug' => Str::slug($cat['name']),
+            ], [
+                'name' => $cat['name'],
                 'description' => $cat['description'],
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-            $categories,
-        );
-
-        DB::table('donation_categories')->upsert(
-            $rows,
-            ['slug'],
-            ['name', 'description', 'updated_at'],
-        );
+                'is_active' => true,
+            ]);
+        }
     }
 }

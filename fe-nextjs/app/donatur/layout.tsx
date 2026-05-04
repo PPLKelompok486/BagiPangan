@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { LogOut, LayoutGrid, Package, PlusCircle, User } from "lucide-react";
+import { LogOut, LayoutGrid, Map as MapIcon, Package, PlusCircle, User } from "lucide-react";
 import "../bagipangan/landing.css";
 import { apiFetch, clearAuth, getUser, type AuthUser } from "@/lib/api";
 
@@ -68,6 +68,7 @@ export default function DonaturLayout({ children }: { children: React.ReactNode 
   const navItems = [
     { href: "/donatur/dashboard", label: "Dashboard", icon: LayoutGrid },
     { href: "/donatur/donations", label: "Donasi saya", icon: Package },
+    { href: "/donatur/map", label: "Peta donasi", icon: MapIcon },
     { href: "/donatur/donations/new", label: "Buat donasi", icon: PlusCircle },
   ];
 

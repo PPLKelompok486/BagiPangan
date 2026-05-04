@@ -25,6 +25,9 @@ class Donation extends Model
         'description',
         'location_city',
         'location_address',
+        'latitude',
+        'longitude',
+        'address_detail',
         'available_from',
         'available_until',
         'portion_count',
@@ -39,6 +42,8 @@ class Donation extends Model
         'available_until' => 'datetime',
         'approved_at' => 'datetime',
         'portion_count' => 'integer',
+        'latitude' => 'decimal:7',
+        'longitude' => 'decimal:7',
     ];
 
     public function user(): BelongsTo
