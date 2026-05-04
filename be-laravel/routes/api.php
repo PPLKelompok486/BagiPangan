@@ -33,6 +33,7 @@ Route::middleware('token.auth')->group(function () {
     Route::post('/donations/{id}/claim', [DonationController::class, 'claim'])->whereNumber('id');
     Route::get('/claims/mine', [ClaimController::class, 'mine']);
     Route::post('/claims/{claim}/proof', [ClaimController::class, 'uploadProof'])->whereNumber('claim');
+    Route::post('/claims/{claim}/cancel', [ClaimController::class, 'cancel'])->whereNumber('claim');
 });
 
 Route::prefix('admin')->middleware(['auth:web', 'admin'])->group(function () {

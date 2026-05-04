@@ -90,4 +90,48 @@ class ClaimController extends Controller
             ]);
         });
     }
+
+    public function cancel(Request $request, Claim $claim)
+    {
+        if ($claim->receiver_id !== Auth::id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        return DB::transaction(function () use ($claim) {
+            $claim = Claim::lockForUpdate()->find($claim->id);
+
+            if (!$claim) {
+                return response()->json(['message' => 'Klaim tidak ditemukan'], 404);
+            }
+
+            $donation = Donation::lockForUpdate()->find($claim->donation_id);
+
+            if (!$donation) {
+                return response()->json(['message' => 'Donasi tidak ditemukan'], 404);
+            }
+
+            if ($claim->status === Claim::STATUS_COMPLETED || $donation->status === Donation::STATUS_COMPLETED) {
+                return response()->json(['message' => 'Klaim sudah selesai dan tidak dapat dibatalkan'], 422);
+            }
+
+            if ($claim->status !== Claim::STATUS_REJECTED) {
+                $claim->update([
+                    'status' => Claim::STATUS_REJECTED,
+                    'cancel_reason' => 'Dibatalkan oleh penerima',
+                    'completed_at' => null,
+                ]);
+            }
+
+            if ($donation->status === Donation::STATUS_CLAIMED) {
+                $donation->update(['status' => Donation::STATUS_APPROVED]);
+            }
+
+            $claim->load(['donation.user:id,name,city,phone', 'donation.category']);
+
+            return response()->json([
+                'message' => 'Klaim berhasil dibatalkan',
+                'data' => $claim,
+            ]);
+        });
+    }
 }

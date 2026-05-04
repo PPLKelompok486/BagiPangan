@@ -23,7 +23,7 @@ async function forward(req: NextRequest, segments: string[]) {
   const init: RequestInit = { method, headers, redirect: "manual" };
 
   if (method !== "GET" && method !== "HEAD") {
-    init.body = await req.text();
+    init.body = await req.arrayBuffer();
   }
 
   try {

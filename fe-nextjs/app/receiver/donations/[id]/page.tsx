@@ -19,9 +19,12 @@ import {
 import { ApiError, apiFetch } from "@/lib/api";
 import {
   type ApiDonation,
+  type ApiClaim,
   type Donation,
+  type Claim,
   formatPickupTime,
   imageForDonation,
+  mapApiClaim,
   mapApiDonation,
   STATUS_LABEL,
   STATUS_TONE,
@@ -61,9 +64,13 @@ export default function DonationDetailPage({ params }: Props) {
   const { id } = use(params);
   const router = useRouter();
   const [donation, setDonation] = useState<Donation | null>(null);
+  const [claim, setClaim] = useState<Claim | null>(null);
   const [error, setError] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [claiming, setClaiming] = useState(false);
+  const [uploadingProof, setUploadingProof] = useState(false);
+  const [cancelingClaim, setCancelingClaim] = useState(false);
+  const [claimError, setClaimError] = useState("");
   const [notification, setNotification] = useState("");
 
   const load = async () => {
@@ -75,8 +82,25 @@ export default function DonationDetailPage({ params }: Props) {
     }
   };
 
+  const loadClaim = async () => {
+    try {
+      const res = await apiFetch<{ data: ApiClaim[] }>("/claims/mine");
+      const donationId = Number(id);
+      const found = res.data.find((item) => item.donation?.id === donationId);
+      setClaim(found ? mapApiClaim(found) : null);
+      setClaimError("");
+    } catch (err) {
+      if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+        setClaim(null);
+        return;
+      }
+      setClaimError(err instanceof ApiError ? err.message : "Gagal memuat klaim");
+    }
+  };
+
   useEffect(() => {
     load();
+    loadClaim();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -105,6 +129,47 @@ export default function DonationDetailPage({ params }: Props) {
     }
   };
 
+  const handleUploadProof = async (file: File) => {
+    if (!claim) return;
+    setUploadingProof(true);
+    setNotification("");
+    const body = new FormData();
+    body.append("proof", file);
+    try {
+      const res = await apiFetch<{ data: ApiClaim }>(`/claims/${claim.id}/proof`, {
+        method: "POST",
+        body,
+      });
+      const updated = mapApiClaim(res.data);
+      setClaim(updated);
+      setDonation(updated.donation);
+      setNotification("Bukti pengambilan berhasil diunggah.");
+    } catch (err) {
+      setNotification(err instanceof ApiError ? err.message : "Gagal mengunggah bukti");
+    } finally {
+      setUploadingProof(false);
+    }
+  };
+
+  const handleCancelClaim = async () => {
+    if (!claim) return;
+    setCancelingClaim(true);
+    setNotification("");
+    try {
+      const res = await apiFetch<{ data: ApiClaim }>(`/claims/${claim.id}/cancel`, {
+        method: "POST",
+      });
+      const updated = mapApiClaim(res.data);
+      setClaim(updated);
+      setDonation(updated.donation);
+      setNotification("Klaim berhasil dibatalkan.");
+    } catch (err) {
+      setNotification(err instanceof ApiError ? err.message : "Gagal membatalkan klaim");
+    } finally {
+      setCancelingClaim(false);
+    }
+  };
+
   if (error) {
     return (
       <div className="bg-white border border-red-200 rounded-3xl p-8 text-center">
@@ -126,6 +191,10 @@ export default function DonationDetailPage({ params }: Props) {
   }
 
   const canClaim = donation.status === "approved";
+  const hasClaim = Boolean(claim);
+  const showClaimActions = hasClaim && donation.status === "claimed";
+  const showClaimCompleted = hasClaim && donation.status === "completed";
+  const showUnavailable = !canClaim && !showClaimActions && !showClaimCompleted;
   const isSuccess = notification.includes("berhasil");
   const heroImage = imageForDonation(donation);
   const hoursLeft = (Date.parse(donation.pickup_time) - Date.now()) / 3_600_000;
@@ -257,8 +326,28 @@ export default function DonationDetailPage({ params }: Props) {
           )}
         </AnimatePresence>
 
+        {claimError && (
+          <div className="mb-4 p-3 rounded-2xl text-sm font-medium bg-red-50 text-red-700 border border-red-200">
+            {claimError}
+          </div>
+        )}
+
         {/* Desktop / non-sticky CTA */}
         <div className="hidden sm:block">
+          {showClaimActions && claim && (
+            <ClaimActions
+              claim={claim}
+              uploading={uploadingProof}
+              canceling={cancelingClaim}
+              onUploadProof={handleUploadProof}
+              onCancelClaim={handleCancelClaim}
+            />
+          )}
+
+          {showClaimCompleted && claim && (
+            <ClaimCompleted claim={claim} />
+          )}
+
           {canClaim && !confirming && (
             <button
               onClick={() => setConfirming(true)}
@@ -276,7 +365,7 @@ export default function DonationDetailPage({ params }: Props) {
             />
           )}
 
-          {!canClaim && (
+          {showUnavailable && (
             <div className="border border-[var(--brand-100)] bg-[var(--cream)] rounded-2xl p-4 text-sm text-[var(--text-mid)]">
               Donasi ini sudah tidak tersedia untuk diklaim.
             </div>
@@ -287,6 +376,17 @@ export default function DonationDetailPage({ params }: Props) {
 
       {/* Mobile sticky CTA */}
       <div className="sm:hidden fixed inset-x-0 bottom-0 z-30 bg-white border-t border-[var(--brand-100)] p-3 shadow-[0_-8px_24px_rgba(7,23,16,0.08)]">
+        {showClaimActions && claim && (
+          <ClaimActions
+            claim={claim}
+            uploading={uploadingProof}
+            canceling={cancelingClaim}
+            onUploadProof={handleUploadProof}
+            onCancelClaim={handleCancelClaim}
+            compact
+          />
+        )}
+        {showClaimCompleted && claim && <ClaimCompleted claim={claim} compact />}
         {canClaim && !confirming && (
           <button
             onClick={() => setConfirming(true)}
@@ -302,7 +402,7 @@ export default function DonationDetailPage({ params }: Props) {
             claiming={claiming}
           />
         )}
-        {!canClaim && (
+        {showUnavailable && (
           <div className="rounded-xl bg-[var(--cream)] px-4 py-3 text-center text-sm text-[var(--text-mid)]">
             Donasi ini sudah tidak tersedia.
           </div>
@@ -355,6 +455,101 @@ function ConfirmBlock({
         </button>
       </div>
     </motion.div>
+  );
+}
+
+function ClaimActions({
+  claim,
+  uploading,
+  canceling,
+  onUploadProof,
+  onCancelClaim,
+  compact,
+}: {
+  claim: Claim;
+  uploading: boolean;
+  canceling: boolean;
+  onUploadProof: (file: File) => void;
+  onCancelClaim: () => void;
+  compact?: boolean;
+}) {
+  const inputId = `proof-${claim.id}-detail`;
+  return (
+    <div
+      className={`rounded-2xl border border-[var(--brand-100)] bg-[var(--cream)] ${
+        compact ? "px-4 py-3" : "p-4"
+      }`}
+    >
+      <div className="text-sm font-semibold text-[var(--brand-950)]">Klaim Anda aktif</div>
+      <p className="text-xs text-[var(--text-mid)] mt-1">
+        Unggah bukti setelah pengambilan dan batalkan jika tidak jadi menjemput.
+      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <input
+          id={inputId}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          disabled={uploading || canceling}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) onUploadProof(file);
+            event.target.value = "";
+          }}
+        />
+        <label
+          htmlFor={inputId}
+          className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${
+            uploading || canceling
+              ? "bg-[var(--brand-50)] text-[var(--brand-400)] border-[var(--brand-100)]"
+              : "bg-white text-[var(--brand-700)] border-[var(--brand-200)] hover:border-[var(--brand-400)]"
+          }`}
+        >
+          {uploading ? "Mengunggah..." : "Unggah bukti"}
+        </label>
+        <button
+          type="button"
+          onClick={onCancelClaim}
+          disabled={uploading || canceling}
+          className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${
+            uploading || canceling
+              ? "bg-white text-[var(--brand-400)] border-[var(--brand-100)]"
+              : "bg-white text-red-600 border-red-200 hover:border-red-300"
+          }`}
+        >
+          {canceling ? "Membatalkan..." : "Batalkan klaim"}
+        </button>
+        <span className="text-[11px] text-[var(--text-mid)]">JPEG/PNG, maks 4MB</span>
+      </div>
+    </div>
+  );
+}
+
+function ClaimCompleted({ claim, compact }: { claim: Claim; compact?: boolean }) {
+  return (
+    <div
+      className={`rounded-2xl border border-emerald-200 bg-emerald-50 ${
+        compact ? "px-4 py-3" : "p-4"
+      }`}
+    >
+      <div className="text-sm font-semibold text-emerald-700">Bukti sudah diunggah</div>
+      <div className="text-xs text-emerald-700 mt-1">
+        Terima kasih, donasi sudah selesai.
+      </div>
+      {claim.proof_image_url && (
+        <div className="mt-2 text-xs text-emerald-700">
+          Bukti: {" "}
+          <a
+            href={claim.proof_image_url}
+            target="_blank"
+            rel="noreferrer"
+            className="font-semibold underline"
+          >
+            Lihat foto
+          </a>
+        </div>
+      )}
+    </div>
   );
 }
 
