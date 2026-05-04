@@ -20,14 +20,22 @@ class DonationCategorySeeder extends Seeder
             ['name' => 'Roti & Kue', 'description' => 'Produk bakery dan camilan'],
         ];
 
-        foreach ($categories as $cat) {
-            DB::table('donation_categories')->insert([
+        $now = now();
+        $rows = array_map(
+            fn (array $cat) => [
                 'name' => $cat['name'],
                 'slug' => Str::slug($cat['name']),
                 'description' => $cat['description'],
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            $categories,
+        );
+
+        DB::table('donation_categories')->upsert(
+            $rows,
+            ['slug'],
+            ['name', 'description', 'updated_at'],
+        );
     }
 }

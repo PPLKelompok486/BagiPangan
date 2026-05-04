@@ -62,7 +62,6 @@ export function Navbar() {
 
   // Update hover pill position
   const handleNavHover = (index: number) => {
-    setHoveredIndex(index);
     if (!navContainerRef.current) return;
     const btn = navItemsRef.current[index];
     const container = navContainerRef.current;
@@ -77,7 +76,6 @@ export function Navbar() {
   };
 
   const handleNavLeave = () => {
-    setHoveredIndex(null);
     setHoverRect(null);
   };
 

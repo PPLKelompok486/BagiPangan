@@ -30,7 +30,7 @@ export default function AdminAuthGate({ children }: { children: React.ReactNode 
 
   }, [router, user]);
 
-  if (!user || user.role !== "admin") return null;
-
+  // Return children on server & initial client render to avoid hydration mismatch
+  // Client-side redirect will happen in useEffect if auth fails
   return <>{children}</>;
 }

@@ -42,6 +42,13 @@ export default function RegisterStep2() {
     role: string;
   }
 
+  interface FormState {
+    phone: string;
+    city: string;
+    organization: string;
+    job: string;
+  }
+
   interface FormErrors {
     phone?: string;
     city?: string;
@@ -52,7 +59,7 @@ export default function RegisterStep2() {
     const s1 = sessionStorage.getItem("registerStep1");
     return s1 ? JSON.parse(s1) : null;
   });
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FormState>({
     phone: "",
     city: "",
     organization: "",
@@ -81,8 +88,10 @@ export default function RegisterStep2() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: undefined });
+    if (name === "phone" || name === "city") {
+      if (errors[name]) {
+        setErrors({ ...errors, [name]: undefined });
+      }
     }
   };
 

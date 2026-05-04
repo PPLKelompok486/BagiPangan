@@ -45,7 +45,7 @@ export default function ReceiverLayout({ children }: { children: React.ReactNode
       router.replace("/donatur/dashboard");
       return;
     }
-    // Fetch avatar
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchAvatar();
   }, [router]);
 

@@ -31,7 +31,7 @@ export default function CreateDonationPage() {
     location_address: "",
     available_from: "",
     available_until: "",
-    portion_count: 1,
+    portion_count: "1",
     category_id: "",
   });
 
@@ -162,12 +162,11 @@ export default function CreateDonationPage() {
                     required
                     type="number"
                     min="1"
-                    value={formData.portion_count || ""}
+                    value={formData.portion_count}
                     onChange={(e) => {
-                      const val = e.target.value;
                       setFormData({ 
                         ...formData, 
-                        portion_count: val === "" ? "" : parseInt(val) 
+                        portion_count: e.target.value, 
                       });
                     }}
                     className="w-full bg-[var(--brand-50)]/30 border border-[var(--brand-100)] rounded-2xl pl-12 pr-5 py-4 focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white outline-none transition-all"
