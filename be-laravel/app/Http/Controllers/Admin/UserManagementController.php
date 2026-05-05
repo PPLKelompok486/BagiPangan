@@ -12,6 +12,7 @@ class UserManagementController extends Controller
     public function index(Request $request)
     {
         $search = $request->query('search');
+        $perPage = $this->resolvePerPage($request->query('per_page'));
 
         $users = User::query()
             ->when($search, function ($query) use ($search) {
@@ -21,12 +22,23 @@ class UserManagementController extends Controller
                 });
             })
             ->latest()
-            ->paginate(12);
+            ->paginate($perPage);
 
         return response()->json([
             'message' => 'Daftar pengguna berhasil diambil',
             'data' => $users,
         ]);
+    }
+
+    private function resolvePerPage($value): int
+    {
+        $perPage = (int) $value;
+
+        if ($perPage <= 0) {
+            return 100;
+        }
+
+        return min($perPage, 500);
     }
 
     public function update(Request $request, User $user)

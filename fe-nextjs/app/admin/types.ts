@@ -22,7 +22,7 @@ export type UsersResponse = {
   message: string;
   data: {
     data: Array<{
-      id: number;
+      id: number | string;
       name: string;
       email: string;
       role: "donatur" | "penerima" | "admin";
