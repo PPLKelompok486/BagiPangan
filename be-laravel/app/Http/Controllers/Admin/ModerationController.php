@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Donation;
+use App\Notifications\DonationApproved;
+use App\Notifications\DonationRejected;
 use Illuminate\Http\Request;
 
 class ModerationController extends Controller
@@ -47,6 +49,9 @@ class ModerationController extends Controller
             ],
         ]);
 
+        $donation->load('user');
+        $donation->user?->notify(new DonationApproved($donation));
+
         return response()->json([
             'message' => 'Donasi berhasil disetujui',
             'data' => $donation,
@@ -76,6 +81,9 @@ class ModerationController extends Controller
                 'title' => $donation->title,
             ],
         ]);
+
+        $donation->load('user');
+        $donation->user?->notify(new DonationRejected($donation, $payload['reason']));
 
         return response()->json([
             'message' => 'Donasi ditolak',

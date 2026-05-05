@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { LogOut, LayoutGrid, Map as MapIcon, Package, PlusCircle, User } from "lucide-react";
 import "../bagipangan/landing.css";
+import NotificationBell from "@/components/NotificationBell";
 import { apiFetch, clearAuth, getUser, type AuthUser } from "@/lib/api";
 
 export default function DonaturLayout({ children }: { children: React.ReactNode }) {
@@ -105,6 +106,7 @@ export default function DonaturLayout({ children }: { children: React.ReactNode 
           </nav>
 
           <div className="flex items-center gap-3">
+            <NotificationBell />
             <Link href="/profile" className="flex items-center gap-3 hidden sm:block hover:opacity-80 transition-opacity">
               {avatarUrl ? (
                 <img

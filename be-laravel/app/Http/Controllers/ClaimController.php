@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Claim;
 use App\Models\Donation;
+use App\Notifications\ClaimCompleted;
+use App\Notifications\ClaimRejected;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -83,6 +85,7 @@ class ClaimController extends Controller
             ]);
 
             $claim->load(['donation.user:id,name,city,phone', 'donation.category']);
+            $claim->donation?->user?->notify(new ClaimCompleted($claim));
 
             return response()->json([
                 'message' => 'Bukti pengambilan berhasil diunggah',
@@ -127,6 +130,7 @@ class ClaimController extends Controller
             }
 
             $claim->load(['donation.user:id,name,city,phone', 'donation.category']);
+            $claim->receiver?->notify(new ClaimRejected($claim));
 
             return response()->json([
                 'message' => 'Klaim berhasil dibatalkan',

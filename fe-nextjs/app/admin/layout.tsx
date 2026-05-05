@@ -5,6 +5,7 @@ import "../bagipangan/landing.css";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LogOut, Home } from "lucide-react";
+import NotificationBell from "@/components/NotificationBell";
 import { clearAuth } from "@/lib/api";
 import AdminAuthGate from "./components/admin-auth-gate";
 
@@ -57,6 +58,11 @@ export default function AdminLayout({ children }: Readonly<{ children: React.Rea
               Manajemen Kategori
             </Link>
           </nav>
+
+          <div className="mt-5 flex items-center justify-between rounded-xl border border-white/20 px-3 py-2 text-white/80">
+            <span className="text-sm font-medium">Notifikasi</span>
+            <NotificationBell tone="dark" />
+          </div>
 
           <div className="mt-auto pt-8 border-t border-white/20 space-y-2">
             <Link

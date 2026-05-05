@@ -8,6 +8,7 @@ use App\Http\Controllers\ClaimController;
 use App\Http\Controllers\DonationController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MapController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\AuthController;
@@ -39,6 +40,14 @@ Route::middleware('token.auth')->group(function () {
     Route::get('/claims/mine', [ClaimController::class, 'mine']);
     Route::post('/claims/{claim}/proof', [ClaimController::class, 'uploadProof'])->whereNumber('claim');
     Route::post('/claims/{claim}/cancel', [ClaimController::class, 'cancel'])->whereNumber('claim');
+
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'index']);
+        Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::patch('/{id}/read', [NotificationController::class, 'markRead']);
+        Route::post('/read-all', [NotificationController::class, 'markAllRead']);
+        Route::delete('/{id}', [NotificationController::class, 'destroy']);
+    });
 });
 
 Route::prefix('admin')->middleware(['web', 'auth:web', 'admin'])->group(function () {
