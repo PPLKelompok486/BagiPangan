@@ -5,16 +5,16 @@ const API_BASE = BACKEND_BASE_URL.endsWith("/api")
   ? BACKEND_BASE_URL
   : `${BACKEND_BASE_URL}/api`;
 
-export async function GET(request: NextRequest, context: { params: { donationId: string } }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ donationId: string }> }) {
   try {
-    const donationId = context.params.donationId;
+    const { donationId } = await context.params;
     if (!donationId || Number.isNaN(Number(donationId))) {
       return NextResponse.json(
         { message: "ID donasi tidak valid." },
         { status: 400 },
       );
     }
-    const res = await fetch(`${API_BASE}/admin/donations/${context.params.donationId}`, {
+    const res = await fetch(`${API_BASE}/admin/donations/${donationId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -40,9 +40,9 @@ export async function GET(request: NextRequest, context: { params: { donationId:
   }
 }
 
-export async function PATCH(request: NextRequest, context: { params: { donationId: string } }) {
+export async function PATCH(request: NextRequest, context: { params: Promise<{ donationId: string }> }) {
   try {
-    const donationId = context.params.donationId;
+    const { donationId } = await context.params;
     if (!donationId || Number.isNaN(Number(donationId))) {
       return NextResponse.json(
         { message: "ID donasi tidak valid." },
@@ -51,7 +51,7 @@ export async function PATCH(request: NextRequest, context: { params: { donationI
     }
     const body = await request.json();
 
-    const res = await fetch(`${API_BASE}/admin/donations/${context.params.donationId}`, {
+    const res = await fetch(`${API_BASE}/admin/donations/${donationId}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -77,16 +77,16 @@ export async function PATCH(request: NextRequest, context: { params: { donationI
   }
 }
 
-export async function DELETE(request: NextRequest, context: { params: { donationId: string } }) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ donationId: string }> }) {
   try {
-    const donationId = context.params.donationId;
+    const { donationId } = await context.params;
     if (!donationId || Number.isNaN(Number(donationId))) {
       return NextResponse.json(
         { message: "ID donasi tidak valid." },
         { status: 400 },
       );
     }
-    const res = await fetch(`${API_BASE}/admin/donations/${context.params.donationId}`, {
+    const res = await fetch(`${API_BASE}/admin/donations/${donationId}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",

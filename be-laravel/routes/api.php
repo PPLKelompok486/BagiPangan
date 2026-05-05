@@ -21,6 +21,11 @@ Route::post('/login', [LoginController::class, 'login']);
     Route::get('/donations/categories', [DonationController::class, 'categories']);
     Route::get('/donations/{id}', [DonationController::class, 'show'])->whereNumber('id');
 
+    Route::middleware('throttle:60,1')->group(function () {
+        Route::get('/donations/map', [MapController::class, 'index']);
+        Route::get('/donations/{id}/map-detail', [MapController::class, 'detail'])->whereNumber('id');
+    });
+
 Route::middleware('token.auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'index']);
     Route::post('/profile', [ProfileController::class, 'store']);
@@ -28,10 +33,6 @@ Route::middleware('token.auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy']);
 
     Route::post('/logout', [LoginController::class, 'logout']);
-    Route::middleware('throttle:60,1')->group(function () {
-        Route::get('/donations/map', [MapController::class, 'index']);
-        Route::get('/donations/{id}/map-detail', [MapController::class, 'detail'])->whereNumber('id');
-    });
     Route::get('/donations/mine', [DonationController::class, 'mine']);
     Route::post('/donations', [DonationController::class, 'store']);
     Route::put('/donations/{id}', [DonationController::class, 'update']);

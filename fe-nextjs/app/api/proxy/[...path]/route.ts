@@ -5,7 +5,7 @@ const API_BASE = BACKEND_BASE_URL.endsWith("/api")
   ? BACKEND_BASE_URL
   : `${BACKEND_BASE_URL}/api`;
 
-const PASSTHROUGH_HEADERS = ["authorization", "content-type", "accept"] as const;
+const PASSTHROUGH_HEADERS = ["authorization", "content-type", "accept", "cookie"] as const;
 
 async function forward(req: NextRequest, segments: string[]) {
   const path = "/" + segments.map(encodeURIComponent).join("/");

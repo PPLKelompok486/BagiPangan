@@ -78,6 +78,11 @@ export async function apiFetch<T = unknown>(
   }
 
   if (!res.ok) {
+    if (res.status === 401) {
+      if (typeof window !== "undefined") {
+        clearAuth();
+      }
+    }
     const message =
       (data && typeof data === "object" && "message" in data
         ? String((data as { message: unknown }).message)
