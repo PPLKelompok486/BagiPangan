@@ -33,11 +33,13 @@ Route::middleware('token.auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy']);
 
     Route::post('/logout', [LoginController::class, 'logout']);
+    Route::get('/donations/mine/export', [DonationController::class, 'exportMine']);
     Route::get('/donations/mine', [DonationController::class, 'mine']);
     Route::post('/donations', [DonationController::class, 'store']);
     Route::put('/donations/{id}', [DonationController::class, 'update']);
     Route::delete('/donations/{id}', [DonationController::class, 'cancel']);
     Route::post('/donations/{id}/claim', [DonationController::class, 'claim'])->whereNumber('id');
+    Route::get('/claims/mine/export', [ClaimController::class, 'exportMine']);
     Route::get('/claims/mine', [ClaimController::class, 'mine']);
     Route::post('/claims/{claim}/proof', [ClaimController::class, 'uploadProof'])->whereNumber('claim');
     Route::post('/claims/{claim}/cancel', [ClaimController::class, 'cancel'])->whereNumber('claim');

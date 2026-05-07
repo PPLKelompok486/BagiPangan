@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { MapPin, Clock, ListChecks, ArrowRight, AlarmClock, CheckCircle2 } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
+import ExportCsvButton from "@/components/ExportCsvButton";
 import {
   type ApiClaim,
   type Claim,
@@ -103,15 +104,18 @@ export default function MyClaimsPage() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="mb-6"
+        className="mb-6 flex flex-wrap items-end justify-between gap-4"
       >
-        <span className="text-xs tracking-[0.24em] text-[var(--brand-600)] font-semibold uppercase">
-          Riwayat
-        </span>
-        <h1 className="text-3xl font-bold mt-2 text-[var(--brand-950)]">Klaim saya</h1>
-        <p className="text-[var(--text-mid)] mt-2">
-          Donasi yang Anda klaim dan jadwal penjemputannya.
-        </p>
+        <div>
+          <span className="text-xs tracking-[0.24em] text-[var(--brand-600)] font-semibold uppercase">
+            Riwayat
+          </span>
+          <h1 className="text-3xl font-bold mt-2 text-[var(--brand-950)]">Klaim saya</h1>
+          <p className="text-[var(--text-mid)] mt-2">
+            Donasi yang Anda klaim dan jadwal penjemputannya.
+          </p>
+        </div>
+        <ExportCsvButton endpoint="/api/claims/mine/export" filenamePrefix="klaim-saya" />
       </motion.div>
 
       {error && (

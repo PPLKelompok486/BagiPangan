@@ -21,6 +21,55 @@ class ClaimController extends Controller
         return response()->json(['data' => $claims]);
     }
 
+    public function exportMine(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $receiverId = Auth::id();
+        $fileName = 'klaim-saya-' . now()->format('Ymd-His') . '.csv';
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
+            'Cache-Control'       => 'no-store, no-cache, must-revalidate',
+        ];
+
+        $callback = function () use ($receiverId) {
+            $file = fopen('php://output', 'wb');
+            fwrite($file, "\xEF\xBB\xBF");
+
+            fputcsv($file, [
+                'ID Klaim', 'ID Donasi', 'Judul Donasi', 'Kategori',
+                'Donatur', 'Kota', 'Status Klaim', 'Tgl Diklaim', 'Tgl Selesai',
+            ]);
+
+            Claim::query()
+                ->with([
+                    'donation:id,title,location_city,category_id,user_id',
+                    'donation.category:id,name',
+                    'donation.user:id,name',
+                ])
+                ->where('receiver_id', $receiverId)
+                ->orderByDesc('claimed_at')
+                ->lazy(200)
+                ->each(function (Claim $claim) use ($file) {
+                    fputcsv($file, [
+                        $claim->id,
+                        optional($claim->donation)->id ?? '',
+                        optional($claim->donation)->title ?? '',
+                        optional($claim->donation?->category)->name ?? '',
+                        optional($claim->donation?->user)->name ?? '',
+                        optional($claim->donation)->location_city ?? '',
+                        $claim->status,
+                        optional($claim->claimed_at)->toDateTimeString() ?? '',
+                        optional($claim->completed_at)->toDateTimeString() ?? '',
+                    ]);
+                });
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
     public function uploadProof(Request $request, Claim $claim)
     {
         if ($claim->receiver_id !== Auth::id()) {

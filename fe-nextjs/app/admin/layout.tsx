@@ -56,6 +56,9 @@ export default function AdminLayout({ children }: Readonly<{ children: React.Rea
             <Link className="block rounded-xl border border-white/20 px-3 py-2 text-white/80 hover:bg-white/10" href="/admin/categories">
               Manajemen Kategori
             </Link>
+            <Link className="block rounded-xl border border-white/20 px-3 py-2 text-white/80 hover:bg-white/10" href="/admin/reports">
+              Ekspor Laporan
+            </Link>
           </nav>
 
           <div className="mt-auto pt-8 border-t border-white/20 space-y-2">
