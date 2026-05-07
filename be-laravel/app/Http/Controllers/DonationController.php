@@ -23,12 +23,66 @@ class DonationController extends Controller
 
     public function index(Request $request)
     {
-        $donations = Donation::with(['user:id,name,city', 'category'])
-            ->where('status', 'approved')
-            ->orderByDesc('created_at')
-            ->paginate(15);
+        $perPage = (int) $request->query('per_page', 12);
+        $perPage = max(1, min($perPage, 50));
 
-        return response()->json($donations);
+        $sort = (string) $request->query('sort', 'newest');
+        $statusParam = $request->query('status');
+
+        $publicStatuses = array_values(Donation::PUBLIC_STATUS_MAP);
+
+        $query = Donation::query()
+            ->with(['user:id,name,city', 'category:id,name'])
+            ->byKeyword($request->query('keyword'))
+            ->byCategory($request->query('category_id'))
+            ->byLocation($request->query('location'))
+            ->byStatus($statusParam);
+
+        // When no explicit status filter is supplied, only expose donations
+        // that have completed moderation (approved/claimed/completed). This
+        // keeps pending/rejected/cancelled rows out of the public feed.
+        if (!is_string($statusParam) || !array_key_exists($statusParam, Donation::PUBLIC_STATUS_MAP)) {
+            $query->whereIn('status', $publicStatuses);
+        }
+
+        switch ($sort) {
+            case 'oldest':
+                $query->orderBy('created_at', 'asc');
+                break;
+            case 'expiry_soon':
+                $query->orderBy('available_until', 'asc');
+                break;
+            case 'newest':
+            default:
+                $query->orderByDesc('created_at');
+                break;
+        }
+
+        $paginator = $query->paginate($perPage)->withQueryString();
+
+        $cards = $paginator->getCollection()->map(function (Donation $d) {
+            return [
+                'id'              => $d->id,
+                'title'           => $d->title,
+                'category'        => $d->category
+                    ? ['id' => $d->category->id, 'name' => $d->category->name]
+                    : null,
+                'status'          => $d->status,
+                'photo_thumbnail' => null,
+                'donor_city'      => $d->user?->city ?? $d->location_city,
+                'expiry_date'     => $d->available_until?->toIso8601String(),
+            ];
+        });
+
+        return response()->json([
+            'data' => $cards,
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page'    => $paginator->lastPage(),
+                'total'        => $paginator->total(),
+                'per_page'     => $paginator->perPage(),
+            ],
+        ]);
     }
 
     public function store(Request $request)

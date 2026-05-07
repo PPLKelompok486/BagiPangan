@@ -19,6 +19,7 @@ Route::post('/login', [LoginController::class, 'login']);
 
     Route::get('/donations', [DonationController::class, 'index']);
     Route::get('/donations/categories', [DonationController::class, 'categories']);
+    Route::get('/categories', [DonationController::class, 'categories']);
     Route::get('/donations/{id}', [DonationController::class, 'show'])->whereNumber('id');
 
     Route::middleware('throttle:60,1')->group(function () {
