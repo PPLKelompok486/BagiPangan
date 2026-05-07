@@ -6,6 +6,7 @@ use App\Models\Claim;
 use App\Models\Donation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -13,9 +14,11 @@ class DonationController extends Controller
 {
     public function categories()
     {
-        return response()->json([
-            'data' => \App\Models\DonationCategory::where('is_active', true)->get(['id', 'name'])
-        ]);
+        $categories = Cache::remember('donation_categories', 300, function () {
+            return \App\Models\DonationCategory::where('is_active', true)->get(['id', 'name']);
+        });
+
+        return response()->json(['data' => $categories]);
     }
 
     public function index(Request $request)

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { User, Mail, Phone, MapPin, Building, Briefcase, ArrowLeft, Loader2, CheckCircle2, Trash2, Edit3, Save, X } from "lucide-react";
 
@@ -341,9 +342,12 @@ export default function ProfilePage() {
             <motion.div className="mb-6 flex flex-col items-center" variants={itemVariants}>
               <div className="relative w-24 h-24 rounded-full bg-[var(--brand-100)] flex items-center justify-center overflow-hidden border-2 border-[var(--brand-200)]">
                 {avatarUrl ? (
-                  <img
+                  <Image
                     src={`${process.env.LARAVEL_API_BASE ?? "http://localhost:8000"}${avatarUrl}`}
                     alt="Avatar"
+                    width={96}
+                    height={96}
+                    unoptimized
                     className="w-full h-full object-cover"
                   />
                 ) : (

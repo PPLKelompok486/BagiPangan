@@ -69,7 +69,7 @@ const defaultFormData: DonationFormData = {
   address_detail: "",
   available_from: "",
   available_until: "",
-  portion_count: "1",
+  portion_count: 1,
   category_id: "",
 };
 
@@ -246,7 +246,7 @@ export default function DonationForm({
                     onChange={(e) => {
                       setFormData({
                         ...formData,
-                        portion_count: e.target.value,
+                        portion_count: e.target.value === "" ? "" : Number(e.target.value),
                       });
                     }}
                     className="w-full rounded-2xl border border-[var(--brand-100)] bg-[var(--brand-50)]/30 py-4 pl-12 pr-5 outline-none transition-all focus:bg-white focus:ring-2 focus:ring-[var(--brand-500)]"

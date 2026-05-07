@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ArrowLeft, Heart, Loader2, CheckCircle2 } from "lucide-react";
 
@@ -160,10 +161,12 @@ export default function RegisterStep2() {
       >
         {/* Background photo with overlay */}
         <div className="absolute inset-0 z-0">
-          <img
+          <Image
             alt="Tangan menyajikan makanan untuk yang membutuhkan"
             src="/images/auth/serving-warmth.jpg"
-            className="w-full h-full object-cover opacity-30"
+            fill
+            sizes="50vw"
+            className="object-cover opacity-30"
             style={{ objectPosition: "50% 45%" }}
           />
           <div className="absolute inset-0 bg-gradient-to-br from-[var(--brand-900)]/85 via-[var(--brand-900)]/70 to-[var(--brand-950)]/95" />

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -29,35 +30,51 @@ class MapController extends Controller
         $status = Arr::get($validated, 'status', 'available');
         $limit = (int) Arr::get($validated, 'limit', self::DEFAULT_LIMIT);
 
-        $donations = Donation::query()
-            ->with(['category:id,name', 'user:id,name,city'])
-            ->whereNotNull('latitude')
-            ->whereNotNull('longitude')
-            ->whereBetween('latitude', [-90, 90])
-            ->whereBetween('longitude', [-180, 180])
-            ->when($status === 'available', fn (Builder $query) => $query->where('status', 'approved'))
-            ->when($status === 'approved', fn (Builder $query) => $query->where('status', 'approved'))
-            ->when($status === 'claimed', fn (Builder $query) => $query->where('status', 'claimed'))
-            ->when(Arr::get($validated, 'category_id'), fn (Builder $query, int $categoryId) => $query->where('category_id', $categoryId))
-            ->when(Arr::get($validated, 'q'), function (Builder $query, string $keyword): void {
-                $query->where(function (Builder $nested) use ($keyword): void {
-                    $needle = '%' . strtolower($keyword) . '%';
-                    $nested->whereRaw('LOWER(title) LIKE ?', [$needle])
-                        ->orWhereRaw('LOWER(description) LIKE ?', [$needle]);
-                });
-            })
-            ->when($bbox !== null, function (Builder $query) use ($bbox): void {
-                [$minLng, $minLat, $maxLng, $maxLat] = $bbox;
-                $query->whereBetween('longitude', [$minLng, $maxLng])
-                    ->whereBetween('latitude', [$minLat, $maxLat]);
-            })
-            ->orderByDesc('available_until')
-            ->limit($limit)
-            ->get();
+        // Build a deterministic cache key from all query parameters.
+        // The map_cache_version counter is incremented by DonationObserver
+        // on every mutation, effectively invalidating all prior map entries.
+        $version  = (int) Cache::get('map_cache_version', 0);
+        $cacheKey = 'map:v' . $version . ':' . md5(json_encode([
+            'status'      => $status,
+            'category_id' => Arr::get($validated, 'category_id'),
+            'q'           => Arr::get($validated, 'q'),
+            'bbox'        => $bbox,
+            'limit'       => $limit,
+        ]));
+
+        $features = Cache::remember($cacheKey, 60, function () use ($status, $validated, $bbox, $limit): array {
+            $donations = Donation::query()
+                ->with(['category:id,name', 'user:id,name,city'])
+                ->whereNotNull('latitude')
+                ->whereNotNull('longitude')
+                ->whereBetween('latitude', [-90, 90])
+                ->whereBetween('longitude', [-180, 180])
+                ->when($status === 'available', fn (Builder $query) => $query->where('status', 'approved'))
+                ->when($status === 'approved', fn (Builder $query) => $query->where('status', 'approved'))
+                ->when($status === 'claimed', fn (Builder $query) => $query->where('status', 'claimed'))
+                ->when(Arr::get($validated, 'category_id'), fn (Builder $query, int $categoryId) => $query->where('category_id', $categoryId))
+                ->when(Arr::get($validated, 'q'), function (Builder $query, string $keyword): void {
+                    $query->where(function (Builder $nested) use ($keyword): void {
+                        $needle = '%' . strtolower($keyword) . '%';
+                        $nested->whereRaw('LOWER(title) LIKE ?', [$needle])
+                            ->orWhereRaw('LOWER(description) LIKE ?', [$needle]);
+                    });
+                })
+                ->when($bbox !== null, function (Builder $query) use ($bbox): void {
+                    [$minLng, $minLat, $maxLng, $maxLat] = $bbox;
+                    $query->whereBetween('longitude', [$minLng, $maxLng])
+                        ->whereBetween('latitude', [$minLat, $maxLat]);
+                })
+                ->orderByDesc('available_until')
+                ->limit($limit)
+                ->get();
+
+            return $donations->map(fn (Donation $donation) => $this->toFeature($donation))->values()->all();
+        });
 
         return response()->json([
-            'type' => 'FeatureCollection',
-            'features' => $donations->map(fn (Donation $donation) => $this->toFeature($donation))->values(),
+            'type'     => 'FeatureCollection',
+            'features' => $features,
         ]);
     }
 

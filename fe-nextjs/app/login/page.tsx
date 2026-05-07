@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Lock, ArrowLeft, ArrowRight, Loader2, CheckCircle2, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { saveAuth, type AuthUser } from "@/lib/api";
 
@@ -263,33 +264,30 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden bg-[#111412] text-[#e1e3de] font-sans selection:bg-[#ccff80] selection:text-[#213600]">
-      {/* Dynamic Google Fonts Import */}
-      <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
-        
-        :root {
-          --brand-primary: #ccff80;
-          --brand-primary-container: #a3e635;
-          --brand-surface: #111412;
-          --brand-on-surface: #e1e3de;
-          --brand-on-surface-variant: #c2cab0;
-          --font-serif: 'Newsreader', serif;
-          --font-sans: 'Plus Jakarta Sans', sans-serif;
-        }
-
-        .font-serif { font-family: var(--font-serif); }
-        .font-sans { font-family: var(--font-sans); }
-      `}</style>
+    <div
+      className="min-h-screen flex flex-col relative overflow-hidden bg-[#111412] text-[#e1e3de] selection:bg-[#ccff80] selection:text-[#213600]"
+      style={{
+        /* Font CSS vars injected by layout.tsx via next/font — no @import needed */
+        fontFamily: "var(--font-login-sans, 'Plus Jakarta Sans', sans-serif)",
+        // @ts-ignore
+        "--font-serif": "var(--font-login-serif, 'Newsreader', serif)",
+        "--font-sans": "var(--font-login-sans, 'Plus Jakarta Sans', sans-serif)",
+      }}
+    >
 
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0 opacity-55">
-        <img
-          alt="Relawan menyalurkan donasi pangan kepada komunitas"
-          src="/images/auth/helping-community.jpg"
-          className="w-full h-full object-cover scale-105"
-          style={{ objectPosition: "50% 40%" }}
-        />
+        <div className="absolute inset-0 scale-105">
+          <Image
+            alt="Relawan menyalurkan donasi pangan kepada komunitas"
+            src="/images/auth/helping-community.jpg"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+            style={{ objectPosition: "50% 40%" }}
+          />
+        </div>
         <div className="absolute inset-0 bg-gradient-to-b from-[#111412]/90 via-[#111412]/70 to-[#111412]"></div>
         <div className="absolute inset-0 bg-gradient-to-r from-[#111412]/50 via-transparent to-[#111412]/50"></div>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(204,255,128,0.10),transparent_55%)]"></div>
