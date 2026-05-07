@@ -7,7 +7,7 @@ import { AlertTriangle, Loader2, LocateFixed, MapPin, RefreshCw } from "lucide-r
 import { apiFetch } from "@/lib/api";
 import { useDonationMap } from "@/hooks/useDonationMap";
 import { useUserGeolocation } from "@/hooks/useUserGeolocation";
-import type { DonationMapFilters, DonationMapStatus } from "@/types/donation-map";
+import type { DonationMapContext, DonationMapFilters, DonationMapStatus } from "@/types/donation-map";
 import MapFilterPanel from "./MapFilterPanel";
 
 const DonationMap = dynamic(() => import("./DonationMap"), {
@@ -20,44 +20,51 @@ type CategoryOption = {
   name: string;
 };
 
+type Props = { context?: DonationMapContext };
+
 function normalizeStatus(value: string | null): DonationMapStatus {
   return value === "claimed" ? "claimed" : "available";
 }
 
-function filtersFromParams(params: URLSearchParams): DonationMapFilters {
+function filtersFromParams(params: URLSearchParams, context: DonationMapContext): DonationMapFilters {
   return {
     category_id: params.get("category_id") ?? "",
     status: normalizeStatus(params.get("status")),
     q: params.get("q") ?? "",
+    context,
   };
 }
 
-export default function DonationMapPageContent() {
+export default function DonationMapPageContent({ context = "receiver" }: Props) {
   return (
     <Suspense fallback={<MapSkeleton />}>
-      <DonationMapScreen />
+      <DonationMapScreen context={context} />
     </Suspense>
   );
 }
 
-function DonationMapScreen() {
+function DonationMapScreen({ context }: { context: DonationMapContext }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [filters, setFilters] = useState<DonationMapFilters>(() => filtersFromParams(searchParams));
+  const [filters, setFilters] = useState<DonationMapFilters>(() => filtersFromParams(searchParams, context));
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
   const deferredQuery = useDeferredValue(filters.q);
   const requestFilters = useMemo(
-    () => ({ ...filters, q: deferredQuery }),
-    [filters, deferredQuery],
+    () => ({ ...filters, q: deferredQuery, context }),
+    [filters, deferredQuery, context],
   );
   const { data, error, isLoading, isRefreshing, retry } = useDonationMap(requestFilters);
   const { location, error: locationError, isLocating } = useUserGeolocation();
 
   useEffect(() => {
+    setFilters((prev) => (prev.context === context ? prev : { ...prev, context }));
+  }, [context]);
+
+  useEffect(() => {
     apiFetch<{ data: CategoryOption[] }>("/donations/categories")
-      .then((payload) => setCategories(payload.data))
+      .then((payload) => setCategories(Array.isArray(payload?.data) ? payload.data : []))
       .catch(() => setCategories([]));
   }, []);
 
@@ -71,10 +78,17 @@ function DonationMapScreen() {
   }, [filters, pathname, router]);
 
   const features = data?.features ?? [];
+  const totalApproved = data?.meta?.total_approved ?? 0;
+  const withoutCoords = data?.meta?.without_coords ?? 0;
   const hasActiveFilter = filters.category_id !== "" || filters.status !== "available" || filters.q.trim() !== "";
-  const emptyMessage = hasActiveFilter
-    ? "Tidak ada donasi yang sesuai dengan filter Anda."
-    : "Data lokasi tidak ditemukan.";
+  const emptyMessage = (() => {
+    if (features.length > 0) return "";
+    if (hasActiveFilter) return "Tidak ada donasi yang sesuai dengan filter Anda.";
+    if (totalApproved > 0 && withoutCoords === totalApproved) {
+      return `Ada ${totalApproved} donasi tersedia, namun belum ada yang memiliki koordinat lokasi. Donatur perlu mengisi koordinat saat membuat donasi.`;
+    }
+    return "Belum ada donasi tersedia di peta.";
+  })();
 
   return (
     <div className="space-y-5">

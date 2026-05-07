@@ -11,6 +11,7 @@ import {
   FileText,
   Tag,
   Loader2,
+  LocateFixed,
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
@@ -98,6 +99,8 @@ export default function DonationForm({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const [gettingLocation, setGettingLocation] = useState(false);
+  const [geoError, setGeoError] = useState("");
 
   const [formData, setFormData] = useState<DonationFormData>(() => buildFormData(initialData));
 
@@ -337,6 +340,41 @@ export default function DonationForm({
                   placeholder="106.8456000"
                 />
               </div>
+            </div>
+
+            <div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!navigator.geolocation) {
+                    setGeoError("Browser tidak mendukung geolocation");
+                    return;
+                  }
+                  setGeoError("");
+                  setGettingLocation(true);
+                  navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        latitude: pos.coords.latitude.toFixed(7),
+                        longitude: pos.coords.longitude.toFixed(7),
+                      }));
+                      setGettingLocation(false);
+                    },
+                    (err) => {
+                      setGeoError(err?.message || "Gagal mendapatkan lokasi");
+                      setGettingLocation(false);
+                    },
+                    { enableHighAccuracy: true, timeout: 8000 },
+                  );
+                }}
+                disabled={gettingLocation}
+                className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--brand-600)] hover:underline disabled:opacity-50"
+              >
+                {gettingLocation ? <Loader2 className="h-4 w-4 animate-spin" /> : <LocateFixed className="h-4 w-4" />}
+                {gettingLocation ? "Mendeteksi lokasi..." : "Gunakan lokasi saya"}
+              </button>
+              {geoError && <p className="mt-1 text-xs text-red-600">{geoError}</p>}
             </div>
 
             <div className="grid gap-6 sm:grid-cols-2">

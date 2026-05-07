@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import L from "leaflet";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
+import { LocateFixed } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
@@ -13,6 +14,22 @@ import type { DonationMapFeature } from "@/types/donation-map";
 import { createDonationMarker } from "./DonationMarker";
 import MapLegend from "./MapLegend";
 import UserLocationMarker from "./UserLocationMarker";
+
+function FlyToUserLocationButton({ location }: { location: UserLocation | null }) {
+  const map = useMap();
+  if (!location) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => map.flyTo([location.lat, location.lng], 15, { animate: true })}
+      title="Pergi ke lokasi saya"
+      aria-label="Pergi ke lokasi saya"
+      className="absolute bottom-6 right-4 z-[500] inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--brand-200,#bbf7d0)] bg-white text-[var(--brand-700,#15803d)] shadow-[0_8px_20px_rgba(15,23,42,0.18)] hover:bg-[var(--brand-50,#f0fdf4)]"
+    >
+      <LocateFixed className="h-5 w-5" />
+    </button>
+  );
+}
 
 const INDONESIA_CENTER: [number, number] = [-2.5, 118];
 const INDONESIA_ZOOM = 5;
@@ -100,6 +117,7 @@ export default function DonationMap({
         <DonationClusterLayer features={features} />
         <FitDonationBounds features={features} userLocation={userLocation} />
         <UserLocationMarker location={userLocation} />
+        <FlyToUserLocationButton location={userLocation} />
       </MapContainer>
 
       <MapLegend />
