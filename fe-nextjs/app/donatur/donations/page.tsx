@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, CalendarClock, Filter, MapPin, Package, Plus, Search, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarClock, Filter, MapPin, Package, Plus, Search, X } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
 import {
   mapApiDonationToDonor,
@@ -245,6 +245,14 @@ function DonationCard({ donation, index }: { donation: DonorDonation; index: num
       <div className="mt-4 text-[10px] uppercase tracking-[0.18em] text-[var(--text-mid)]/70">
         {timeAgo(donation.created_at)}
       </div>
+
+      <Link
+        href={`/donatur/donations/${donation.id}`}
+        className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--brand-100)] bg-[var(--brand-50)] px-4 py-2.5 text-sm font-semibold text-[var(--brand-700)] transition-colors hover:border-[var(--brand-300)] hover:bg-[var(--brand-100)]"
+      >
+        Lihat detail
+        <ArrowRight className="h-4 w-4" />
+      </Link>
     </motion.article>
   );
 }

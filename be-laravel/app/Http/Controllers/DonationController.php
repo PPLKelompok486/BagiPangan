@@ -83,13 +83,55 @@ class DonationController extends Controller
 
     public function show($id)
     {
-        $donation = Donation::with(['user', 'category'])->find($id);
+        $donation = Donation::with([
+            'user:id,name,phone,city,address,organization,company_name',
+            'category:id,name',
+            'claims',
+        ])->find($id);
 
         if (!$donation) {
             return response()->json(['message' => 'Donasi tidak ditemukan'], 404);
         }
 
-        return response()->json(['data' => $donation]);
+        $activeClaims = $donation->claims->whereIn('status', [
+            Claim::STATUS_REQUESTED,
+            Claim::STATUS_APPROVED,
+            Claim::STATUS_COMPLETED,
+        ])->count();
+
+        $remainingPortion = max(0, ($donation->portion_count ?? 0) - $activeClaims);
+
+        $donor = $donation->user;
+        $photoUrl = $donation->photo_url ?? null;
+
+        return response()->json([
+            'data' => [
+                'id_donation' => $donation->id,
+                'id' => $donation->id,
+                'title' => $donation->title,
+                'description' => $donation->description,
+                'category' => $donation->category?->name,
+                'category_id' => $donation->category_id,
+                'portion' => $donation->portion_count,
+                'remaining_portion' => $remainingPortion,
+                'location' => $donation->location_city,
+                'location_address' => $donation->location_address,
+                'latitude' => $donation->latitude,
+                'longitude' => $donation->longitude,
+                'expired_at' => optional($donation->available_until)->toIso8601String(),
+                'available_from' => optional($donation->available_from)->toIso8601String(),
+                'status' => $donation->status,
+                'photo_url' => $photoUrl,
+                'created_at' => optional($donation->created_at)->toIso8601String(),
+                'donor' => $donor ? [
+                    'id' => $donor->id,
+                    'name' => $donor->name,
+                    'phone' => $donor->phone,
+                    'address' => $donor->address ?? $donor->city,
+                    'organization' => $donor->organization ?? $donor->company_name,
+                ] : null,
+            ],
+        ]);
     }
 
     public function update(Request $request, $id)
