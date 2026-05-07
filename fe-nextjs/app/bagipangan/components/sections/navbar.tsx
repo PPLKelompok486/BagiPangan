@@ -17,10 +17,10 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>("");
-  const [user] = useState<AuthUser | null>(() => {
-    if (typeof window === "undefined") return null;
-    return getUser();
-  });
+  const [user, setUser] = useState<AuthUser | null>(null);
+  useEffect(() => {
+    setUser(getUser());
+  }, []);
   const navItemsRef = useRef<(HTMLButtonElement | null)[]>([]);
   const [hoverRect, setHoverRect] = useState<{ left: number; width: number } | null>(null);
   const navContainerRef = useRef<HTMLDivElement>(null);

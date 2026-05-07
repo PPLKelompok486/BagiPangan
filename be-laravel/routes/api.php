@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DonationManagementController;
 use App\Http\Controllers\Admin\ModerationController;
@@ -67,5 +68,6 @@ Route::middleware('token.auth')->group(function () {
 });
 
 Route::prefix('admin')->middleware(['token.auth', 'admin'])->group(function () {
+    Route::get('/dashboard', [AdminDashboardController::class, 'index']);
     Route::get('/fund-donations/monitoring', [\App\Http\Controllers\Api\FundDonationController::class, 'index']);
 });
