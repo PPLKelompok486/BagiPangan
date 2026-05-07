@@ -12,6 +12,9 @@ export type ApiDonation = {
   description: string;
   location_city: string;
   location_address: string | null;
+  address_detail?: string | null;
+  latitude?: string | number | null;
+  longitude?: string | number | null;
   available_from: string | null;
   available_until: string | null;
   portion_count: number;
@@ -24,7 +27,8 @@ export type ApiDonation = {
     city?: string | null;
     phone?: string | null;
   } | null;
-  category?: { id: number; name: string } | null;
+  category?: { id: number; name: string } | string | null;
+  category_obj?: { id: number; name: string } | null;
 };
 
 export type DonationDonor = {
@@ -41,6 +45,12 @@ export type Donation = {
   quantity: string;
   pickup_address: string;
   pickup_time: string;
+  available_from?: string | null;
+  available_until?: string | null;
+  address_detail?: string | null;
+  has_coordinates: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
   status: DonationStatus;
   created_at: string;
   updated_at: string;
@@ -124,7 +134,25 @@ function resolvePickupAddress(donation: ApiDonation): string {
   return parts.join(", ") || donation.location_city || "Lokasi belum diisi";
 }
 
+function normalizeCategory(
+  donation: ApiDonation,
+): { id: number; name: string } | null {
+  if (donation.category_obj) return donation.category_obj;
+  const c = donation.category;
+  if (!c) return null;
+  if (typeof c === "string") return { id: 0, name: c };
+  return c;
+}
+
+function toNumber(v: string | number | null | undefined): number | null {
+  if (v === null || v === undefined || v === "") return null;
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
 export function mapApiDonation(donation: ApiDonation): Donation {
+  const lat = toNumber(donation.latitude ?? null);
+  const lng = toNumber(donation.longitude ?? null);
   return {
     id: donation.id,
     title: donation.title,
@@ -132,6 +160,12 @@ export function mapApiDonation(donation: ApiDonation): Donation {
     quantity: `${donation.portion_count} porsi`,
     pickup_address: resolvePickupAddress(donation),
     pickup_time: resolvePickupTime(donation),
+    available_from: donation.available_from ?? null,
+    available_until: donation.available_until ?? null,
+    address_detail: donation.address_detail ?? null,
+    has_coordinates: lat !== null && lng !== null,
+    latitude: lat,
+    longitude: lng,
     status: donation.status,
     created_at: donation.created_at,
     updated_at: donation.updated_at,
@@ -143,7 +177,7 @@ export function mapApiDonation(donation: ApiDonation): Donation {
           phone: donation.user.phone ?? null,
         }
       : undefined,
-    category: donation.category ?? null,
+    category: normalizeCategory(donation),
   };
 }
 

@@ -104,6 +104,19 @@ class DonationController extends Controller
         $donor = $donation->user;
         $photoUrl = $donation->photo_url ?? null;
 
+        $myClaim = null;
+        if ($userId = Auth::id()) {
+            $myClaim = Claim::where('donation_id', $donation->id)
+                ->where('receiver_id', $userId)
+                ->whereIn('status', [
+                    Claim::STATUS_REQUESTED,
+                    Claim::STATUS_APPROVED,
+                    Claim::STATUS_COMPLETED,
+                ])
+                ->select(['id', 'donation_id', 'status', 'proof_image_url', 'claimed_at', 'completed_at'])
+                ->first();
+        }
+
         return response()->json([
             'data' => [
                 'id_donation' => $donation->id,
@@ -112,17 +125,26 @@ class DonationController extends Controller
                 'description' => $donation->description,
                 'category' => $donation->category?->name,
                 'category_id' => $donation->category_id,
+                'category_obj' => $donation->category ? [
+                    'id' => $donation->category->id,
+                    'name' => $donation->category->name,
+                ] : null,
                 'portion' => $donation->portion_count,
+                'portion_count' => $donation->portion_count,
                 'remaining_portion' => $remainingPortion,
                 'location' => $donation->location_city,
+                'location_city' => $donation->location_city,
                 'location_address' => $donation->location_address,
+                'address_detail' => $donation->address_detail ?? null,
                 'latitude' => $donation->latitude,
                 'longitude' => $donation->longitude,
                 'expired_at' => optional($donation->available_until)->toIso8601String(),
                 'available_from' => optional($donation->available_from)->toIso8601String(),
+                'available_until' => optional($donation->available_until)->toIso8601String(),
                 'status' => $donation->status,
                 'photo_url' => $photoUrl,
                 'created_at' => optional($donation->created_at)->toIso8601String(),
+                'updated_at' => optional($donation->updated_at)->toIso8601String(),
                 'donor' => $donor ? [
                     'id' => $donor->id,
                     'name' => $donor->name,
@@ -130,7 +152,14 @@ class DonationController extends Controller
                     'address' => $donor->address ?? $donor->city,
                     'organization' => $donor->organization ?? $donor->company_name,
                 ] : null,
+                'user' => $donor ? [
+                    'id' => $donor->id,
+                    'name' => $donor->name,
+                    'city' => $donor->city,
+                    'phone' => $donor->phone,
+                ] : null,
             ],
+            'my_claim' => $myClaim,
         ]);
     }
 
