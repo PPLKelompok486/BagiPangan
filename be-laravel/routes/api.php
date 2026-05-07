@@ -70,4 +70,5 @@ Route::middleware('token.auth')->group(function () {
 Route::prefix('admin')->middleware(['token.auth', 'admin'])->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index']);
     Route::get('/fund-donations/monitoring', [\App\Http\Controllers\Api\FundDonationController::class, 'index']);
+    Route::get('/reports/analytics', [ReportController::class, 'analytics']);
 });
