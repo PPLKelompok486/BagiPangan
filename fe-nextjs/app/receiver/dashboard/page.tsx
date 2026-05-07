@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Clock, Package, ArrowRight, Flame, Search, Filter, X, RefreshCw } from "lucide-react";
+import { MapPin, Clock, Package, ArrowRight, Flame, Search, Filter, X, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import useSWR from "swr";
 import { ApiError, apiFetch, getUser, type AuthUser } from "@/lib/api";
 import { type ApiDonation, type Donation, formatPickupTime, imageForDonation, mapApiDonation } from "@/lib/donations";
@@ -16,12 +16,26 @@ const EASE_OUT_QUART: [number, number, number, number] = [0.16, 1, 0.3, 1];
 type DonationsPayload = {
   list: Donation[];
   fetchedAt: number;
+  meta?: PaginationMeta;
 };
+
+type PaginationMeta = {
+  current_page: number;
+  last_page: number;
+  total: number;
+  per_page: number;
+};
+
+type CategoryOption = { id: number; name: string };
 
 // SWR fetcher — apiFetch already throws ApiError on non-OK
 const fetcher = async (path: string): Promise<DonationsPayload> => {
-  const res = await apiFetch<{ data: ApiDonation[] }>(path);
-  return { list: res.data.map(mapApiDonation), fetchedAt: Date.now() };
+  const res = await apiFetch<{ data: ApiDonation[]; meta?: PaginationMeta }>(path);
+  return {
+    list: res.data.map(mapApiDonation),
+    fetchedAt: Date.now(),
+    meta: res.meta,
+  };
 };
 
 type FilterKey = "all" | "urgent" | "today";
@@ -54,22 +68,54 @@ export default function ReceiverDashboard() {
   // Data — SWR with background refresh every 60 s (replaces setInterval + setTick)
   // No full component re-render: only the parts that use `data` will update.
   // ---------------------------------------------------------------------------
+  const [query, setQuery] = useState("");
+  const [filterKey, setFilterKey] = useState<FilterKey>("all");
+  const [categoryId, setCategoryId] = useState<string>("");
+  const [page, setPage] = useState(1);
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const deferredQuery = useDeferredValue(query);
+
+  useEffect(() => {
+    let active = true;
+    apiFetch<{ data: CategoryOption[] }>("/donations/categories")
+      .then((res) => {
+        if (!active) return;
+        setCategories(Array.isArray(res?.data) ? res.data : []);
+      })
+      .catch(() => active && setCategories([]));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [deferredQuery, categoryId, filterKey]);
+
+  const swrKey = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set("per_page", "30");
+    params.set("page", String(page));
+    if (deferredQuery.trim()) params.set("keyword", deferredQuery.trim());
+    if (categoryId) params.set("category_id", categoryId);
+    if (filterKey === "urgent") params.set("sort", "expiry_soon");
+    return `/donations?${params.toString()}`;
+  }, [deferredQuery, categoryId, filterKey, page]);
+
   const {
     data: donationsPayload,
     error: swrError,
     isLoading,
     mutate,
     isValidating,
-  } = useSWR<DonationsPayload>("/donations", fetcher, {
+  } = useSWR<DonationsPayload>(swrKey, fetcher, {
     refreshInterval: 60_000,      // background poll — no re-render tsunami
     revalidateOnFocus: false,     // don't refetch when user tabs back in
     dedupingInterval: 30_000,
     keepPreviousData: true,       // show stale data while refreshing
     onError: () => {},            // errors handled via swrError below
   });
-
-  const [query, setQuery] = useState("");
-  const [filterKey, setFilterKey] = useState<FilterKey>("all");
 
   const donations = donationsPayload?.list ?? null;
   const fetchedAt = donationsPayload?.fetchedAt ?? 0;
@@ -287,6 +333,23 @@ export default function ReceiverDashboard() {
               </motion.div>
             )}
           </AnimatePresence>
+
+          {categories.length > 0 && (
+            <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-1">
+              <FilterChip active={categoryId === ""} onClick={() => setCategoryId("")}>
+                Semua kategori
+              </FilterChip>
+              {categories.map((cat) => (
+                <FilterChip
+                  key={cat.id}
+                  active={categoryId === String(cat.id)}
+                  onClick={() => setCategoryId(String(cat.id))}
+                >
+                  {cat.name}
+                </FilterChip>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -347,6 +410,32 @@ export default function ReceiverDashboard() {
             ))}
           </AnimatePresence>
         </motion.div>
+      )}
+
+      {donationsPayload?.meta && donationsPayload.meta.last_page > 1 && (
+        <div className="mt-8 flex items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1 || isValidating}
+            aria-label="Halaman sebelumnya"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--brand-100)] bg-white text-[var(--brand-700)] hover:border-[var(--brand-300)] disabled:opacity-50"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <span className="text-sm font-semibold text-[var(--brand-950)]">
+            {donationsPayload.meta.current_page} / {donationsPayload.meta.last_page}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.min(donationsPayload.meta!.last_page, p + 1))}
+            disabled={page >= donationsPayload.meta.last_page || isValidating}
+            aria-label="Halaman berikutnya"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--brand-100)] bg-white text-[var(--brand-700)] hover:border-[var(--brand-300)] disabled:opacity-50"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
       )}
     </div>
   );

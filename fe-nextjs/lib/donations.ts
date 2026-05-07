@@ -6,6 +6,16 @@ export type DonationStatus =
   | "completed"
   | "cancelled";
 
+export type PaginatedDonations = {
+  data: ApiDonation[];
+  meta?: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
+};
+
 export type ApiDonation = {
   id: number;
   title: string;

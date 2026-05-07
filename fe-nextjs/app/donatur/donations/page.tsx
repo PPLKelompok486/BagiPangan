@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, CalendarClock, Filter, MapPin, Package, Plus, Search, X } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
@@ -26,11 +27,40 @@ const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "cancelled", label: "Dibatalkan" },
 ];
 
+function isFilterKey(value: string | null): value is FilterKey {
+  if (!value) return false;
+  return ["all", "approved", "claimed", "pending", "rejected", "completed", "cancelled"].includes(value);
+}
+
 export default function DonorDonationsListPage() {
+  return (
+    <Suspense fallback={null}>
+      <DonorDonationsListInner />
+    </Suspense>
+  );
+}
+
+function DonorDonationsListInner() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   const [donations, setDonations] = useState<DonorDonation[] | null>(null);
   const [error, setError] = useState("");
-  const [query, setQuery] = useState("");
-  const [filterKey, setFilterKey] = useState<FilterKey>("all");
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
+  const [filterKey, setFilterKey] = useState<FilterKey>(() => {
+    const raw = searchParams.get("status");
+    return isFilterKey(raw) ? raw : "all";
+  });
+
+  // Sync filter state to URL
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (query.trim()) params.set("q", query.trim());
+    if (filterKey !== "all") params.set("status", filterKey);
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [query, filterKey, pathname, router]);
 
   useEffect(() => {
     let active = true;
