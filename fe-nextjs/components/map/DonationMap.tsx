@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import L from "leaflet";
+import { useEffect, useMemo, useRef, useState } from "react";
+import L, { type LatLngBounds } from "leaflet";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import { LocateFixed } from "lucide-react";
 import "leaflet/dist/leaflet.css";
@@ -15,18 +15,33 @@ import { createDonationMarker } from "./DonationMarker";
 import MapLegend from "./MapLegend";
 import UserLocationMarker from "./UserLocationMarker";
 
-function FlyToUserLocationButton({ location }: { location: UserLocation | null }) {
+function FlyToUserLocationButton({
+  location,
+  loading,
+}: {
+  location: UserLocation | null;
+  loading: boolean;
+}) {
   const map = useMap();
-  if (!location) return null;
+  if (!location && !loading) return null;
+  const disabled = !location || loading;
   return (
     <button
       type="button"
-      onClick={() => map.flyTo([location.lat, location.lng], 15, { animate: true })}
-      title="Pergi ke lokasi saya"
-      aria-label="Pergi ke lokasi saya"
-      className="absolute bottom-6 right-4 z-[500] inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--brand-200,#bbf7d0)] bg-white text-[var(--brand-700,#15803d)] shadow-[0_8px_20px_rgba(15,23,42,0.18)] hover:bg-[var(--brand-50,#f0fdf4)]"
+      onClick={() => location && map.flyTo([location.lat, location.lng], 15, { animate: true })}
+      disabled={disabled}
+      title={loading ? "Mendeteksi lokasi..." : "Pergi ke lokasi saya"}
+      aria-label={loading ? "Mendeteksi lokasi" : "Pergi ke lokasi saya"}
+      className="absolute bottom-6 right-4 z-[500] inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--brand-200,#bbf7d0)] bg-white text-[var(--brand-700,#15803d)] shadow-[0_8px_20px_rgba(15,23,42,0.18)] hover:bg-[var(--brand-50,#f0fdf4)] disabled:opacity-60 disabled:cursor-not-allowed"
     >
-      <LocateFixed className="h-5 w-5" />
+      {loading ? (
+        <span
+          aria-hidden="true"
+          className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[var(--brand-200,#bbf7d0)] border-t-[var(--brand-600,#16a34a)]"
+        />
+      ) : (
+        <LocateFixed className="h-5 w-5" />
+      )}
     </button>
   );
 }
@@ -34,54 +49,88 @@ function FlyToUserLocationButton({ location }: { location: UserLocation | null }
 const INDONESIA_CENTER: [number, number] = [-2.5, 118];
 const INDONESIA_ZOOM = 5;
 
+type MarkerWithDonationId = L.Marker & {
+  options: L.MarkerOptions & { donationId?: number };
+};
+
 function DonationClusterLayer({ features }: { features: DonationMapFeature[] }) {
   const map = useMap();
+  const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
 
+  // Create the cluster group once and attach/detach from the map.
   useEffect(() => {
     const cluster = L.markerClusterGroup({
       showCoverageOnHover: false,
       spiderfyOnMaxZoom: true,
-      maxClusterRadius: 48,
+      maxClusterRadius: 60,
     });
-
-    for (const feature of features) {
-      cluster.addLayer(createDonationMarker(feature));
-    }
-
+    clusterRef.current = cluster;
     map.addLayer(cluster);
 
     return () => {
       map.removeLayer(cluster);
+      clusterRef.current = null;
     };
-  }, [features, map]);
+  }, [map]);
+
+  // Incrementally diff markers when `features` changes — avoid full clearLayers rebuild.
+  useEffect(() => {
+    const cluster = clusterRef.current;
+    if (!cluster) return;
+
+    const existingMarkers = cluster.getLayers() as MarkerWithDonationId[];
+    const existingIds = new Set<number>();
+    for (const layer of existingMarkers) {
+      const id = layer.options.donationId;
+      if (typeof id === "number") existingIds.add(id);
+    }
+
+    const newIds = new Set<number>(features.map((feature) => feature.properties.id));
+
+    // Remove markers that are no longer in the data.
+    for (const layer of existingMarkers) {
+      const id = layer.options.donationId;
+      if (typeof id !== "number" || !newIds.has(id)) {
+        cluster.removeLayer(layer);
+      }
+    }
+
+    // Add markers that aren't already on the cluster.
+    for (const feature of features) {
+      if (!existingIds.has(feature.properties.id)) {
+        cluster.addLayer(createDonationMarker(feature));
+      }
+    }
+  }, [features]);
 
   return null;
 }
 
 function FitDonationBounds({
-  features,
-  userLocation,
+  bounds,
+  resetKey,
 }: {
-  features: DonationMapFeature[];
-  userLocation: UserLocation | null;
+  bounds: LatLngBounds | null;
+  resetKey: string;
 }) {
   const map = useMap();
-  const bounds = useMemo(() => {
-    const points = features.map((feature) => {
-      const [lng, lat] = feature.geometry.coordinates;
-      return [lat, lng] as [number, number];
-    });
-    return points.length > 0 ? L.latLngBounds(points) : null;
-  }, [features]);
+  const fittedRef = useRef(false);
+
+  // Reset the "have we fitted yet" flag whenever the filter key changes
+  // so a fresh filter run re-fits to the new bounds.
+  useEffect(() => {
+    fittedRef.current = false;
+  }, [resetKey]);
 
   useEffect(() => {
-    if (userLocation || !bounds) return;
+    if (!bounds || fittedRef.current) return;
     if (bounds.getNorthEast().equals(bounds.getSouthWest())) {
       map.setView(bounds.getCenter(), 13, { animate: true });
-      return;
+    } else {
+      map.fitBounds(bounds, { padding: [42, 42], maxZoom: 14 });
     }
-    map.fitBounds(bounds, { padding: [42, 42], maxZoom: 14 });
-  }, [bounds, map, userLocation]);
+    fittedRef.current = true;
+  }, [bounds, map]);
 
   return null;
 }
@@ -89,11 +138,24 @@ function FitDonationBounds({
 export default function DonationMap({
   features,
   userLocation,
+  geolocationLoading = false,
+  filterKey = "",
 }: {
   features: DonationMapFeature[];
   userLocation: UserLocation | null;
+  geolocationLoading?: boolean;
+  filterKey?: string;
 }) {
   const [tileError, setTileError] = useState(false);
+
+  const bounds = useMemo<LatLngBounds | null>(() => {
+    if (features.length === 0) return null;
+    const points = features.map((feature) => {
+      const [lng, lat] = feature.geometry.coordinates;
+      return [lat, lng] as [number, number];
+    });
+    return L.latLngBounds(points);
+  }, [features]);
 
   return (
     <div className="relative h-full min-h-[60vh] w-full overflow-hidden rounded-2xl" data-testid="donation-map">
@@ -115,9 +177,9 @@ export default function DonationMap({
           }}
         />
         <DonationClusterLayer features={features} />
-        <FitDonationBounds features={features} userLocation={userLocation} />
+        <FitDonationBounds bounds={bounds} resetKey={filterKey} />
         <UserLocationMarker location={userLocation} />
-        <FlyToUserLocationButton location={userLocation} />
+        <FlyToUserLocationButton location={userLocation} loading={geolocationLoading} />
       </MapContainer>
 
       <MapLegend />

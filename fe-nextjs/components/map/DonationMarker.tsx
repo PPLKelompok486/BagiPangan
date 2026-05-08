@@ -58,7 +58,8 @@ export function createDonationMarker(feature: DonationMapFeature): L.Marker {
   const marker = L.marker([lat, lng], {
     icon: createDonationIcon(props.status),
     title: props.title,
-  });
+    donationId: props.id,
+  } as L.MarkerOptions);
 
   marker.bindPopup(`
     <article style="width:240px;font-family:inherit">
