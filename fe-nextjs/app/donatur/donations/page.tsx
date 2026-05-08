@@ -7,13 +7,19 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, CalendarClock, Filter, MapPin, Package, Plus, Search, X } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
 import {
+  formatTime,
   mapApiDonationToDonor,
   STATUS_LABEL,
   STATUS_TONE,
+  timeAgo,
   type ApiDonation,
   type DonorDonation,
   type DonorDonationStatus,
-} from "../lib/mock-donations";
+} from "@/lib/donations";
+import { easeOut } from "@/app/bagipangan/lib/motion";
+import { FilterChip } from "@/components/ui/FilterChip";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { DonationSkeletonGrid } from "@/components/ui/DonationCardSkeleton";
 
 type FilterKey = "all" | DonorDonationStatus;
 
@@ -167,10 +173,22 @@ function DonorDonationsListInner() {
         </div>
       )}
 
-      {donations === null && <DonationListSkeleton />}
+      {donations === null && <DonationSkeletonGrid count={6} />}
 
       {donations && donations.length === 0 && !error && (
-        <EmptyState />
+        <EmptyState
+          title="Belum ada donasi"
+          description="Mulai dengan membuat donasi pertama agar komunitas penerima bisa melihatnya."
+          action={
+            <Link
+              href="/donatur/donations/new"
+              className="inline-flex items-center gap-2 rounded-xl bg-[var(--brand-600)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--brand-700)]"
+            >
+              <Plus className="h-4 w-4" />
+              Buat donasi baru
+            </Link>
+          }
+        />
       )}
 
       {filtered && filtered.length === 0 && donations && donations.length > 0 && (
@@ -210,32 +228,6 @@ function DonorDonationsListInner() {
   );
 }
 
-function FilterChip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <motion.button
-      type="button"
-      onClick={onClick}
-      whileTap={{ scale: 0.95 }}
-      aria-pressed={active}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors ${
-        active
-          ? "bg-[var(--brand-600)] text-white border-[var(--brand-600)]"
-          : "bg-white text-[var(--text-mid)] border-[var(--brand-100)] hover:border-[var(--brand-300)] hover:text-[var(--brand-700)]"
-      }`}
-    >
-      {children}
-    </motion.button>
-  );
-}
-
 function DonationCard({ donation, index }: { donation: DonorDonation; index: number }) {
   return (
     <motion.article
@@ -243,7 +235,7 @@ function DonationCard({ donation, index }: { donation: DonorDonation; index: num
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.96 }}
-      transition={{ duration: 0.4, delay: Math.min(index, 6) * 0.04, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.4, delay: Math.min(index, 6) * 0.04, ease: easeOut }}
       whileHover={{ y: -2 }}
       className="group relative flex flex-col rounded-2xl border border-[var(--brand-100)] bg-white p-5 shadow-[var(--shadow-card)] hover:border-[var(--brand-300)] transition"
     >
@@ -279,79 +271,3 @@ function DonationCard({ donation, index }: { donation: DonorDonation; index: num
   );
 }
 
-function DonationListSkeleton() {
-  return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div
-          key={i}
-          className="h-44 animate-pulse rounded-2xl border border-[var(--brand-100)] bg-white"
-        />
-      ))}
-    </div>
-  );
-}
-
-function EmptyState() {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className="rounded-3xl border border-[var(--brand-100)] bg-white p-10 text-center"
-    >
-      <div className="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--brand-50)] text-[var(--brand-600)]">
-        <Package className="h-6 w-6" />
-      </div>
-      <h2 className="bagi-display text-2xl font-semibold text-[var(--brand-950)]">
-        Belum ada donasi
-      </h2>
-      <p className="mx-auto mt-2 max-w-md text-sm text-[var(--text-mid)]">
-        Mulai dengan membuat donasi pertama agar komunitas penerima bisa melihatnya.
-      </p>
-      <div className="mt-5 flex justify-center">
-        <Link
-          href="/donatur/donations/new"
-          className="inline-flex items-center gap-2 rounded-xl bg-[var(--brand-600)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--brand-700)]"
-        >
-          <Plus className="h-4 w-4" />
-          Buat donasi baru
-        </Link>
-      </div>
-    </motion.div>
-  );
-}
-
-function formatTime(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString("id-ID", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
-}
-
-function timeAgo(iso: string): string {
-  const t = Date.parse(iso);
-  if (Number.isNaN(t)) return "";
-  const diffMin = Math.round((Date.now() - t) / 60_000);
-  if (Math.abs(diffMin) < 1) return "baru saja";
-  if (diffMin > 0) {
-    if (diffMin < 60) return `${diffMin} menit lalu`;
-    const h = Math.round(diffMin / 60);
-    if (h < 24) return `${h} jam lalu`;
-    const d = Math.round(h / 24);
-    return `${d} hari lalu`;
-  }
-  const fwd = -diffMin;
-  if (fwd < 60) return `dalam ${fwd} menit`;
-  const h = Math.round(fwd / 60);
-  if (h < 24) return `dalam ${h} jam`;
-  const d = Math.round(h / 24);
-  return `dalam ${d} hari`;
-}

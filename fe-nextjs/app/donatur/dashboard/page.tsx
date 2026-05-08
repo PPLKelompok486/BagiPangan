@@ -24,16 +24,19 @@ import {
 import { ApiError, apiFetch, getUser, type AuthUser } from "@/lib/api";
 import {
   buildImpactEvents,
+  formatTime,
   mapApiDonationToDonor,
   STATUS_LABEL,
   STATUS_TONE,
+  timeAgo,
   type ApiDonation,
   type DonorDonation,
   type DonorDonationStatus,
   type ImpactEvent,
-} from "../lib/mock-donations";
-
-const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
+} from "@/lib/donations";
+import { easeOut } from "@/app/bagipangan/lib/motion";
+import { FilterChip } from "@/components/ui/FilterChip";
+import { DonationSkeletonGrid } from "@/components/ui/DonationCardSkeleton";
 
 type FilterKey = "all" | DonorDonationStatus;
 
@@ -123,7 +126,7 @@ export default function DonaturDashboard() {
       <motion.section
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.55, ease: EASE }}
+        transition={{ duration: 0.55, ease: easeOut }}
         className="relative overflow-hidden rounded-3xl mb-6 border border-[var(--brand-100)]"
       >
         <div
@@ -293,7 +296,9 @@ export default function DonaturDashboard() {
             </div>
           )}
 
-          {donations === null && <DonationListSkeleton />}
+          {donations === null && (
+            <DonationSkeletonGrid count={4} className="grid gap-4 sm:grid-cols-2" />
+          )}
 
           {isFirstTime && <DonorEmptyState />}
 
@@ -349,7 +354,7 @@ function CountUp({ value }: { value: number }) {
   const mv = useMotionValue(0);
   const rounded = useTransform(mv, (v) => Math.round(v).toString());
   useEffect(() => {
-    const controls = animate(mv, value, { duration: 0.9, ease: EASE });
+    const controls = animate(mv, value, { duration: 0.9, ease: easeOut });
     return () => controls.stop();
   }, [mv, value]);
   return <motion.span aria-label={String(value)}>{rounded}</motion.span>;
@@ -381,7 +386,7 @@ function KpiCard({
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: EASE }}
+      transition={{ duration: 0.4, ease: easeOut }}
       className="relative overflow-hidden rounded-2xl border border-[var(--brand-100)] bg-white p-5 shadow-[var(--shadow-card)]"
     >
       <div className="flex items-start justify-between gap-3">
@@ -402,32 +407,6 @@ function KpiCard({
   );
 }
 
-function FilterChip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <motion.button
-      type="button"
-      onClick={onClick}
-      whileTap={{ scale: 0.95 }}
-      aria-pressed={active}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors ${
-        active
-          ? "bg-[var(--brand-600)] text-white border-[var(--brand-600)]"
-          : "bg-white text-[var(--text-mid)] border-[var(--brand-100)] hover:border-[var(--brand-300)] hover:text-[var(--brand-700)]"
-      }`}
-    >
-      {children}
-    </motion.button>
-  );
-}
-
 function DonationRow({ donation, index }: { donation: DonorDonation; index: number }) {
   const pickup = formatTime(donation.pickup_time);
   return (
@@ -436,7 +415,7 @@ function DonationRow({ donation, index }: { donation: DonorDonation; index: numb
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.96 }}
-      transition={{ duration: 0.4, delay: Math.min(index, 6) * 0.04, ease: EASE }}
+      transition={{ duration: 0.4, delay: Math.min(index, 6) * 0.04, ease: easeOut }}
       whileHover={{ y: -2 }}
       className="group relative flex flex-col rounded-2xl border border-[var(--brand-100)] bg-white p-5 shadow-[var(--shadow-card)] hover:border-[var(--brand-300)] transition"
     >
@@ -497,25 +476,12 @@ function DonationRow({ donation, index }: { donation: DonorDonation; index: numb
   );
 }
 
-function DonationListSkeleton() {
-  return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div
-          key={i}
-          className="h-44 animate-pulse rounded-2xl border border-[var(--brand-100)] bg-white"
-        />
-      ))}
-    </div>
-  );
-}
-
 function DonorEmptyState() {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: EASE }}
+      transition={{ duration: 0.4, ease: easeOut }}
       className="relative overflow-hidden rounded-3xl border border-dashed border-[var(--brand-300)] bg-white p-10 text-center"
     >
       <div
@@ -700,38 +666,3 @@ function TrustBadge() {
   );
 }
 
-/* -------------------- HELPERS -------------------- */
-
-function formatTime(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString("id-ID", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
-}
-
-function timeAgo(iso: string): string {
-  const t = Date.parse(iso);
-  if (Number.isNaN(t)) return "";
-  const diffMin = Math.round((Date.now() - t) / 60_000);
-  if (Math.abs(diffMin) < 1) return "baru saja";
-  if (diffMin > 0) {
-    if (diffMin < 60) return `${diffMin} menit lalu`;
-    const h = Math.round(diffMin / 60);
-    if (h < 24) return `${h} jam lalu`;
-    const d = Math.round(h / 24);
-    return `${d} hari lalu`;
-  }
-  const fwd = -diffMin;
-  if (fwd < 60) return `dalam ${fwd} menit`;
-  const h = Math.round(fwd / 60);
-  if (h < 24) return `dalam ${h} jam`;
-  const d = Math.round(h / 24);
-  return `dalam ${d} hari`;
-}

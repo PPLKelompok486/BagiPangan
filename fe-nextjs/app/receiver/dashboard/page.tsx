@@ -4,14 +4,17 @@ import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Clock, Package, ArrowRight, Flame, Search, Filter, X, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { MapPin, Clock, ArrowRight, Flame, Search, Filter, X, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import useSWR from "swr";
 import { ApiError, apiFetch, getUser, type AuthUser } from "@/lib/api";
 import { type ApiDonation, type Donation, formatPickupTime, imageForDonation, mapApiDonation } from "@/lib/donations";
 import { CountUp } from "@/lib/count-up";
+import { easeOut } from "@/app/bagipangan/lib/motion";
+import { FilterChip } from "@/components/ui/FilterChip";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { DonationSkeletonGrid } from "@/components/ui/DonationCardSkeleton";
 
 const URGENT_WINDOW_HOURS = 6;
-const EASE_OUT_QUART: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
 type DonationsPayload = {
   list: Donation[];
@@ -192,7 +195,7 @@ export default function ReceiverDashboard() {
       <motion.section
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.55, ease: EASE_OUT_QUART }}
+        transition={{ duration: 0.55, ease: easeOut }}
         className="relative overflow-hidden rounded-3xl mb-8 border border-[var(--brand-100)]"
       >
         {/* Next.js Image: WebP auto-conversion, lazy, properly sized */}
@@ -335,7 +338,7 @@ export default function ReceiverDashboard() {
           </AnimatePresence>
 
           {categories.length > 0 && (
-            <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-1">
+            <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-none">
               <FilterChip active={categoryId === ""} onClick={() => setCategoryId("")}>
                 Semua kategori
               </FilterChip>
@@ -369,7 +372,9 @@ export default function ReceiverDashboard() {
       {/* ------------------------------------------------------------------ */}
       {/* STATES                                                               */}
       {/* ------------------------------------------------------------------ */}
-      {isLoading && !donations && <SkeletonGrid />}
+      {isLoading && !donations && (
+        <DonationSkeletonGrid count={6} className="grid gap-5 md:grid-cols-2 lg:grid-cols-3" />
+      )}
 
       {donations && donations.length === 0 && !error && (
         <EmptyState
@@ -455,7 +460,7 @@ function DonationCard({ donation, index }: { donation: Donation; index: number }
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.96 }}
-      transition={{ duration: 0.45, delay: Math.min(index, 8) * 0.05, ease: EASE_OUT_QUART }}
+      transition={{ duration: 0.45, delay: Math.min(index, 8) * 0.05, ease: easeOut }}
       whileHover="hover"
       className="group relative bg-white border border-[var(--brand-100)] rounded-3xl overflow-hidden flex flex-col shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-soft)] hover:border-[var(--brand-300)] transition-all"
     >
@@ -466,7 +471,7 @@ function DonationCard({ donation, index }: { donation: Donation; index: number }
           loading="lazy"
           className="h-full w-full object-cover"
           variants={{ hover: { scale: 1.06 } }}
-          transition={{ duration: 0.5, ease: EASE_OUT_QUART }}
+          transition={{ duration: 0.5, ease: easeOut }}
         />
         <div
           aria-hidden="true"
@@ -534,49 +539,6 @@ function DonationCard({ donation, index }: { donation: Donation; index: number }
   );
 }
 
-function FilterChip({
-  active,
-  onClick,
-  children,
-  tone,
-  count,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-  tone?: "hot" | "warm";
-  count?: number;
-}) {
-  const activeClass = active
-    ? tone === "hot"
-      ? "bg-red-600 text-white border-red-600"
-      : tone === "warm"
-        ? "bg-amber-500 text-white border-amber-500"
-        : "bg-[var(--brand-600)] text-white border-[var(--brand-600)]"
-    : "bg-white text-[var(--text-mid)] border-[var(--brand-100)] hover:border-[var(--brand-300)] hover:text-[var(--brand-700)]";
-
-  return (
-    <motion.button
-      type="button"
-      onClick={onClick}
-      whileTap={{ scale: 0.95 }}
-      aria-pressed={active}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors ${activeClass}`}
-    >
-      {children}
-      {typeof count === "number" && count > 0 && (
-        <span
-          className={`text-[10px] font-bold px-1.5 min-w-[18px] h-[18px] rounded-full inline-flex items-center justify-center ${
-            active ? "bg-white/25" : "bg-[var(--brand-50)] text-[var(--brand-700)]"
-          }`}
-        >
-          {count}
-        </span>
-      )}
-    </motion.button>
-  );
-}
-
 function StatChip({
   label,
   tone,
@@ -606,51 +568,3 @@ function StatChip({
   );
 }
 
-function EmptyState({
-  title,
-  body,
-  action,
-}: {
-  title: string;
-  body: string;
-  action?: React.ReactNode;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="bg-white border border-[var(--brand-100)] rounded-3xl p-12 text-center"
-    >
-      <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--brand-50)] text-[var(--brand-600)] mb-4">
-        <Package className="h-6 w-6" />
-      </div>
-      <h2 className="font-bold text-lg text-[var(--brand-950)]">{title}</h2>
-      <p className="text-[var(--text-mid)] mt-1 text-sm">{body}</p>
-      {action && <div className="mt-4">{action}</div>}
-    </motion.div>
-  );
-}
-
-function SkeletonGrid() {
-  return (
-    <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div
-          key={i}
-          className="bg-white border border-[var(--brand-100)] rounded-3xl overflow-hidden animate-pulse"
-        >
-          <div className="h-44 bg-[var(--brand-50)]" />
-          <div className="p-5">
-            <div className="h-4 w-2/3 bg-[var(--brand-50)] rounded mb-3" />
-            <div className="h-3 w-full bg-[var(--brand-50)] rounded mb-2" />
-            <div className="h-3 w-5/6 bg-[var(--brand-50)] rounded mb-5" />
-            <div className="h-3 w-1/2 bg-[var(--brand-50)] rounded mb-2" />
-            <div className="h-3 w-2/3 bg-[var(--brand-50)] rounded mb-5" />
-            <div className="h-10 w-full bg-[var(--brand-50)] rounded-xl" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
