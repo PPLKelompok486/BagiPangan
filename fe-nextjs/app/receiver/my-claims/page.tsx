@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { MapPin, Clock, ListChecks, ArrowRight, AlarmClock, CheckCircle2 } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
-import ExportCsvButton from "@/components/ExportCsvButton";
+import { ExportCsvButton } from "@/components/ui/ExportCsvButton";
 import {
   type ApiClaim,
   type Claim,
@@ -115,7 +115,10 @@ export default function MyClaimsPage() {
             Donasi yang Anda klaim dan jadwal penjemputannya.
           </p>
         </div>
-        <ExportCsvButton endpoint="/api/claims/mine/export" filenamePrefix="klaim-saya" />
+        <ExportCsvButton
+          endpoint="/api/claims/mine/export"
+          filename={`klaim-saya-${new Date().toISOString().slice(0, 10)}.csv`}
+        />
       </motion.div>
 
       {error && (

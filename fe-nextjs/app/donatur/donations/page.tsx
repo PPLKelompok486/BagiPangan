@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, CalendarClock, Filter, MapPin, Package, Plus, Search, X } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
-import ExportCsvButton from "@/components/ExportCsvButton";
+import { ExportCsvButton } from "@/components/ui/ExportCsvButton";
 import {
   mapApiDonationToDonor,
   STATUS_LABEL,
@@ -86,7 +86,10 @@ export default function DonorDonationsListPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <ExportCsvButton endpoint="/api/donations/mine/export" filenamePrefix="donasi-saya" />
+          <ExportCsvButton
+            endpoint="/api/donations/mine/export"
+            filename={`donasi-saya-${new Date().toISOString().slice(0, 10)}.csv`}
+          />
           <Link
             href="/donatur/donations/new"
             className="inline-flex items-center gap-2 rounded-xl bg-[var(--brand-600)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--brand-700)]"
