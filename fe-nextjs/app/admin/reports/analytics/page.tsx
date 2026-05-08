@@ -58,30 +58,75 @@ function formatDateLabel(d: string): string {
   return date.toLocaleDateString("id-ID", { day: "2-digit", month: "short" });
 }
 
+/**
+ * Animates an integer value from 0 -> target over `duration` ms.
+ * Used so KPI numbers count up when the date range changes
+ * instead of snapping, giving the dashboard a livelier feel.
+ */
+function useCountUp(target: number, duration = 600): number {
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    let raf = 0;
+    let start: number | null = null;
+
+    const step = (ts: number) => {
+      if (start === null) start = ts;
+      const progress = Math.min((ts - start) / duration, 1);
+      setValue(Math.round(progress * target));
+      if (progress < 1) {
+        raf = requestAnimationFrame(step);
+      }
+    };
+
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+
+  return value;
+}
+
 export default function ReportsAnalyticsPage() {
-  const [dateFrom, setDateFrom] = useState<string>(daysAgoYmd(29));
-  const [dateTo, setDateTo] = useState<string>(todayYmd());
+  // Default to last 30 days so charts populate immediately on first paint.
+  const [dateFrom, setDateFrom] = useState<string>(() => daysAgoYmd(29));
+  const [dateTo, setDateTo] = useState<string>(() => todayYmd());
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!dateFrom || !dateTo || dateFrom > dateTo) return;
+
+    // AbortController guards against stale responses winning a race
+    // when the user changes the date range faster than the network.
+    const controller = new AbortController();
+
     const handle = setTimeout(async () => {
       setLoading(true);
       try {
         const params = new URLSearchParams({ date_from: dateFrom, date_to: dateTo });
-        const res = await fetch(`/api/admin/reports/analytics?${params}`, { cache: "no-store" });
+        const res = await fetch(`/api/admin/reports/analytics?${params}`, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
         if (res.ok) {
           const json = await res.json();
           setAnalytics(json.data);
         }
-      } catch {
-        /* ignore */
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") {
+          console.error("Analytics fetch failed", err);
+        }
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     }, 400);
-    return () => clearTimeout(handle);
+
+    return () => {
+      clearTimeout(handle);
+      controller.abort();
+    };
   }, [dateFrom, dateTo]);
 
   const totalFromPerDay = useMemo(
@@ -147,7 +192,9 @@ export default function ReportsAnalyticsPage() {
       <section className="rounded-[1.6rem] border border-[var(--brand-100,#e2e8f0)] bg-white p-6 shadow-sm">
         <h3 className="mb-4 text-lg font-semibold text-[var(--brand-900,#0f172a)]">Donasi per Hari</h3>
         {loading ? (
-          <SkeletonChart />
+          <ChartSkeleton height={280} />
+        ) : lineData.length === 0 ? (
+          <EmptyDataState />
         ) : (
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={lineData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
@@ -165,7 +212,9 @@ export default function ReportsAnalyticsPage() {
         <section className="rounded-[1.6rem] border border-[var(--brand-100,#e2e8f0)] bg-white p-6 shadow-sm">
           <h3 className="mb-4 text-lg font-semibold text-[var(--brand-900,#0f172a)]">Distribusi Kategori</h3>
           {loading ? (
-            <SkeletonChart />
+            <ChartSkeleton height={280} />
+          ) : (analytics?.by_category ?? []).length === 0 ? (
+            <EmptyDataState />
           ) : (
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={analytics?.by_category ?? []} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
@@ -182,7 +231,9 @@ export default function ReportsAnalyticsPage() {
         <section className="rounded-[1.6rem] border border-[var(--brand-100,#e2e8f0)] bg-white p-6 shadow-sm">
           <h3 className="mb-4 text-lg font-semibold text-[var(--brand-900,#0f172a)]">Status Donasi</h3>
           {loading ? (
-            <SkeletonChart />
+            <ChartSkeleton height={280} />
+          ) : statusPieData.length === 0 ? (
+            <EmptyDataState />
           ) : (
             <ResponsiveContainer width="100%" height={280}>
               <PieChart>
@@ -211,7 +262,7 @@ export default function ReportsAnalyticsPage() {
       <section className="rounded-[1.6rem] border border-[var(--brand-100,#e2e8f0)] bg-white p-6 shadow-sm">
         <h3 className="mb-4 text-lg font-semibold text-[var(--brand-900,#0f172a)]">Top 5 Donatur</h3>
         {loading ? (
-          <div className="h-32 animate-pulse rounded-xl bg-[var(--brand-50,#f1f5f9)]" />
+          <ChartSkeleton height={128} />
         ) : !analytics?.top_donors?.length ? (
           <p className="text-sm text-slate-500">Belum ada data donatur dalam rentang ini.</p>
         ) : (
@@ -250,6 +301,7 @@ function KpiCard({
   color: string;
   loading: boolean;
 }) {
+  const animated = useCountUp(value);
   return (
     <div className="rounded-[1.6rem] border border-[var(--brand-100,#e2e8f0)] bg-white p-4 shadow-sm">
       <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</div>
@@ -257,13 +309,31 @@ function KpiCard({
         <div className="mt-3 h-8 w-20 animate-pulse rounded bg-slate-100" />
       ) : (
         <div className="mt-1 text-3xl font-bold" style={{ color }}>
-          {value.toLocaleString("id-ID")}
+          {animated.toLocaleString("id-ID")}
         </div>
       )}
     </div>
   );
 }
 
-function SkeletonChart() {
-  return <div className="h-[280px] animate-pulse rounded-xl bg-[var(--brand-50,#f1f5f9)]" />;
+/**
+ * Pulse skeleton sized to match the chart card it replaces, so
+ * the layout doesn't jump when analytics finish loading.
+ */
+function ChartSkeleton({ height = 240 }: { height?: number }) {
+  return (
+    <div
+      className="animate-pulse rounded-[1.6rem] bg-[var(--brand-50,#f1f5f9)]"
+      style={{ height }}
+      aria-hidden
+    />
+  );
+}
+
+function EmptyDataState() {
+  return (
+    <p className="py-12 text-center text-sm text-[var(--text-mid,#64748b)]">
+      Tidak ada data untuk rentang tanggal ini
+    </p>
+  );
 }

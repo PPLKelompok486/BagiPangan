@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Donation;
+use App\Services\DonationAnalyticsService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -11,6 +12,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
 {
+    public function __construct(private readonly DonationAnalyticsService $analytics)
+    {
+    }
+
     public function analytics(Request $request): JsonResponse
     {
         $request->validate([
@@ -26,47 +31,12 @@ class ReportController extends Controller
             ? Carbon::parse($request->input('date_to'))->endOfDay()
             : now()->endOfDay();
 
-        $perDay = Donation::query()
-            ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
-            ->whereBetween('created_at', [$from, $to])
-            ->groupByRaw('DATE(created_at)')
-            ->orderByRaw('DATE(created_at)')
-            ->get()
-            ->map(fn ($row) => ['date' => $row->date, 'count' => (int) $row->count]);
-
-        $byStatus = Donation::query()
-            ->selectRaw('status, COUNT(*) as count')
-            ->whereBetween('created_at', [$from, $to])
-            ->groupBy('status')
-            ->pluck('count', 'status')
-            ->map(fn ($v) => (int) $v);
-
-        $byCategory = Donation::query()
-            ->selectRaw('donation_categories.name as category, COUNT(donations.id) as count')
-            ->leftJoin('donation_categories', 'donations.category_id', '=', 'donation_categories.id')
-            ->whereBetween('donations.created_at', [$from, $to])
-            ->groupBy('donation_categories.name')
-            ->orderByDesc('count')
-            ->limit(10)
-            ->get()
-            ->map(fn ($row) => ['category' => $row->category ?? 'Tanpa Kategori', 'count' => (int) $row->count]);
-
-        $topDonors = Donation::query()
-            ->selectRaw('users.name, COUNT(donations.id) as total')
-            ->join('users', 'donations.user_id', '=', 'users.id')
-            ->whereBetween('donations.created_at', [$from, $to])
-            ->groupBy('users.id', 'users.name')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get()
-            ->map(fn ($row) => ['name' => $row->name, 'total' => (int) $row->total]);
-
         return response()->json([
             'data' => [
-                'per_day'     => $perDay,
-                'by_status'   => $byStatus,
-                'by_category' => $byCategory,
-                'top_donors'  => $topDonors,
+                'per_day'     => $this->analytics->perDay($from, $to),
+                'by_status'   => $this->analytics->byStatus($from, $to),
+                'by_category' => $this->analytics->byCategory($from, $to),
+                'top_donors'  => $this->analytics->topDonors($from, $to),
             ],
         ]);
     }
