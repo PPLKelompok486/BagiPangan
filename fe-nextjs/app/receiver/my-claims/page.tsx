@@ -10,27 +10,13 @@ import {
   type Claim,
   type Donation,
   formatPickupTime,
+  hoursUntil,
   imageForDonation,
   mapApiClaim,
+  pickupCountdown,
   STATUS_LABEL,
   STATUS_TONE,
 } from "@/lib/donations";
-
-function hoursUntil(iso: string): number | null {
-  const t = Date.parse(iso);
-  if (Number.isNaN(t)) return null;
-  return (t - Date.now()) / (1000 * 60 * 60);
-}
-
-function pickupCountdown(iso: string): string {
-  const h = hoursUntil(iso);
-  if (h === null) return "";
-  if (h < 0) return "Waktu jemput sudah lewat";
-  if (h < 1) return `${Math.max(1, Math.round(h * 60))} menit lagi`;
-  if (h < 24) return `${Math.round(h)} jam lagi`;
-  const d = Math.round(h / 24);
-  return `${d} hari lagi`;
-}
 
 const STEPS: { key: Donation["status"]; label: string }[] = [
   { key: "claimed", label: "Diklaim" },

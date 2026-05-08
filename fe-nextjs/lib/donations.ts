@@ -78,6 +78,29 @@ export type Claim = {
   donation: Donation;
 };
 
+/** Returns hours until an ISO datetime string. Negative if past. Null if invalid/missing. */
+export function hoursUntil(iso: string | null | undefined): number | null {
+  if (!iso) return null;
+  const t = Date.parse(iso);
+  if (Number.isNaN(t)) return null;
+  return (t - Date.now()) / (1000 * 60 * 60);
+}
+
+/** Returns a human-readable countdown string for a pickup window end time. */
+export function pickupCountdown(
+  iso: string | null | undefined,
+  now: number = Date.now(),
+): string {
+  if (!iso) return "";
+  const t = Date.parse(iso);
+  if (Number.isNaN(t)) return "";
+  const diff = (t - now) / (1000 * 60 * 60);
+  if (diff < 0) return "Waktu jemput sudah lewat";
+  if (diff < 1) return `${Math.max(1, Math.round(diff * 60))} menit lagi`;
+  if (diff < 24) return `${Math.round(diff)} jam lagi`;
+  return `${Math.round(diff / 24)} hari lagi`;
+}
+
 export function formatPickupTime(iso: string): string {
   try {
     return new Date(iso).toLocaleString("id-ID", {

@@ -84,14 +84,10 @@ class DonationController extends Controller
     public function show($id)
     {
         $donation = Donation::with([
-            'user:id,name,phone,city,address,organization,company_name',
+            'user:id,name,city,phone',
             'category:id,name',
             'claims',
-        ])->find($id);
-
-        if (!$donation) {
-            return response()->json(['message' => 'Donasi tidak ditemukan'], 404);
-        }
+        ])->findOrFail($id);
 
         $activeClaims = $donation->claims->whereIn('status', [
             Claim::STATUS_REQUESTED,
@@ -149,8 +145,8 @@ class DonationController extends Controller
                     'id' => $donor->id,
                     'name' => $donor->name,
                     'phone' => $donor->phone,
-                    'address' => $donor->address ?? $donor->city,
-                    'organization' => $donor->organization ?? $donor->company_name,
+                    'address' => $donor->city,
+                    'organization' => null,
                 ] : null,
                 'user' => $donor ? [
                     'id' => $donor->id,

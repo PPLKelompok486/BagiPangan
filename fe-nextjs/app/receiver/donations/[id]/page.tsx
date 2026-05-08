@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useMemo, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -24,24 +24,20 @@ import {
   type Donation,
   type Claim,
   formatPickupTime,
+  hoursUntil,
   imageForDonation,
   mapApiClaim,
   mapApiDonation,
+  pickupCountdown,
   STATUS_LABEL,
   STATUS_TONE,
 } from "@/lib/donations";
+import { easeOut } from "@/app/bagipangan/lib/motion";
 
 type Props = { params: Promise<{ id: string }> };
 
-function pickupCountdown(iso: string): string {
-  const t = Date.parse(iso);
-  if (Number.isNaN(t)) return "";
-  const diff = (t - Date.now()) / (1000 * 60 * 60);
-  if (diff < 0) return "Waktu jemput sudah lewat";
-  if (diff < 1) return `${Math.max(1, Math.round(diff * 60))} menit lagi`;
-  if (diff < 24) return `${Math.round(diff)} jam lagi`;
-  return `${Math.round(diff / 24)} hari lagi`;
-}
+type FeedbackKind = "error" | "success" | "info";
+type FeedbackState = { kind: FeedbackKind; message: string } | null;
 
 const SAFETY_TIPS = [
   {
@@ -61,6 +57,16 @@ const SAFETY_TIPS = [
   },
 ];
 
+/** Returns Date.now() that updates every `intervalMs` so consumers can recompute time-derived values. */
+function useNow(intervalMs: number = 60_000): number {
+  const [now, setNow] = useState<number>(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), intervalMs);
+    return () => clearInterval(id);
+  }, [intervalMs]);
+  return now;
+}
+
 export default function DonationDetailPage({ params }: Props) {
   const { id } = use(params);
   const router = useRouter();
@@ -71,64 +77,69 @@ export default function DonationDetailPage({ params }: Props) {
   const [claiming, setClaiming] = useState(false);
   const [uploadingProof, setUploadingProof] = useState(false);
   const [cancelingClaim, setCancelingClaim] = useState(false);
-  const [claimError, setClaimError] = useState("");
-  const [notification, setNotification] = useState("");
+  const [feedback, setFeedback] = useState<FeedbackState>(null);
 
-  const load = async () => {
+  const now = useNow(60_000);
+
+  const loadClaim = useCallback(async () => {
+    try {
+      const res = await apiFetch<{ data: ApiClaim[] }>("/claims/mine");
+      const donationId = Number(id);
+      const found = res.data.find((item) => item.donation?.id === donationId);
+      setClaim(found ? mapApiClaim(found) : null);
+    } catch (err) {
+      if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+        setClaim(null);
+        return;
+      }
+      setFeedback({
+        kind: "error",
+        message: err instanceof ApiError ? err.message : "Gagal memuat klaim",
+      });
+    }
+  }, [id]);
+
+  const load = useCallback(async () => {
     try {
       const res = await apiFetch<{ data: ApiDonation; my_claim?: ApiClaim | null }>(`/donations/${id}`);
       setDonation(mapApiDonation(res.data));
       if (res.my_claim !== undefined) {
         setClaim(res.my_claim ? mapApiClaim({ ...res.my_claim, donation: res.data }) : null);
-        setClaimError("");
+        setFeedback(null);
       } else {
         await loadClaim();
       }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Gagal memuat donasi");
     }
-  };
-
-  const loadClaim = async () => {
-    try {
-      const res = await apiFetch<{ data: ApiClaim[] }>("/claims/mine");
-      const donationId = Number(id);
-      const found = res.data.find((item) => item.donation?.id === donationId);
-      setClaim(found ? mapApiClaim(found) : null);
-      setClaimError("");
-    } catch (err) {
-      if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
-        setClaim(null);
-        return;
-      }
-      setClaimError(err instanceof ApiError ? err.message : "Gagal memuat klaim");
-    }
-  };
+  }, [id, loadClaim]);
 
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+    void load();
+  }, [load]);
 
   const countdown = useMemo(
-    () => (donation ? pickupCountdown(donation.pickup_time) : ""),
-    [donation],
+    () => (donation ? pickupCountdown(donation.pickup_time, now) : ""),
+    [donation, now],
   );
 
   const handleClaim = async () => {
     setClaiming(true);
-    setNotification("");
+    setFeedback(null);
     try {
       await apiFetch(`/donations/${id}/claim`, { method: "POST" });
-      setNotification("Donasi berhasil diklaim, mengalihkan...");
+      setFeedback({ kind: "success", message: "Donasi berhasil diklaim, mengalihkan..." });
       setTimeout(() => router.push("/receiver/my-claims"), 600);
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
-        setNotification("Donasi sudah diklaim orang lain.");
+        setFeedback({ kind: "error", message: "Donasi sudah diklaim orang lain." });
         setConfirming(false);
         await load();
       } else {
-        setNotification(err instanceof ApiError ? err.message : "Gagal mengklaim donasi");
+        setFeedback({
+          kind: "error",
+          message: err instanceof ApiError ? err.message : "Gagal mengklaim donasi",
+        });
       }
     } finally {
       setClaiming(false);
@@ -138,7 +149,7 @@ export default function DonationDetailPage({ params }: Props) {
   const handleUploadProof = async (file: File) => {
     if (!claim) return;
     setUploadingProof(true);
-    setNotification("");
+    setFeedback(null);
     const body = new FormData();
     body.append("proof", file);
     try {
@@ -149,9 +160,12 @@ export default function DonationDetailPage({ params }: Props) {
       const updated = mapApiClaim(res.data);
       setClaim(updated);
       setDonation(updated.donation);
-      setNotification("Bukti pengambilan berhasil diunggah.");
+      setFeedback({ kind: "success", message: "Bukti pengambilan berhasil diunggah." });
     } catch (err) {
-      setNotification(err instanceof ApiError ? err.message : "Gagal mengunggah bukti");
+      setFeedback({
+        kind: "error",
+        message: err instanceof ApiError ? err.message : "Gagal mengunggah bukti",
+      });
     } finally {
       setUploadingProof(false);
     }
@@ -160,7 +174,7 @@ export default function DonationDetailPage({ params }: Props) {
   const handleCancelClaim = async () => {
     if (!claim) return;
     setCancelingClaim(true);
-    setNotification("");
+    setFeedback(null);
     try {
       const res = await apiFetch<{ data: ApiClaim }>(`/claims/${claim.id}/cancel`, {
         method: "POST",
@@ -168,9 +182,12 @@ export default function DonationDetailPage({ params }: Props) {
       const updated = mapApiClaim(res.data);
       setClaim(updated);
       setDonation(updated.donation);
-      setNotification("Klaim berhasil dibatalkan.");
+      setFeedback({ kind: "success", message: "Klaim berhasil dibatalkan." });
     } catch (err) {
-      setNotification(err instanceof ApiError ? err.message : "Gagal membatalkan klaim");
+      setFeedback({
+        kind: "error",
+        message: err instanceof ApiError ? err.message : "Gagal membatalkan klaim",
+      });
     } finally {
       setCancelingClaim(false);
     }
@@ -201,10 +218,26 @@ export default function DonationDetailPage({ params }: Props) {
   const showClaimActions = hasClaim && donation.status === "claimed";
   const showClaimCompleted = hasClaim && donation.status === "completed";
   const showUnavailable = !canClaim && !showClaimActions && !showClaimCompleted;
-  const isSuccess = notification.includes("berhasil");
   const heroImage = imageForDonation(donation);
-  const hoursLeft = (Date.parse(donation.pickup_time) - Date.now()) / 3_600_000;
-  const isUrgent = hoursLeft >= 0 && hoursLeft < 2;
+  const hoursLeft = hoursUntil(donation.pickup_time);
+  const isUrgent = hoursLeft !== null && hoursLeft >= 0 && hoursLeft < 2;
+
+  const ctaProps: DonationCtaProps = {
+    claim,
+    confirming,
+    claiming,
+    uploadingProof,
+    cancelingClaim,
+    canClaim,
+    showClaimActions,
+    showClaimCompleted,
+    showUnavailable,
+    onStartConfirm: () => setConfirming(true),
+    onCancelConfirm: () => setConfirming(false),
+    onClaim: handleClaim,
+    onUploadProof: handleUploadProof,
+    onCancelClaim: handleCancelClaim,
+  };
 
   return (
     <div className="max-w-3xl mx-auto pb-28 sm:pb-8">
@@ -218,7 +251,7 @@ export default function DonationDetailPage({ params }: Props) {
       <motion.article
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.5, ease: easeOut }}
         className="bg-white border border-[var(--brand-100)] rounded-3xl overflow-hidden shadow-[var(--shadow-soft)]"
       >
         <div className="relative h-56 sm:h-72 overflow-hidden bg-[var(--brand-50)]">
@@ -228,7 +261,7 @@ export default function DonationDetailPage({ params }: Props) {
             className="h-full w-full object-cover"
             initial={{ scale: 1.08 }}
             animate={{ scale: 1 }}
-            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 1.2, ease: easeOut }}
           />
           <div
             aria-hidden="true"
@@ -262,7 +295,7 @@ export default function DonationDetailPage({ params }: Props) {
             </h1>
           </div>
           <span
-            className={`text-xs font-semibold px-3 py-1.5 rounded-full border ${STATUS_TONE[donation.status]}`}
+            className={`rounded-full px-3 py-1.5 text-xs font-semibold border ${STATUS_TONE[donation.status]}`}
           >
             {STATUS_LABEL[donation.status]}
           </span>
@@ -293,7 +326,12 @@ export default function DonationDetailPage({ params }: Props) {
                 : formatPickupTime(donation.pickup_time)
             }
           />
-          <InfoRow icon={<MapPin className="h-4 w-4" />} label="Alamat" value={donation.pickup_address} />
+          <InfoRow
+            icon={<MapPin className="h-4 w-4" />}
+            label="Alamat"
+            value={donation.pickup_address}
+            secondary={donation.address_detail ?? undefined}
+          />
           <InfoRow icon={<User className="h-4 w-4" />} label="Donatur" value={donation.donor?.name ?? "—"} />
           {donation.donor?.phone && (
             <InfoRow icon={<Phone className="h-4 w-4" />} label="Kontak donatur" value={donation.donor.phone} />
@@ -333,109 +371,129 @@ export default function DonationDetailPage({ params }: Props) {
           </div>
         </details>
 
-        <AnimatePresence>
-          {notification && (
-            <motion.div
-              key={notification}
-              role={isSuccess ? "status" : "alert"}
-              aria-live={isSuccess ? "polite" : "assertive"}
-              initial={{ opacity: 0, y: -8, height: 0 }}
-              animate={{ opacity: 1, y: 0, height: "auto" }}
-              exit={{ opacity: 0, y: -8, height: 0 }}
-              className={`mb-4 p-3 rounded-2xl text-sm font-medium ${
-                isSuccess
-                  ? "bg-[var(--brand-50)] text-[var(--brand-700)] border border-[var(--brand-100)]"
-                  : "bg-red-50 text-red-700 border border-red-200"
-              }`}
-            >
-              {notification}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {claimError && (
-          <div className="mb-4 p-3 rounded-2xl text-sm font-medium bg-red-50 text-red-700 border border-red-200">
-            {claimError}
-          </div>
-        )}
+        <FeedbackBanner feedback={feedback} />
 
         {/* Desktop / non-sticky CTA */}
         <div className="hidden sm:block">
-          {showClaimActions && claim && (
-            <ClaimActions
-              claim={claim}
-              uploading={uploadingProof}
-              canceling={cancelingClaim}
-              onUploadProof={handleUploadProof}
-              onCancelClaim={handleCancelClaim}
-            />
-          )}
-
-          {showClaimCompleted && claim && (
-            <ClaimCompleted claim={claim} />
-          )}
-
-          {canClaim && !confirming && (
-            <button
-              onClick={() => setConfirming(true)}
-              className="w-full bg-[var(--brand-600)] text-white py-3.5 rounded-xl font-bold hover:bg-[var(--brand-700)] transition-colors shadow-[0_12px_30px_rgba(45,122,79,0.2)]"
-            >
-              Klaim donasi ini
-            </button>
-          )}
-
-          {canClaim && confirming && (
-            <ConfirmBlock
-              onConfirm={handleClaim}
-              onCancel={() => setConfirming(false)}
-              claiming={claiming}
-            />
-          )}
-
-          {showUnavailable && (
-            <div className="border border-[var(--brand-100)] bg-[var(--cream)] rounded-2xl p-4 text-sm text-[var(--text-mid)]">
-              Donasi ini sudah tidak tersedia untuk diklaim.
-            </div>
-          )}
+          <DonationCta {...ctaProps} />
         </div>
         </div>
       </motion.article>
 
       {/* Mobile sticky CTA */}
       <div className="sm:hidden fixed inset-x-0 bottom-0 z-30 bg-white border-t border-[var(--brand-100)] p-3 shadow-[0_-8px_24px_rgba(7,23,16,0.08)]">
-        {showClaimActions && claim && (
-          <ClaimActions
-            claim={claim}
-            uploading={uploadingProof}
-            canceling={cancelingClaim}
-            onUploadProof={handleUploadProof}
-            onCancelClaim={handleCancelClaim}
-            compact
-          />
-        )}
-        {showClaimCompleted && claim && <ClaimCompleted claim={claim} compact />}
-        {canClaim && !confirming && (
-          <button
-            onClick={() => setConfirming(true)}
-            className="w-full bg-[var(--brand-600)] text-white py-3.5 rounded-xl font-bold shadow-[0_12px_30px_rgba(45,122,79,0.2)]"
-          >
-            Klaim donasi ini
-          </button>
-        )}
-        {canClaim && confirming && (
-          <ConfirmBlock
-            onConfirm={handleClaim}
-            onCancel={() => setConfirming(false)}
-            claiming={claiming}
-          />
-        )}
-        {showUnavailable && (
-          <div className="rounded-xl bg-[var(--cream)] px-4 py-3 text-center text-sm text-[var(--text-mid)]">
-            Donasi ini sudah tidak tersedia.
-          </div>
-        )}
+        <DonationCta {...ctaProps} compact />
       </div>
     </div>
+  );
+}
+
+type DonationCtaProps = {
+  claim: Claim | null;
+  confirming: boolean;
+  claiming: boolean;
+  uploadingProof: boolean;
+  cancelingClaim: boolean;
+  canClaim: boolean;
+  showClaimActions: boolean;
+  showClaimCompleted: boolean;
+  showUnavailable: boolean;
+  onStartConfirm: () => void;
+  onCancelConfirm: () => void;
+  onClaim: () => void;
+  onUploadProof: (file: File) => void;
+  onCancelClaim: () => void;
+};
+
+function DonationCta({
+  claim,
+  confirming,
+  claiming,
+  uploadingProof,
+  cancelingClaim,
+  canClaim,
+  showClaimActions,
+  showClaimCompleted,
+  showUnavailable,
+  onStartConfirm,
+  onCancelConfirm,
+  onClaim,
+  onUploadProof,
+  onCancelClaim,
+  compact,
+}: DonationCtaProps & { compact?: boolean }) {
+  if (showClaimActions && claim) {
+    return (
+      <ClaimActions
+        claim={claim}
+        uploading={uploadingProof}
+        canceling={cancelingClaim}
+        onUploadProof={onUploadProof}
+        onCancelClaim={onCancelClaim}
+        compact={compact}
+      />
+    );
+  }
+
+  if (showClaimCompleted && claim) {
+    return <ClaimCompleted claim={claim} compact={compact} />;
+  }
+
+  if (canClaim && !confirming) {
+    return (
+      <button
+        onClick={onStartConfirm}
+        className="w-full bg-[var(--brand-600)] text-white py-3.5 rounded-xl font-bold hover:bg-[var(--brand-700)] transition-colors shadow-[0_12px_30px_rgba(45,122,79,0.2)]"
+      >
+        Klaim donasi ini
+      </button>
+    );
+  }
+
+  if (canClaim && confirming) {
+    return (
+      <ConfirmBlock onConfirm={onClaim} onCancel={onCancelConfirm} claiming={claiming} />
+    );
+  }
+
+  if (showUnavailable) {
+    return (
+      <div
+        className={`border border-[var(--brand-100)] bg-[var(--cream)] rounded-2xl text-sm text-[var(--text-mid)] ${
+          compact ? "px-4 py-3 text-center" : "p-4"
+        }`}
+      >
+        {compact ? "Donasi ini sudah tidak tersedia." : "Donasi ini sudah tidak tersedia untuk diklaim."}
+      </div>
+    );
+  }
+
+  return null;
+}
+
+function FeedbackBanner({ feedback }: { feedback: FeedbackState }) {
+  return (
+    <AnimatePresence>
+      {feedback && (
+        <motion.div
+          key={feedback.message}
+          role={feedback.kind === "error" ? "alert" : "status"}
+          aria-live={feedback.kind === "error" ? "assertive" : "polite"}
+          initial={{ opacity: 0, y: -8, height: 0 }}
+          animate={{ opacity: 1, y: 0, height: "auto" }}
+          exit={{ opacity: 0, y: -8, height: 0 }}
+          className={`mb-4 p-3 rounded-2xl text-sm font-medium ${
+            feedback.kind === "success"
+              ? "bg-[var(--brand-50)] text-[var(--brand-700)] border border-[var(--brand-100)]"
+              : feedback.kind === "error"
+                ? "bg-red-50 text-red-700 border border-red-200"
+                : "bg-amber-50 text-amber-700 border border-amber-200"
+          }`}
+        >
+          {feedback.message}
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -584,10 +642,12 @@ function InfoRow({
   icon,
   label,
   value,
+  secondary,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
+  secondary?: string;
 }) {
   return (
     <div className="border border-[var(--brand-100)] rounded-2xl p-3 flex items-start gap-3">
@@ -597,6 +657,9 @@ function InfoRow({
       <div>
         <div className="text-xs text-[var(--text-mid)] uppercase tracking-wider">{label}</div>
         <div className="text-sm font-semibold text-[var(--brand-950)]">{value}</div>
+        {secondary && (
+          <p className="text-xs text-[var(--text-mid)] mt-0.5">{secondary}</p>
+        )}
       </div>
     </div>
   );

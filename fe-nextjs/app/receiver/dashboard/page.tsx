@@ -7,7 +7,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Clock, Package, ArrowRight, Flame, Search, Filter, X, RefreshCw } from "lucide-react";
 import useSWR from "swr";
 import { ApiError, apiFetch, getUser, type AuthUser } from "@/lib/api";
-import { type ApiDonation, type Donation, formatPickupTime, imageForDonation, mapApiDonation } from "@/lib/donations";
+import {
+  type ApiDonation,
+  type Donation,
+  formatPickupTime,
+  hoursUntil,
+  imageForDonation,
+  mapApiDonation,
+} from "@/lib/donations";
 import { CountUp } from "@/lib/count-up";
 
 const URGENT_WINDOW_HOURS = 6;
@@ -25,12 +32,6 @@ const fetcher = async (path: string): Promise<DonationsPayload> => {
 };
 
 type FilterKey = "all" | "urgent" | "today";
-
-function hoursUntil(iso: string): number | null {
-  const t = Date.parse(iso);
-  if (Number.isNaN(t)) return null;
-  return (t - Date.now()) / (1000 * 60 * 60);
-}
 
 function urgencyLabel(iso: string): { label: string; tone: "hot" | "warm" | null } {
   const h = hoursUntil(iso);

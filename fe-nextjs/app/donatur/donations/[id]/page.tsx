@@ -17,6 +17,7 @@ import {
   User,
 } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
+import { easeOut } from "@/app/bagipangan/lib/motion";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -156,7 +157,7 @@ export default function DonationDetailPage({ params }: Props) {
       <motion.article
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.45, ease: easeOut }}
         className="overflow-hidden rounded-3xl border border-[var(--brand-100)] bg-white shadow-[var(--shadow-card)]"
       >
         <div className="relative overflow-hidden bg-[linear-gradient(135deg,#0f2c1a_0%,#1f5c3e_48%,#2d7a4f_100%)] px-6 py-8 text-white sm:px-8">

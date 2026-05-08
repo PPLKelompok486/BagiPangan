@@ -173,7 +173,7 @@ export default function DonationDetailPage({ params }: Props) {
   const isNearlyExpired = hoursLeft !== null && hoursLeft >= 0 && hoursLeft <= 6;
   const isExpired = hoursLeft !== null && hoursLeft < 0;
   const role = user?.role;
-  const isReceiver = role === "penerima" || role === "receiver" || (role as string) === "receiver";
+  const isReceiver = role === "penerima" || (role as string) === "receiver";
   const canClaim = donation.status === "approved" && isReceiver && !isExpired;
 
   return (
