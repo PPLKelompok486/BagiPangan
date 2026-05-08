@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { MapPin, Clock, ListChecks, ArrowRight, AlarmClock, CheckCircle2 } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
+import { easeOut } from "@/app/bagipangan/lib/motion";
 import {
   type ApiClaim,
   type Claim,
@@ -102,7 +103,7 @@ export default function MyClaimsPage() {
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.5, ease: easeOut }}
         className="mb-6"
       >
         <span className="text-xs tracking-[0.24em] text-[var(--brand-600)] font-semibold uppercase">
@@ -159,7 +160,7 @@ export default function MyClaimsPage() {
         <motion.aside
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.45, ease: easeOut }}
           className="mb-6 overflow-hidden rounded-3xl border border-[var(--brand-200)] bg-[var(--brand-50)] p-5 sm:p-6"
         >
           <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -270,7 +271,7 @@ function ClaimCard({
     <motion.article
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: Math.min(index, 6) * 0.05, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.4, delay: Math.min(index, 6) * 0.05, ease: easeOut }}
       whileHover={{ y: -2 }}
       className="group bg-white border border-[var(--brand-100)] rounded-3xl p-5 shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-soft)] hover:border-[var(--brand-300)] transition-all"
     >
@@ -283,7 +284,7 @@ function ClaimCard({
             className="h-full w-full object-cover"
             initial={{ scale: 1.1 }}
             animate={{ scale: 1 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.6, ease: easeOut }}
           />
         </div>
         <div className="flex-1 min-w-0">
