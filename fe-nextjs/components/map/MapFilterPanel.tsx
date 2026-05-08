@@ -12,6 +12,7 @@ type MapFilterPanelProps = {
   filters: DonationMapFilters;
   categories: CategoryOption[];
   isOpen: boolean;
+  activeFilterCount?: number;
   onToggle: () => void;
   onChange: (filters: DonationMapFilters) => void;
   onReset: () => void;
@@ -26,11 +27,18 @@ export default function MapFilterPanel({
   filters,
   categories,
   isOpen,
+  activeFilterCount,
   onToggle,
   onChange,
   onReset,
 }: MapFilterPanelProps) {
-  const hasActiveFilter = filters.category_id !== "" || filters.status !== "available" || filters.q.trim() !== "";
+  const computedCount = [
+    filters.category_id !== "",
+    filters.status !== "available",
+    filters.q.trim() !== "",
+  ].filter(Boolean).length;
+  const badgeCount = activeFilterCount ?? computedCount;
+  const hasActiveFilter = badgeCount > 0;
 
   return (
     <section className="rounded-2xl border border-[var(--brand-100)] bg-white p-3 shadow-[var(--shadow-card)] lg:sticky lg:top-24">
@@ -38,10 +46,16 @@ export default function MapFilterPanel({
         <button
           type="button"
           onClick={onToggle}
-          className="inline-flex items-center gap-2 rounded-xl bg-[var(--brand-50)] px-3 py-2 text-sm font-bold text-[var(--brand-700)]"
+          aria-label={badgeCount > 0 ? `Filter peta, ${badgeCount} aktif` : "Filter peta"}
+          className="relative inline-flex items-center gap-2 rounded-xl bg-[var(--brand-50)] px-3 py-2 text-sm font-bold text-[var(--brand-700)]"
         >
           <SlidersHorizontal className="h-4 w-4" />
           Filter peta
+          {badgeCount > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--brand-600)] px-1 text-[10px] font-bold text-white">
+              {badgeCount}
+            </span>
+          )}
         </button>
         {hasActiveFilter && (
           <button

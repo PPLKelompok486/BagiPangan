@@ -2,6 +2,7 @@
 
 import { Suspense, useDeferredValue, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle, Loader2, LocateFixed, MapPin, RefreshCw } from "lucide-react";
 import { apiFetch } from "@/lib/api";
@@ -77,10 +78,22 @@ function DonationMapScreen({ context }: { context: DonationMapContext }) {
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }, [filters, pathname, router]);
 
-  const features = data?.features ?? [];
+  // Memoize features by stringification so a same-data revalidation does not
+  // produce a new array reference and force the cluster layer to rebuild.
+  const features = useMemo(
+    () => data?.features ?? [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [JSON.stringify(data?.features)],
+  );
   const totalApproved = data?.meta?.total_approved ?? 0;
   const withoutCoords = data?.meta?.without_coords ?? 0;
-  const hasActiveFilter = filters.category_id !== "" || filters.status !== "available" || filters.q.trim() !== "";
+  const activeFilterCount = [
+    filters.category_id !== "",
+    filters.status !== "available",
+    filters.q.trim() !== "",
+  ].filter(Boolean).length;
+  const hasActiveFilter = activeFilterCount > 0;
+  const filterKey = `${filters.category_id}|${filters.status}|${deferredQuery.trim()}|${context}`;
   const emptyMessage = (() => {
     if (features.length > 0) return "";
     if (hasActiveFilter) return "Tidak ada donasi yang sesuai dengan filter Anda.";
@@ -129,14 +142,20 @@ function DonationMapScreen({ context }: { context: DonationMapContext }) {
           filters={filters}
           categories={categories}
           isOpen={filterOpen}
+          activeFilterCount={activeFilterCount}
           onToggle={() => setFilterOpen((value) => !value)}
           onChange={setFilters}
-          onReset={() => setFilters({ category_id: "", status: "available", q: "" })}
+          onReset={() => setFilters({ category_id: "", status: "available", q: "", context })}
         />
 
         <section className="relative overflow-hidden rounded-2xl border border-[var(--brand-100)] bg-white shadow-[var(--shadow-card)]">
           <div className="h-[60vh] min-h-[420px] lg:h-[calc(100vh-220px)]">
-            <DonationMap features={features} userLocation={location} />
+            <DonationMap
+              features={features}
+              userLocation={location}
+              geolocationLoading={isLocating}
+              filterKey={filterKey}
+            />
           </div>
 
           {(isLoading || isRefreshing) && (
@@ -168,6 +187,21 @@ function DonationMapScreen({ context }: { context: DonationMapContext }) {
 
           {!isLoading && !error && features.length === 0 && (
             <div className="absolute inset-x-4 top-4 z-[600] rounded-2xl border border-[var(--brand-100)] bg-white/95 px-4 py-3 text-sm font-bold text-[var(--brand-950)] shadow-[0_12px_30px_rgba(15,23,42,0.12)] backdrop-blur">
+              {withoutCoords > 0 && (
+                <figure className="mx-auto mb-3 max-w-[240px]">
+                  <Image
+                    src="/images/map-empty-state.jpg"
+                    alt=""
+                    width={240}
+                    height={160}
+                    className="mx-auto h-auto w-full rounded-xl object-cover opacity-80"
+                    aria-hidden="true"
+                  />
+                  <figcaption className="sr-only">
+                    Ilustrasi komunitas yang berbagi pangan.
+                  </figcaption>
+                </figure>
+              )}
               {emptyMessage}
             </div>
           )}

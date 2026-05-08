@@ -18,6 +18,16 @@ type DonationMapState = {
 const CACHE_TTL_MS = 30_000;
 const cache = new Map<string, { expiresAt: number; data: DonationMapFeatureCollection }>();
 
+// Dev-only escape hatch: in development, hot-reloaded modules can persist
+// stale cached data at module scope. Expose a global function so engineers can
+// run `window.__donationMapCacheBust()` from devtools to clear the cache.
+// This is a no-op in production builds.
+if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
+  (window as unknown as Record<string, unknown>).__donationMapCacheBust = () => {
+    cache.clear();
+  };
+}
+
 function buildPath(filters: DonationMapFilters): string {
   const params = new URLSearchParams();
   params.set("status", filters.status);
