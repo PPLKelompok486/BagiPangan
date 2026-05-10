@@ -43,6 +43,11 @@ function pickupCountdown(iso: string): string {
   return `${Math.round(diff / 24)} hari lagi`;
 }
 
+function formatPickupWindow(availableFrom: string | null, pickupUntil: string): string {
+  const from = availableFrom ? formatPickupTime(availableFrom) : "—";
+  return `${from} – ${formatPickupTime(pickupUntil)}`;
+}
+
 const SAFETY_TIPS = [
   {
     icon: AlarmClock,
@@ -294,7 +299,7 @@ export default function DonationDetailPage({ params }: Props) {
           <InfoRow
             icon={<Clock className="h-4 w-4" />}
             label="Jendela jemput"
-            value={`${donation.available_from ? formatPickupTime(donation.available_from) : "—"} – ${formatPickupTime(donation.pickup_time)}`}
+            value={formatPickupWindow(donation.available_from, donation.pickup_time)}
           />
           <InfoRow icon={<MapPin className="h-4 w-4" />} label="Alamat" value={donation.pickup_address} />
           {donation.category && (
