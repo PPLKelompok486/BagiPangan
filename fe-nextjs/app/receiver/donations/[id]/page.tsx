@@ -76,47 +76,25 @@ export default function DonationDetailPage({ params }: Props) {
   const [claiming, setClaiming] = useState(false);
   const [uploadingProof, setUploadingProof] = useState(false);
   const [cancelingClaim, setCancelingClaim] = useState(false);
-  const [claimError, setClaimError] = useState("");
   const [notification, setNotification] = useState("");
 
   const load = async () => {
     try {
-      const res = await apiFetch<{ data: ApiDonation; my_claim?: Omit<ApiClaim, "donation"> | null }>(
+      const res = await apiFetch<{ data: ApiDonation; my_claim: Omit<ApiClaim, "donation"> | null }>(
         `/donations/${id}`,
       );
       const mappedDonation = mapApiDonation(res.data);
       setDonation(mappedDonation);
-      if (res.my_claim !== undefined) {
-        setClaim(
-          res.my_claim
-            ? {
-                ...res.my_claim,
-                donation: mappedDonation,
-              }
-            : null,
-        );
-        setClaimError("");
-      } else {
-        await loadClaim();
-      }
+      setClaim(
+        res.my_claim
+          ? {
+              ...res.my_claim,
+              donation: mappedDonation,
+            }
+          : null,
+      );
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Gagal memuat donasi");
-    }
-  };
-
-  const loadClaim = async () => {
-    try {
-      const res = await apiFetch<{ data: ApiClaim[] }>("/claims/mine");
-      const donationId = Number(id);
-      const found = res.data.find((item) => item.donation?.id === donationId);
-      setClaim(found ? mapApiClaim(found) : null);
-      setClaimError("");
-    } catch (err) {
-      if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
-        setClaim(null);
-        return;
-      }
-      setClaimError(err instanceof ApiError ? err.message : "Gagal memuat klaim");
     }
   };
 
@@ -362,12 +340,6 @@ export default function DonationDetailPage({ params }: Props) {
             </motion.div>
           )}
         </AnimatePresence>
-
-        {claimError && (
-          <div className="mb-4 p-3 rounded-2xl text-sm font-medium bg-red-50 text-red-700 border border-red-200">
-            {claimError}
-          </div>
-        )}
 
         {/* Desktop / non-sticky CTA */}
         <div className="hidden sm:block">

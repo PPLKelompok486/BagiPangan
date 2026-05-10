@@ -10,6 +10,7 @@ import { formatPickupTime, type ApiDonation, type Donation, mapApiDonation, STAT
 type Props = { params: Promise<{ id: string }> };
 
 const EDITABLE_STATUSES = new Set(["pending", "approved"] as const);
+const UNAUTHORIZED_NOTICE = "Anda tidak dapat mengakses detail donasi ini";
 
 const STATUS_NOTE: Record<Donation["status"], string> = {
   pending: "Donasi sedang menunggu verifikasi admin.",
@@ -39,7 +40,7 @@ export default function DonorDonationDetailPage({ params }: Props) {
         const mapped = mapApiDonation(res.data);
         const user = getUser();
         if (!user || mapped.user_id !== user.id) {
-          const notice = encodeURIComponent("Anda tidak dapat mengakses detail donasi ini");
+          const notice = encodeURIComponent(UNAUTHORIZED_NOTICE);
           router.replace(`/donatur/dashboard?notice=${notice}`);
           return;
         }
