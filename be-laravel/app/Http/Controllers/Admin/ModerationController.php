@@ -37,15 +37,13 @@ class ModerationController extends Controller
             'rejected_reason' => null,
         ]);
 
-        ActivityLog::create([
-            'actor_user_id' => $request->user()->id,
-            'action' => 'donation.approved',
-            'entity_type' => 'donation',
-            'entity_id' => $donation->id,
-            'metadata' => [
-                'title' => $donation->title,
-            ],
-        ]);
+        ActivityLog::record(
+            'donation.approved',
+            'donation',
+            $donation->id,
+            ['title' => $donation->title],
+            $request->user()->id,
+        );
 
         return response()->json([
             'message' => 'Donasi berhasil disetujui',
@@ -66,16 +64,16 @@ class ModerationController extends Controller
             'rejected_reason' => $payload['reason'],
         ]);
 
-        ActivityLog::create([
-            'actor_user_id' => $request->user()->id,
-            'action' => 'donation.rejected',
-            'entity_type' => 'donation',
-            'entity_id' => $donation->id,
-            'metadata' => [
+        ActivityLog::record(
+            'donation.rejected',
+            'donation',
+            $donation->id,
+            [
                 'reason' => $payload['reason'],
                 'title' => $donation->title,
             ],
-        ]);
+            $request->user()->id,
+        );
 
         return response()->json([
             'message' => 'Donasi ditolak',
