@@ -110,7 +110,7 @@ class DonationController extends Controller
                     Claim::STATUS_APPROVED,
                     Claim::STATUS_COMPLETED,
                 ])
-                ->select(['id', 'status', 'proof_image_url', 'claimed_at', 'completed_at', 'donation_id'])
+                ->select(['id', 'status', 'proof_image_url', 'claimed_at', 'completed_at'])
                 ->first();
         }
 
