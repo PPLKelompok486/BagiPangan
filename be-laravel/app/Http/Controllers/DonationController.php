@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Claim;
 use App\Models\Donation;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -83,13 +84,40 @@ class DonationController extends Controller
 
     public function show($id)
     {
-        $donation = Donation::with(['user', 'category'])->find($id);
+        $donation = Donation::with([
+            'user:id,name,city,phone',
+            'category:id,name',
+        ])->find($id);
 
         if (!$donation) {
             return response()->json(['message' => 'Donasi tidak ditemukan'], 404);
         }
 
-        return response()->json(['data' => $donation]);
+        $userId = Auth::id();
+        if (!$userId) {
+            $token = request()->bearerToken();
+            if ($token) {
+                $userId = User::where('remember_token', $token)->value('id');
+            }
+        }
+
+        $currentClaim = null;
+        if ($userId) {
+            $currentClaim = Claim::where('donation_id', $donation->id)
+                ->where('receiver_id', $userId)
+                ->whereIn('status', [
+                    Claim::STATUS_REQUESTED,
+                    Claim::STATUS_APPROVED,
+                    Claim::STATUS_COMPLETED,
+                ])
+                ->select(['id', 'status', 'proof_image_url', 'claimed_at', 'completed_at'])
+                ->first();
+        }
+
+        return response()->json([
+            'data' => $donation,
+            'my_claim' => $currentClaim,
+        ]);
     }
 
     public function update(Request $request, $id)
