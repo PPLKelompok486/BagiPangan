@@ -122,14 +122,14 @@ function DonationMapScreen({ context }: { context: DonationMapFilters["context"]
       )}
 
       <div className="grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
-          <MapFilterPanel
-            filters={filters}
-            categories={categories}
-            isOpen={filterOpen}
-            onToggle={() => setFilterOpen((value) => !value)}
-            onChange={setFilters}
-            onReset={() => setFilters({ category_id: "", status: "available", q: "" })}
-          />
+        <MapFilterPanel
+          filters={filters}
+          categories={categories}
+          isOpen={filterOpen}
+          onToggle={() => setFilterOpen((value) => !value)}
+          onChange={setFilters}
+          onReset={() => setFilters({ category_id: "", status: "available", q: "" })}
+        />
 
         <section className="relative overflow-hidden rounded-2xl border border-[var(--brand-100)] bg-white shadow-[var(--shadow-card)]">
           <div className="h-[60vh] min-h-[420px] lg:h-[calc(100vh-220px)]">

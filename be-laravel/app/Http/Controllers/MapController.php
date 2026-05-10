@@ -45,7 +45,7 @@ class MapController extends Controller
             'context'     => $context,
         ]));
 
-        $features = Cache::remember($cacheKey, 60, function () use ($status, $validated, $bbox, $limit, $context): array {
+        $mapPayload = Cache::remember($cacheKey, 60, function () use ($status, $validated, $bbox, $limit, $context): array {
             $donations = Donation::query()
                 ->with(['category:id,name', 'user:id,name,city'])
                 ->whereNotNull('latitude')
@@ -72,24 +72,25 @@ class MapController extends Controller
                 ->limit($limit)
                 ->get();
 
-            return $donations->map(fn (Donation $donation) => $this->toFeature($donation, $context))->values()->all();
-        });
+            $features = $donations->map(fn (Donation $donation) => $this->toFeature($donation, $context))->values()->all();
+            $counts = Donation::query()
+                ->selectRaw("COUNT(CASE WHEN status = 'approved' THEN 1 END) as total_approved")
+                ->selectRaw("COUNT(CASE WHEN status = 'approved' AND (latitude IS NULL OR longitude IS NULL) THEN 1 END) as without_coords")
+                ->first();
 
-        $totalApproved = Donation::query()->where('status', 'approved')->count();
-        $withoutCoords = Donation::query()
-            ->where('status', 'approved')
-            ->where(function (Builder $query): void {
-                $query->whereNull('latitude')->orWhereNull('longitude');
-            })
-            ->count();
+            return [
+                'features' => $features,
+                'meta' => [
+                    'total_approved' => (int) ($counts?->total_approved ?? 0),
+                    'without_coords' => (int) ($counts?->without_coords ?? 0),
+                ],
+            ];
+        });
 
         return response()->json([
             'type'     => 'FeatureCollection',
-            'features' => $features,
-            'meta'     => [
-                'total_approved' => $totalApproved,
-                'without_coords' => $withoutCoords,
-            ],
+            'features' => $mapPayload['features'],
+            'meta'     => $mapPayload['meta'],
         ]);
     }
 
