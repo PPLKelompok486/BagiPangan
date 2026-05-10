@@ -23,12 +23,47 @@ class DonationController extends Controller
 
     public function index(Request $request)
     {
-        $donations = Donation::with(['user:id,name,city', 'category'])
-            ->where('status', 'approved')
-            ->orderByDesc('created_at')
-            ->paginate(15);
+        $request->validate([
+            'q' => ['nullable', 'string', 'max:120'],
+            'category_id' => ['nullable', 'integer', 'exists:donation_categories,id'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'sort' => ['nullable', 'in:newest,oldest,expiry_soon'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
+        ]);
 
-        return response()->json($donations);
+        $query = Donation::with(['user:id,name,city', 'category:id,name'])
+            ->where('status', Donation::STATUS_APPROVED);
+
+        if ($q = $request->input('q')) {
+            $needle = '%' . strtolower($q) . '%';
+            $query->where(function ($sub) use ($needle) {
+                $sub->whereRaw('LOWER(title) LIKE ?', [$needle])
+                    ->orWhereRaw('LOWER(description) LIKE ?', [$needle]);
+            });
+        }
+
+        if ($categoryId = $request->input('category_id')) {
+            $query->where('category_id', $categoryId);
+        }
+
+        if ($city = $request->input('city')) {
+            $cityNeedle = '%' . strtolower($city) . '%';
+            $query->where(function ($sub) use ($cityNeedle) {
+                $sub->whereRaw('LOWER(location_city) LIKE ?', [$cityNeedle])
+                    ->orWhereHas('user', fn ($userQuery) => $userQuery->whereRaw('LOWER(city) LIKE ?', [$cityNeedle]));
+            });
+        }
+
+        $sort = $request->input('sort', 'newest');
+        match ($sort) {
+            'oldest' => $query->orderBy('created_at'),
+            'expiry_soon' => $query->orderByRaw('available_until IS NULL')->orderBy('available_until'),
+            default => $query->orderByDesc('created_at'),
+        };
+
+        $perPage = (int) $request->input('per_page', 15);
+
+        return response()->json($query->paginate($perPage));
     }
 
     public function store(Request $request)

@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Clock, Package, ArrowRight, Flame, Search, Filter, X, RefreshCw } from "lucide-react";
 import useSWR from "swr";
 import { ApiError, apiFetch, getUser, type AuthUser } from "@/lib/api";
-import { type ApiDonation, type Donation, formatPickupTime, imageForDonation, mapApiDonation } from "@/lib/donations";
+import { type Donation, type PaginatedDonations, formatPickupTime, imageForDonation, mapApiDonation } from "@/lib/donations";
 import { CountUp } from "@/lib/count-up";
 
 const URGENT_WINDOW_HOURS = 6;
@@ -16,12 +16,26 @@ const EASE_OUT_QUART: [number, number, number, number] = [0.16, 1, 0.3, 1];
 type DonationsPayload = {
   list: Donation[];
   fetchedAt: number;
+  currentPage: number;
+  lastPage: number;
+  total: number;
 };
 
 // SWR fetcher — apiFetch already throws ApiError on non-OK
 const fetcher = async (path: string): Promise<DonationsPayload> => {
-  const res = await apiFetch<{ data: ApiDonation[] }>(path);
-  return { list: res.data.map(mapApiDonation), fetchedAt: Date.now() };
+  const res = await apiFetch<PaginatedDonations>(path);
+  return {
+    list: res.data.map(mapApiDonation),
+    fetchedAt: Date.now(),
+    currentPage: res.current_page,
+    lastPage: res.last_page,
+    total: res.total,
+  };
+};
+
+type DonationCategory = {
+  id: number;
+  name: string;
 };
 
 type FilterKey = "all" | "urgent" | "today";
@@ -54,13 +68,28 @@ export default function ReceiverDashboard() {
   // Data — SWR with background refresh every 60 s (replaces setInterval + setTick)
   // No full component re-render: only the parts that use `data` will update.
   // ---------------------------------------------------------------------------
+  const [query, setQuery] = useState("");
+  const [filterKey, setFilterKey] = useState<FilterKey>("all");
+  const [categoryId, setCategoryId] = useState("");
+  const [page, setPage] = useState(1);
+
+  const swrKey = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set("per_page", "12");
+    params.set("page", String(page));
+    if (query.trim()) params.set("q", query.trim());
+    if (categoryId) params.set("category_id", categoryId);
+    if (filterKey === "urgent") params.set("sort", "expiry_soon");
+    return `/donations?${params.toString()}`;
+  }, [query, categoryId, filterKey, page]);
+
   const {
     data: donationsPayload,
     error: swrError,
     isLoading,
     mutate,
     isValidating,
-  } = useSWR<DonationsPayload>("/donations", fetcher, {
+  } = useSWR<DonationsPayload>(swrKey, fetcher, {
     refreshInterval: 60_000,      // background poll — no re-render tsunami
     revalidateOnFocus: false,     // don't refetch when user tabs back in
     dedupingInterval: 30_000,
@@ -68,11 +97,21 @@ export default function ReceiverDashboard() {
     onError: () => {},            // errors handled via swrError below
   });
 
-  const [query, setQuery] = useState("");
-  const [filterKey, setFilterKey] = useState<FilterKey>("all");
+  const { data: categoriesPayload } = useSWR<{ data: DonationCategory[] }>(
+    "/donations/categories",
+    async (path: string) => apiFetch<{ data: DonationCategory[] }>(path),
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 300_000,
+    },
+  );
 
   const donations = donationsPayload?.list ?? null;
   const fetchedAt = donationsPayload?.fetchedAt ?? 0;
+  const currentPage = donationsPayload?.currentPage ?? page;
+  const lastPage = donationsPayload?.lastPage ?? 1;
+  const total = donationsPayload?.total ?? 0;
+  const categories = categoriesPayload?.data ?? [];
 
   const error =
     swrError instanceof ApiError
@@ -108,14 +147,7 @@ export default function ReceiverDashboard() {
 
   const filtered = useMemo(() => {
     if (!donations) return null;
-    const q = query.trim().toLowerCase();
     return donations.filter((d) => {
-      if (q) {
-        const hay = [d.title, d.description, d.pickup_address, d.donor?.name ?? "", d.donor?.city ?? ""]
-          .join(" ")
-          .toLowerCase();
-        if (!hay.includes(q)) return false;
-      }
       if (filterKey === "urgent") {
         const h = hoursUntil(d.pickup_time);
         if (h === null || h < 0 || h >= URGENT_WINDOW_HOURS) return false;
@@ -125,7 +157,7 @@ export default function ReceiverDashboard() {
       }
       return true;
     });
-  }, [donations, query, filterKey, fetchedAt, endOfDay]);
+  }, [donations, filterKey, fetchedAt, endOfDay]);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -136,7 +168,7 @@ export default function ReceiverDashboard() {
   }, []);
 
   const firstName = user?.name?.split(" ")[0] ?? "";
-  const hasActiveFilter = filterKey !== "all" || query.length > 0;
+  const hasActiveFilter = filterKey !== "all" || query.length > 0 || categoryId !== "";
 
   return (
     <div>
@@ -213,15 +245,21 @@ export default function ReceiverDashboard() {
               <input
                 type="search"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => {
+                  setPage(1);
+                  setQuery(e.target.value);
+                }}
                 placeholder="Cari berdasarkan nama, alamat, donatur..."
                 aria-label="Cari donasi"
                 className="w-full rounded-xl border border-[var(--brand-100)] bg-white py-2.5 pl-9 pr-9 text-sm text-[var(--brand-950)] placeholder:text-[var(--text-mid)]/60 focus:border-[var(--brand-400)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-50)]"
               />
               {query && (
                 <button
-                  type="button"
-                  onClick={() => setQuery("")}
+                    type="button"
+                    onClick={() => {
+                      setPage(1);
+                      setQuery("");
+                    }}
                   aria-label="Hapus pencarian"
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-[var(--text-mid)] hover:bg-[var(--brand-50)] hover:text-[var(--brand-700)]"
                 >
@@ -232,12 +270,18 @@ export default function ReceiverDashboard() {
 
             <div className="flex items-center gap-1.5 flex-wrap">
               <Filter className="h-4 w-4 text-[var(--text-mid)] mr-1" aria-hidden="true" />
-              <FilterChip active={filterKey === "all"} onClick={() => setFilterKey("all")}>
+              <FilterChip active={filterKey === "all"} onClick={() => {
+                setPage(1);
+                setFilterKey("all");
+              }}>
                 Semua
               </FilterChip>
               <FilterChip
                 active={filterKey === "urgent"}
-                onClick={() => setFilterKey("urgent")}
+                onClick={() => {
+                  setPage(1);
+                  setFilterKey("urgent");
+                }}
                 tone="hot"
                 count={stats.urgent}
               >
@@ -245,7 +289,10 @@ export default function ReceiverDashboard() {
               </FilterChip>
               <FilterChip
                 active={filterKey === "today"}
-                onClick={() => setFilterKey("today")}
+                onClick={() => {
+                  setPage(1);
+                  setFilterKey("today");
+                }}
                 tone="warm"
                 count={stats.endingToday}
               >
@@ -275,6 +322,29 @@ export default function ReceiverDashboard() {
             </div>
           </div>
 
+          {categories.length > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap mt-2">
+              <FilterChip active={categoryId === ""} onClick={() => {
+                setPage(1);
+                setCategoryId("");
+              }}>
+                Semua kategori
+              </FilterChip>
+              {categories.map((category) => (
+                <FilterChip
+                  key={category.id}
+                  active={categoryId === String(category.id)}
+                  onClick={() => {
+                    setPage(1);
+                    setCategoryId(String(category.id));
+                  }}
+                >
+                  {category.name}
+                </FilterChip>
+              ))}
+            </div>
+          )}
+
           <AnimatePresence>
             {hasActiveFilter && filtered && (
               <motion.div
@@ -283,7 +353,7 @@ export default function ReceiverDashboard() {
                 exit={{ opacity: 0, height: 0 }}
                 className="text-xs text-[var(--text-mid)] mt-2 px-1"
               >
-                Menampilkan <span className="font-semibold text-[var(--brand-700)]">{filtered.length}</span> dari {donations.length} donasi
+                Menampilkan <span className="font-semibold text-[var(--brand-700)]">{filtered.length}</span> dari {total} donasi
               </motion.div>
             )}
           </AnimatePresence>
@@ -324,8 +394,10 @@ export default function ReceiverDashboard() {
               <button
                 type="button"
                 onClick={() => {
+                  setPage(1);
                   setQuery("");
                   setFilterKey("all");
+                  setCategoryId("");
                 }}
                 className="inline-flex items-center gap-2 bg-[var(--brand-600)] text-white px-4 py-2.5 rounded-xl font-semibold text-sm hover:bg-[var(--brand-700)]"
               >
@@ -347,6 +419,30 @@ export default function ReceiverDashboard() {
             ))}
           </AnimatePresence>
         </motion.div>
+      )}
+
+      {lastPage > 1 && (
+        <div className="mt-6 flex items-center justify-center gap-2">
+          <button
+            type="button"
+            disabled={currentPage <= 1}
+            onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+            className="rounded-lg border border-[var(--brand-100)] bg-white px-3 py-1.5 text-sm text-[var(--brand-700)] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            ←
+          </button>
+          <span className="text-sm text-[var(--text-mid)]">
+            {currentPage} / {lastPage}
+          </span>
+          <button
+            type="button"
+            disabled={currentPage >= lastPage}
+            onClick={() => setPage((prev) => Math.min(lastPage, prev + 1))}
+            className="rounded-lg border border-[var(--brand-100)] bg-white px-3 py-1.5 text-sm text-[var(--brand-700)] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            →
+          </button>
+        </div>
       )}
     </div>
   );
