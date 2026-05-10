@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   Camera,
   MessageCircle,
+  Tag,
 } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
 import {
@@ -75,8 +76,24 @@ export default function DonationDetailPage({ params }: Props) {
 
   const load = async () => {
     try {
-      const res = await apiFetch<{ data: ApiDonation }>(`/donations/${id}`);
-      setDonation(mapApiDonation(res.data));
+      const res = await apiFetch<{ data: ApiDonation; my_claim?: Omit<ApiClaim, "donation"> | null }>(
+        `/donations/${id}`,
+      );
+      const mappedDonation = mapApiDonation(res.data);
+      setDonation(mappedDonation);
+      if (res.my_claim !== undefined) {
+        setClaim(
+          res.my_claim
+            ? {
+                ...res.my_claim,
+                donation: mappedDonation,
+              }
+            : null,
+        );
+        setClaimError("");
+      } else {
+        await loadClaim();
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Gagal memuat donasi");
     }
@@ -100,7 +117,6 @@ export default function DonationDetailPage({ params }: Props) {
 
   useEffect(() => {
     load();
-    loadClaim();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -275,13 +291,29 @@ export default function DonationDetailPage({ params }: Props) {
 
         <div className="grid sm:grid-cols-2 gap-3 mb-6">
           <InfoRow icon={<Package className="h-4 w-4" />} label="Jumlah" value={donation.quantity} />
-          <InfoRow icon={<Clock className="h-4 w-4" />} label="Waktu jemput" value={formatPickupTime(donation.pickup_time)} />
+          <InfoRow
+            icon={<Clock className="h-4 w-4" />}
+            label="Jendela jemput"
+            value={`${donation.available_from ? formatPickupTime(donation.available_from) : "—"} – ${formatPickupTime(donation.pickup_time)}`}
+          />
           <InfoRow icon={<MapPin className="h-4 w-4" />} label="Alamat" value={donation.pickup_address} />
+          {donation.category && (
+            <InfoRow icon={<Tag className="h-4 w-4" />} label="Kategori" value={donation.category.name} />
+          )}
           <InfoRow icon={<User className="h-4 w-4" />} label="Donatur" value={donation.donor?.name ?? "—"} />
           {donation.donor?.phone && (
             <InfoRow icon={<Phone className="h-4 w-4" />} label="Kontak donatur" value={donation.donor.phone} />
           )}
         </div>
+        {donation.has_coordinates && (
+          <Link
+            href={`/receiver/map?q=${encodeURIComponent(donation.title)}`}
+            className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-[var(--brand-600)] hover:underline"
+          >
+            <MapPin className="h-4 w-4" />
+            Lihat di peta
+          </Link>
+        )}
 
         <details className="mb-5 rounded-2xl border border-[var(--brand-100)] bg-[var(--cream)] overflow-hidden">
           <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-semibold text-[var(--brand-950)] select-none">

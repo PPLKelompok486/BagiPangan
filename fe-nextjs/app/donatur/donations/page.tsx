@@ -252,6 +252,12 @@ function DonationCard({ donation, index }: { donation: DonorDonation; index: num
       <div className="mt-4 text-[10px] uppercase tracking-[0.18em] text-[var(--text-mid)]/70">
         {timeAgo(donation.created_at)}
       </div>
+      <Link
+        href={`/donatur/donations/${donation.id}`}
+        className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-[var(--brand-700)] hover:text-[var(--brand-800)]"
+      >
+        Lihat detail
+      </Link>
     </motion.article>
   );
 }
