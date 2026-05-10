@@ -4,7 +4,7 @@ import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CalendarClock, Clock, MapPin, Package, Tag } from "lucide-react";
-import { ApiError, apiFetch, getUser } from "@/lib/api";
+import { ApiError, apiFetch } from "@/lib/api";
 import { formatPickupTime, type ApiDonation, type Donation, mapApiDonation, STATUS_LABEL, STATUS_TONE } from "@/lib/donations";
 
 type Props = { params: Promise<{ id: string }> };
@@ -34,18 +34,16 @@ export default function DonorDonationDetailPage({ params }: Props) {
 
     const load = async () => {
       try {
-        const res = await apiFetch<{ data: ApiDonation }>(`/donations/${id}`);
+        const res = await apiFetch<{ data: ApiDonation[] }>("/donations/mine");
         if (!active) return;
-
-        const mapped = mapApiDonation(res.data);
-        const user = getUser();
-        if (!user || mapped.user_id !== user.id) {
+        const found = res.data.find((item) => item.id === Number(id));
+        if (!found) {
           const notice = encodeURIComponent(UNAUTHORIZED_NOTICE);
           router.replace(`/donatur/dashboard?notice=${notice}`);
           return;
         }
 
-        setDonation(mapped);
+        setDonation(mapApiDonation(found));
       } catch (err) {
         if (!active) return;
         setError(err instanceof ApiError ? err.message : "Gagal memuat detail donasi");

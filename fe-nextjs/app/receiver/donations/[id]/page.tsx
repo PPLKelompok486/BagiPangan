@@ -32,6 +32,7 @@ import {
 } from "@/lib/donations";
 
 type Props = { params: Promise<{ id: string }> };
+type ApiClaimWithoutDonation = Omit<ApiClaim, "donation">;
 
 function pickupCountdown(iso: string): string {
   const t = Date.parse(iso);
@@ -80,7 +81,7 @@ export default function DonationDetailPage({ params }: Props) {
 
   const load = async () => {
     try {
-      const res = await apiFetch<{ data: ApiDonation; my_claim: Omit<ApiClaim, "donation"> | null }>(
+      const res = await apiFetch<{ data: ApiDonation; my_claim: ApiClaimWithoutDonation | null }>(
         `/donations/${id}`,
       );
       const mappedDonation = mapApiDonation(res.data);
