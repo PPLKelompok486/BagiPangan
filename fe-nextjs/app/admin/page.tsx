@@ -143,7 +143,7 @@ export default function AdminPage() {
           </div>
           <div className="flex-1 rounded-2xl overflow-hidden border border-gray-100 relative bg-(--brand-50)/30">
             {/* Embedded Live Map from existing map component */}
-            <DonationMapPageContent />
+            <DonationMapPageContent context="admin" />
           </div>
         </div>
 
