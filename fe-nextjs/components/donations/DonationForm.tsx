@@ -11,6 +11,7 @@ import {
   FileText,
   Tag,
   Loader2,
+  LocateFixed,
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
@@ -95,6 +96,7 @@ export default function DonationForm({
 }: DonationFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [gettingLocation, setGettingLocation] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
@@ -131,6 +133,31 @@ export default function DonationForm({
     };
     fetchCategories();
   }, []);
+
+  const handleUseMyLocation = () => {
+    if (!("geolocation" in navigator)) {
+      setError("Browser tidak mendukung deteksi lokasi.");
+      return;
+    }
+
+    setGettingLocation(true);
+    setError("");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setFormData((prev) => ({
+          ...prev,
+          latitude: position.coords.latitude.toFixed(7),
+          longitude: position.coords.longitude.toFixed(7),
+        }));
+        setGettingLocation(false);
+      },
+      () => {
+        setError("Gagal mendapatkan lokasi. Pastikan izin lokasi sudah aktif.");
+        setGettingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 8_000 },
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -298,6 +325,16 @@ export default function DonationForm({
                 placeholder="Sebutkan jalan, nomor rumah, atau patokan..."
               />
             </div>
+
+            <button
+              type="button"
+              onClick={handleUseMyLocation}
+              disabled={gettingLocation}
+              className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--brand-700)] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {gettingLocation ? <Loader2 className="h-4 w-4 animate-spin" /> : <LocateFixed className="h-4 w-4" />}
+              {gettingLocation ? "Mendeteksi lokasi..." : "Gunakan lokasi saya"}
+            </button>
 
             <div className="space-y-2">
               <label className="ml-1 text-sm font-bold text-[var(--brand-900)]">Detail Patokan</label>

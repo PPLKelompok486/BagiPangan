@@ -24,6 +24,7 @@ function buildPath(filters: DonationMapFilters): string {
   params.set("limit", "500");
   if (filters.category_id) params.set("category_id", filters.category_id);
   if (filters.q.trim()) params.set("q", filters.q.trim());
+  if (filters.context) params.set("context", filters.context);
   return `/donations/map?${params.toString()}`;
 }
 
