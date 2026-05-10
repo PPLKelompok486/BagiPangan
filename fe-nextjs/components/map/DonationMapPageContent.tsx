@@ -57,7 +57,10 @@ function DonationMapScreen() {
 
   useEffect(() => {
     apiFetch<{ data: CategoryOption[] }>("/donations/categories")
-      .then((payload) => setCategories(payload.data))
+      .then((payload) => {
+        const cats = payload && payload.data && Array.isArray(payload.data) ? payload.data : [];
+        setCategories(cats);
+      })
       .catch(() => setCategories([]));
   }, []);
 

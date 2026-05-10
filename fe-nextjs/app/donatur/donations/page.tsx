@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, CalendarClock, Filter, MapPin, Package, Plus, Search, X } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
+import { ExportCsvButton } from "@/components/ui/ExportCsvButton";
 import {
   mapApiDonationToDonor,
   STATUS_LABEL,
@@ -84,13 +85,19 @@ export default function DonorDonationsListPage() {
             Semua donasi yang pernah Anda posting.
           </p>
         </div>
-        <Link
-          href="/donatur/donations/new"
-          className="inline-flex items-center gap-2 rounded-xl bg-[var(--brand-600)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--brand-700)]"
-        >
-          <Plus className="h-4 w-4" />
-          Buat donasi baru
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <ExportCsvButton
+            endpoint="/api/donations/mine/export"
+            filename={`donasi-saya-${new Date().toISOString().slice(0, 10)}.csv`}
+          />
+          <Link
+            href="/donatur/donations/new"
+            className="inline-flex items-center gap-2 rounded-xl bg-[var(--brand-600)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--brand-700)]"
+          >
+            <Plus className="h-4 w-4" />
+            Buat donasi baru
+          </Link>
+        </div>
       </div>
 
       <div className="mb-4 rounded-2xl border border-[var(--brand-100)] bg-white p-3">

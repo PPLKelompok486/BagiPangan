@@ -126,6 +126,51 @@ class DonationController extends Controller
         return response()->json(['data' => $donations]);
     }
 
+    public function exportMine(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $userId = Auth::id();
+        $fileName = 'donasi-saya-' . now()->format('Ymd-His') . '.csv';
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
+            'Cache-Control'       => 'no-store, no-cache, must-revalidate',
+        ];
+
+        $callback = function () use ($userId) {
+            $file = fopen('php://output', 'wb');
+            fwrite($file, "\xEF\xBB\xBF");
+
+            fputcsv($file, [
+                'ID', 'Judul', 'Kategori', 'Kota', 'Status',
+                'Jumlah Porsi', 'Tersedia Dari', 'Tersedia Hingga', 'Tgl Dibuat',
+            ]);
+
+            Donation::query()
+                ->with(['category:id,name'])
+                ->where('user_id', $userId)
+                ->orderByDesc('created_at')
+                ->lazy(200)
+                ->each(function (Donation $donation) use ($file) {
+                    fputcsv($file, [
+                        $donation->id,
+                        $donation->title,
+                        optional($donation->category)->name ?? '',
+                        $donation->location_city ?? '',
+                        $donation->status,
+                        $donation->portion_count,
+                        optional($donation->available_from)->toDateTimeString() ?? '',
+                        optional($donation->available_until)->toDateTimeString() ?? '',
+                        optional($donation->created_at)->toDateTimeString() ?? '',
+                    ]);
+                });
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
     public function claim(Request $request, $id)
     {
         $receiverId = Auth::id();
