@@ -46,4 +46,3 @@ class DonationDetailTest extends TestCase
             ->assertJsonPath('my_claim.status', Claim::STATUS_REQUESTED);
     }
 }
-

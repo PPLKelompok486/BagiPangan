@@ -39,7 +39,8 @@ export default function DonorDonationDetailPage({ params }: Props) {
         const mapped = mapApiDonation(res.data);
         const user = getUser();
         if (!user || mapped.user_id !== user.id) {
-          router.replace("/donatur/dashboard?notice=Anda%20tidak%20dapat%20mengakses%20detail%20donasi%20ini");
+          const notice = encodeURIComponent("Anda tidak dapat mengakses detail donasi ini");
+          router.replace(`/donatur/dashboard?notice=${notice}`);
           return;
         }
 
