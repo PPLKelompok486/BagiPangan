@@ -44,10 +44,15 @@ class DonationIndexTest extends TestCase
             'status' => Donation::STATUS_APPROVED,
         ]);
 
-        $this->getJson('/api/donations?q=0')
+        $response = $this->getJson('/api/donations?q=0');
+
+        $response
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.title', 'Paket 0 rupiah');
+
+        $titles = collect($response->json('data'))->pluck('title');
+        $this->assertFalse($titles->contains('Paket 2026'));
     }
 
     public function test_it_filters_by_category_id(): void
@@ -98,11 +103,11 @@ class DonationIndexTest extends TestCase
 
     public function test_it_sorts_by_expiry_soon_and_returns_pagination_fields(): void
     {
-        $later = Donation::factory()->create([
+        $expiresLater = Donation::factory()->create([
             'status' => Donation::STATUS_APPROVED,
             'available_until' => now()->addHours(10),
         ]);
-        $earlier = Donation::factory()->create([
+        $expiresSoon = Donation::factory()->create([
             'status' => Donation::STATUS_APPROVED,
             'available_until' => now()->addHours(2),
         ]);
@@ -118,10 +123,10 @@ class DonationIndexTest extends TestCase
             ->assertJsonPath('last_page', 2)
             ->assertJsonPath('per_page', 1)
             ->assertJsonPath('total', 2)
-            ->assertJsonPath('data.0.id', $earlier->id);
+            ->assertJsonPath('data.0.id', $expiresSoon->id);
 
         $this->getJson('/api/donations?sort=expiry_soon&per_page=1&page=2')
             ->assertOk()
-            ->assertJsonPath('data.0.id', $later->id);
+            ->assertJsonPath('data.0.id', $expiresLater->id);
     }
 }
