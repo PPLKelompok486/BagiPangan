@@ -35,7 +35,7 @@ class DonationController extends Controller
             ->where('status', Donation::STATUS_APPROVED);
 
         if ($request->filled('q')) {
-            $escaped = addcslashes(strtolower(trim((string) $request->input('q'))), '\\%_');
+            $escaped = $this->escapeLikeValue(strtolower(trim((string) $request->input('q'))));
             $needle = '%' . $escaped . '%';
             $query->where(function ($sub) use ($needle) {
                 $sub->whereRaw("LOWER(title) LIKE ? ESCAPE '\\\\'", [$needle])
@@ -48,7 +48,7 @@ class DonationController extends Controller
         }
 
         if ($request->filled('city')) {
-            $escapedCity = addcslashes(strtolower(trim((string) $request->input('city'))), '\\%_');
+            $escapedCity = $this->escapeLikeValue(strtolower(trim((string) $request->input('city'))));
             $cityNeedle = '%' . $escapedCity . '%';
             $query->where(function ($sub) use ($cityNeedle) {
                 $sub->whereRaw("LOWER(location_city) LIKE ? ESCAPE '\\\\'", [$cityNeedle])
@@ -272,5 +272,10 @@ class DonationController extends Controller
         $donation->update(['status' => 'cancelled']);
 
         return response()->json(['message' => 'Donasi berhasil dibatalkan']);
+    }
+
+    private function escapeLikeValue(string $value): string
+    {
+        return str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $value);
     }
 }

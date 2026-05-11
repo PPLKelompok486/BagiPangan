@@ -31,7 +31,7 @@ class DonationIndexTest extends TestCase
             ->assertJsonPath('data.0.title', 'Nasi Kotak Lebih');
     }
 
-    public function test_it_filters_keyword_zero_value(): void
+    public function test_it_searches_for_literal_zero_character(): void
     {
         Donation::factory()->create([
             'title' => 'Paket 2026',
@@ -120,7 +120,7 @@ class DonationIndexTest extends TestCase
     public function test_it_treats_city_wildcards_as_literal_characters(): void
     {
         Donation::factory()->create([
-            'location_city' => 'SaoxPaulo',
+            'location_city' => 'SaoPaulo',
             'status' => Donation::STATUS_APPROVED,
         ]);
         Donation::factory()->create([
