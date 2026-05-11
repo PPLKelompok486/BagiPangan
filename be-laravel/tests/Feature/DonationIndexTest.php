@@ -50,9 +50,25 @@ class DonationIndexTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.title', 'Paket 0 rupiah');
+    }
 
-        $titles = collect($response->json('data'))->pluck('title');
-        $this->assertFalse($titles->contains('Paket 2026'));
+    public function test_it_treats_keyword_wildcards_as_literal_characters(): void
+    {
+        Donation::factory()->create([
+            'title' => 'Paket 100 Premium',
+            'description' => 'Tanpa simbol persen',
+            'status' => Donation::STATUS_APPROVED,
+        ]);
+        Donation::factory()->create([
+            'title' => 'Paket 100% Halal',
+            'description' => 'Ada simbol persen',
+            'status' => Donation::STATUS_APPROVED,
+        ]);
+
+        $this->getJson('/api/donations?q=100%')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.title', 'Paket 100% Halal');
     }
 
     public function test_it_filters_by_category_id(): void
@@ -99,6 +115,23 @@ class DonationIndexTest extends TestCase
         $this->getJson('/api/donations?city=bandung')
             ->assertOk()
             ->assertJsonCount(2, 'data');
+    }
+
+    public function test_it_treats_city_wildcards_as_literal_characters(): void
+    {
+        Donation::factory()->create([
+            'location_city' => 'SaoxPaulo',
+            'status' => Donation::STATUS_APPROVED,
+        ]);
+        Donation::factory()->create([
+            'location_city' => 'Sao_Paulo',
+            'status' => Donation::STATUS_APPROVED,
+        ]);
+
+        $this->getJson('/api/donations?city=sao_paulo')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.location_city', 'Sao_Paulo');
     }
 
     public function test_it_sorts_by_expiry_soon_and_returns_pagination_fields(): void

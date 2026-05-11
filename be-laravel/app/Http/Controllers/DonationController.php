@@ -35,10 +35,11 @@ class DonationController extends Controller
             ->where('status', Donation::STATUS_APPROVED);
 
         if ($request->filled('q')) {
-            $needle = '%' . strtolower(trim((string) $request->input('q'))) . '%';
+            $escaped = addcslashes(strtolower(trim((string) $request->input('q'))), '\\%_');
+            $needle = '%' . $escaped . '%';
             $query->where(function ($sub) use ($needle) {
-                $sub->whereRaw('LOWER(title) LIKE ?', [$needle])
-                    ->orWhereRaw('LOWER(description) LIKE ?', [$needle]);
+                $sub->whereRaw("LOWER(title) LIKE ? ESCAPE '\\\\'", [$needle])
+                    ->orWhereRaw("LOWER(description) LIKE ? ESCAPE '\\\\'", [$needle]);
             });
         }
 
@@ -47,10 +48,11 @@ class DonationController extends Controller
         }
 
         if ($request->filled('city')) {
-            $cityNeedle = '%' . strtolower(trim((string) $request->input('city'))) . '%';
+            $escapedCity = addcslashes(strtolower(trim((string) $request->input('city'))), '\\%_');
+            $cityNeedle = '%' . $escapedCity . '%';
             $query->where(function ($sub) use ($cityNeedle) {
-                $sub->whereRaw('LOWER(location_city) LIKE ?', [$cityNeedle])
-                    ->orWhereHas('user', fn ($userQuery) => $userQuery->whereRaw('LOWER(city) LIKE ?', [$cityNeedle]));
+                $sub->whereRaw("LOWER(location_city) LIKE ? ESCAPE '\\\\'", [$cityNeedle])
+                    ->orWhereHas('user', fn ($userQuery) => $userQuery->whereRaw("LOWER(city) LIKE ? ESCAPE '\\\\'", [$cityNeedle]));
             });
         }
 
