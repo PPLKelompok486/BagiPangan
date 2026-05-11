@@ -31,7 +31,7 @@ class DonationIndexTest extends TestCase
             ->assertJsonPath('data.0.title', 'Nasi Kotak Lebih');
     }
 
-    public function test_it_searches_for_literal_zero_character(): void
+    public function test_it_searches_for_literal_zero_string(): void
     {
         Donation::factory()->create([
             'title' => 'Paket 2026',

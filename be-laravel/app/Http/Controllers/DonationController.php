@@ -274,6 +274,11 @@ class DonationController extends Controller
         return response()->json(['message' => 'Donasi berhasil dibatalkan']);
     }
 
+    /**
+     * Escape LIKE wildcard characters so user input is matched literally.
+     *
+     * This is paired with SQL `ESCAPE '\'` in LIKE clauses.
+     */
     private function escapeLikeValue(string $value): string
     {
         return str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $value);
