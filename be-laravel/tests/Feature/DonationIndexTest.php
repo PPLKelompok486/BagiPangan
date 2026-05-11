@@ -160,6 +160,9 @@ class DonationIndexTest extends TestCase
 
         $this->getJson('/api/donations?sort=expiry_soon&per_page=1&page=2')
             ->assertOk()
+            ->assertJsonPath('current_page', 2)
+            ->assertJsonPath('last_page', 2)
+            ->assertJsonPath('total', 2)
             ->assertJsonPath('data.0.id', $expiresLater->id);
     }
 }

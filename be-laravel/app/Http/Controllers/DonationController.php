@@ -40,8 +40,8 @@ class DonationController extends Controller
                 $escaped = $this->escapeLikeValue($normalizedQuery);
                 $needle = '%' . $escaped . '%';
                 $query->where(function ($sub) use ($needle) {
-                    $sub->whereRaw("LOWER(title) LIKE ? ESCAPE '\\\\'", [$needle])
-                        ->orWhereRaw("LOWER(description) LIKE ? ESCAPE '\\\\'", [$needle]);
+                    $sub->whereRaw("LOWER(title) LIKE ? ESCAPE '!'", [$needle])
+                        ->orWhereRaw("LOWER(description) LIKE ? ESCAPE '!'", [$needle]);
                 });
             }
         }
@@ -56,8 +56,8 @@ class DonationController extends Controller
                 $escapedCity = $this->escapeLikeValue($normalizedCity);
                 $cityNeedle = '%' . $escapedCity . '%';
                 $query->where(function ($sub) use ($cityNeedle) {
-                    $sub->whereRaw("LOWER(location_city) LIKE ? ESCAPE '\\\\'", [$cityNeedle])
-                        ->orWhereHas('user', fn ($userQuery) => $userQuery->whereRaw("LOWER(city) LIKE ? ESCAPE '\\\\'", [$cityNeedle]));
+                    $sub->whereRaw("LOWER(location_city) LIKE ? ESCAPE '!'", [$cityNeedle])
+                        ->orWhereHas('user', fn ($userQuery) => $userQuery->whereRaw("LOWER(city) LIKE ? ESCAPE '!'", [$cityNeedle]));
                 });
             }
         }
@@ -283,10 +283,10 @@ class DonationController extends Controller
     /**
      * Escape LIKE wildcard characters so user input is matched literally.
      *
-     * This is paired with SQL `ESCAPE '\'` in LIKE clauses.
+     * This is paired with SQL `ESCAPE '!'` in LIKE clauses.
      */
     private function escapeLikeValue(string $value): string
     {
-        return str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $value);
+        return str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $value);
     }
 }
