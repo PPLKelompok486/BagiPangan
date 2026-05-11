@@ -35,12 +35,15 @@ class DonationController extends Controller
             ->where('status', Donation::STATUS_APPROVED);
 
         if ($request->filled('q')) {
-            $escaped = $this->escapeLikeValue(strtolower(trim((string) $request->input('q'))));
-            $needle = '%' . $escaped . '%';
-            $query->where(function ($sub) use ($needle) {
-                $sub->whereRaw("LOWER(title) LIKE ? ESCAPE '\\\\'", [$needle])
-                    ->orWhereRaw("LOWER(description) LIKE ? ESCAPE '\\\\'", [$needle]);
-            });
+            $normalizedQuery = strtolower(trim((string) $request->input('q')));
+            if ($normalizedQuery !== '') {
+                $escaped = $this->escapeLikeValue($normalizedQuery);
+                $needle = '%' . $escaped . '%';
+                $query->where(function ($sub) use ($needle) {
+                    $sub->whereRaw("LOWER(title) LIKE ? ESCAPE '\\\\'", [$needle])
+                        ->orWhereRaw("LOWER(description) LIKE ? ESCAPE '\\\\'", [$needle]);
+                });
+            }
         }
 
         if ($categoryId = $request->input('category_id')) {
@@ -48,12 +51,15 @@ class DonationController extends Controller
         }
 
         if ($request->filled('city')) {
-            $escapedCity = $this->escapeLikeValue(strtolower(trim((string) $request->input('city'))));
-            $cityNeedle = '%' . $escapedCity . '%';
-            $query->where(function ($sub) use ($cityNeedle) {
-                $sub->whereRaw("LOWER(location_city) LIKE ? ESCAPE '\\\\'", [$cityNeedle])
-                    ->orWhereHas('user', fn ($userQuery) => $userQuery->whereRaw("LOWER(city) LIKE ? ESCAPE '\\\\'", [$cityNeedle]));
-            });
+            $normalizedCity = strtolower(trim((string) $request->input('city')));
+            if ($normalizedCity !== '') {
+                $escapedCity = $this->escapeLikeValue($normalizedCity);
+                $cityNeedle = '%' . $escapedCity . '%';
+                $query->where(function ($sub) use ($cityNeedle) {
+                    $sub->whereRaw("LOWER(location_city) LIKE ? ESCAPE '\\\\'", [$cityNeedle])
+                        ->orWhereHas('user', fn ($userQuery) => $userQuery->whereRaw("LOWER(city) LIKE ? ESCAPE '\\\\'", [$cityNeedle]));
+                });
+            }
         }
 
         $sort = $request->input('sort', 'newest');
