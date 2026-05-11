@@ -31,6 +31,25 @@ class DonationIndexTest extends TestCase
             ->assertJsonPath('data.0.title', 'Nasi Kotak Lebih');
     }
 
+    public function test_it_filters_keyword_zero_value(): void
+    {
+        Donation::factory()->create([
+            'title' => 'Paket 2026',
+            'description' => 'Nasi untuk acara',
+            'status' => Donation::STATUS_APPROVED,
+        ]);
+        Donation::factory()->create([
+            'title' => 'Paket 0 rupiah',
+            'description' => 'Promo donasi',
+            'status' => Donation::STATUS_APPROVED,
+        ]);
+
+        $this->getJson('/api/donations?q=0')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.title', 'Paket 0 rupiah');
+    }
+
     public function test_it_filters_by_category_id(): void
     {
         $bread = DonationCategory::factory()->create(['name' => 'Roti & Kue']);
@@ -79,11 +98,11 @@ class DonationIndexTest extends TestCase
 
     public function test_it_sorts_by_expiry_soon_and_returns_pagination_fields(): void
     {
-        Donation::factory()->create([
+        $later = Donation::factory()->create([
             'status' => Donation::STATUS_APPROVED,
             'available_until' => now()->addHours(10),
         ]);
-        Donation::factory()->create([
+        $earlier = Donation::factory()->create([
             'status' => Donation::STATUS_APPROVED,
             'available_until' => now()->addHours(2),
         ]);
@@ -98,9 +117,11 @@ class DonationIndexTest extends TestCase
             ->assertJsonPath('current_page', 1)
             ->assertJsonPath('last_page', 2)
             ->assertJsonPath('per_page', 1)
-            ->assertJsonPath('total', 2);
+            ->assertJsonPath('total', 2)
+            ->assertJsonPath('data.0.id', $earlier->id);
 
-        $firstId = $response->json('data.0.id');
-        $this->assertNotNull($firstId);
+        $this->getJson('/api/donations?sort=expiry_soon&per_page=1&page=2')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $later->id);
     }
 }

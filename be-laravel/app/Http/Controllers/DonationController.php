@@ -34,8 +34,8 @@ class DonationController extends Controller
         $query = Donation::with(['user:id,name,city', 'category:id,name'])
             ->where('status', Donation::STATUS_APPROVED);
 
-        if ($q = $request->input('q')) {
-            $needle = '%' . strtolower($q) . '%';
+        if ($request->filled('q')) {
+            $needle = '%' . strtolower(trim((string) $request->input('q'))) . '%';
             $query->where(function ($sub) use ($needle) {
                 $sub->whereRaw('LOWER(title) LIKE ?', [$needle])
                     ->orWhereRaw('LOWER(description) LIKE ?', [$needle]);
@@ -46,8 +46,8 @@ class DonationController extends Controller
             $query->where('category_id', $categoryId);
         }
 
-        if ($city = $request->input('city')) {
-            $cityNeedle = '%' . strtolower($city) . '%';
+        if ($request->filled('city')) {
+            $cityNeedle = '%' . strtolower(trim((string) $request->input('city'))) . '%';
             $query->where(function ($sub) use ($cityNeedle) {
                 $sub->whereRaw('LOWER(location_city) LIKE ?', [$cityNeedle])
                     ->orWhereHas('user', fn ($userQuery) => $userQuery->whereRaw('LOWER(city) LIKE ?', [$cityNeedle]));

@@ -142,8 +142,8 @@ export default function ReceiverDashboard() {
       const hrs = (t - fetchedAt) / (1000 * 60 * 60);
       if (hrs >= 0 && hrs < URGENT_WINDOW_HOURS) urgent += 1;
     }
-    return { total: donations.length, endingToday, urgent };
-  }, [donations, fetchedAt, endOfDay]);
+    return { total, endingToday, urgent };
+  }, [donations, fetchedAt, endOfDay, total]);
 
   const filtered = useMemo(() => {
     if (!donations) return null;
