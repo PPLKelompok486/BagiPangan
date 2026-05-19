@@ -46,6 +46,11 @@ export type DonationPayload = {
   category_id: number | null;
 };
 
+type CategoryOption = {
+  id: number;
+  name: string;
+};
+
 type DonationFormProps = {
   initialData?: Partial<DonationFormData>;
   onSubmit: (payload: DonationPayload) => Promise<void>;
@@ -81,6 +86,17 @@ function buildFormData(initialData?: Partial<DonationFormData>): DonationFormDat
   };
 }
 
+function normalizeCategories(payload: unknown): CategoryOption[] {
+  if (Array.isArray(payload)) {
+    return payload as CategoryOption[];
+  }
+  if (payload && typeof payload === "object" && "data" in payload) {
+    const data = (payload as { data: unknown }).data;
+    return Array.isArray(data) ? (data as CategoryOption[]) : [];
+  }
+  return [];
+}
+
 export default function DonationForm({
   initialData,
   onSubmit,
@@ -99,7 +115,8 @@ export default function DonationForm({
   const [gettingLocation, setGettingLocation] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [categoriesError, setCategoriesError] = useState("");
 
   const [formData, setFormData] = useState<DonationFormData>(() => buildFormData(initialData));
 
@@ -118,17 +135,17 @@ export default function DonationForm({
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await apiFetch<{ data: { id: number; name: string }[] }>(
-          "/donations/categories",
+        const res = await apiFetch("/donations/categories");
+        const nextCategories = normalizeCategories(res);
+        setCategories(nextCategories);
+        setCategoriesError(
+          nextCategories.length === 0
+            ? "Kategori belum tersedia. Silakan coba beberapa saat lagi."
+            : "",
         );
-        setCategories(res.data);
       } catch {
-        setCategories([
-          { id: 2, name: "Makanan Siap Saji" },
-          { id: 3, name: "Bahan Pokok" },
-          { id: 4, name: "Sayur & Buah" },
-          { id: 5, name: "Roti & Kue" },
-        ]);
+        setCategories([]);
+        setCategoriesError("Gagal memuat kategori. Silakan muat ulang halaman.");
       }
     };
     fetchCategories();
@@ -248,6 +265,7 @@ export default function DonationForm({
                   <Tag className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-mid)]" />
                   <select
                     required
+                    disabled={categories.length === 0}
                     value={formData.category_id}
                     onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
                     className="w-full appearance-none rounded-2xl border border-[var(--brand-100)] bg-[var(--brand-50)]/30 py-4 pl-12 pr-5 outline-none transition-all focus:bg-white focus:ring-2 focus:ring-[var(--brand-500)]"
@@ -259,6 +277,11 @@ export default function DonationForm({
                       </option>
                     ))}
                   </select>
+                  {categoriesError && (
+                    <p className="mt-2 text-xs font-semibold text-red-600">
+                      {categoriesError}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="space-y-2">

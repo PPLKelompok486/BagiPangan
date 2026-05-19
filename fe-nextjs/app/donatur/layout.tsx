@@ -13,14 +13,8 @@ export default function DonaturLayout({ children }: { children: React.ReactNode 
   const pathname = usePathname();
   const [avatarUrl, setAvatarUrl] = useState<string>("");
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-
-  const [user] = useState<AuthUser | null>(() => {
-    const u = getUser();
-    if (u?.role !== "donatur") {
-      return null;
-    }
-    return u;
-  });
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [hydrated, setHydrated] = useState(false);
 
   const fetchAvatar = async () => {
     // Check session cache first — avoids waterfall request on every navigation
@@ -44,6 +38,7 @@ export default function DonaturLayout({ children }: { children: React.ReactNode 
   };
 
   useEffect(() => {
+    setHydrated(true);
     const u = getUser();
     if (!u) {
       router.replace("/login");
@@ -53,6 +48,7 @@ export default function DonaturLayout({ children }: { children: React.ReactNode 
       router.replace("/receiver/dashboard");
       return;
     }
+    setUser(u);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchAvatar();
   }, [router]);
@@ -72,7 +68,7 @@ export default function DonaturLayout({ children }: { children: React.ReactNode 
     router.replace("/login");
   };
 
-  if (!user) return null;
+  if (!hydrated || !user) return null;
 
   const navItems = [
     { href: "/donatur/dashboard", label: "Dashboard", icon: LayoutGrid },

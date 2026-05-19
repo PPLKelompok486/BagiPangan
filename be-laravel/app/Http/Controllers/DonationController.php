@@ -4,22 +4,46 @@ namespace App\Http\Controllers;
 
 use App\Models\Claim;
 use App\Models\Donation;
+use App\Models\DonationCategory;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class DonationController extends Controller
 {
     public function categories()
     {
-        $categories = Cache::remember('donation_categories', 300, function () {
-            return \App\Models\DonationCategory::where('is_active', true)->get(['id', 'name']);
-        });
+        $items = DonationCategory::where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
-        return response()->json(['data' => $categories]);
+        if ($items->isEmpty()) {
+            $defaults = [
+                ['name' => 'Makanan Siap Saji', 'description' => 'Nasi bungkus, lauk pauk, dll'],
+                ['name' => 'Bahan Pokok', 'description' => 'Beras, minyak, telur, dll'],
+                ['name' => 'Sayur & Buah', 'description' => 'Hasil tani segar'],
+                ['name' => 'Roti & Kue', 'description' => 'Produk bakery dan camilan'],
+            ];
+
+            foreach ($defaults as $cat) {
+                DonationCategory::updateOrCreate([
+                    'slug' => Str::slug($cat['name']),
+                ], [
+                    'name' => $cat['name'],
+                    'description' => $cat['description'],
+                    'is_active' => true,
+                ]);
+            }
+
+            $items = DonationCategory::where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name']);
+        }
+
+        return response()->json(['data' => $items]);
     }
 
     public function index(Request $request)
