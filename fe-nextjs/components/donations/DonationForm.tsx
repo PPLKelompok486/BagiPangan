@@ -140,7 +140,7 @@ export default function DonationForm({
         setCategories(nextCategories);
         setCategoriesError(
           nextCategories.length === 0
-            ? "Kategori belum tersedia. Silakan coba beberapa saat lagi."
+            ? "Kategori belum tersedia. Donasi tetap bisa dikirim tanpa memilih kategori."
             : "",
         );
       } catch {
@@ -264,7 +264,7 @@ export default function DonationForm({
                 <div className="relative">
                   <Tag className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-mid)]" />
                   <select
-                    required
+                    required={categories.length > 0}
                     disabled={categories.length === 0}
                     value={formData.category_id}
                     onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
