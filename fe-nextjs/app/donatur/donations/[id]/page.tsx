@@ -12,6 +12,17 @@ type Props = { params: Promise<{ id: string }> };
 const EDITABLE_STATUSES = new Set(["pending", "approved"] as const);
 const UNAUTHORIZED_NOTICE = "Anda tidak dapat mengakses detail donasi ini";
 
+type DonationProgressStatus = "pending" | "approved" | "claimed" | "completed";
+
+const PROGRESS_STEPS: Array<{ key: DonationProgressStatus; label: string; note: string }> = [
+  { key: "pending", label: "Menunggu review", note: "Admin memeriksa donasi Anda." },
+  { key: "approved", label: "Disetujui", note: "Donasi tayang dan bisa diklaim." },
+  { key: "claimed", label: "Diklaim", note: "Penerima sudah mengklaim donasi." },
+  { key: "completed", label: "Selesai", note: "Donasi sudah didistribusikan." },
+];
+
+const PROGRESS_KEYS = new Set(PROGRESS_STEPS.map((step) => step.key));
+
 const STATUS_NOTE: Record<Donation["status"], string> = {
   pending: "Donasi sedang menunggu verifikasi admin.",
   approved: "Donasi sudah tayang dan dapat diklaim penerima.",
@@ -19,6 +30,11 @@ const STATUS_NOTE: Record<Donation["status"], string> = {
   claimed: "Ada 1 penerima mengklaim donasi ini.",
   completed: "Donasi sudah selesai didistribusikan.",
   cancelled: "Donasi ini sudah dibatalkan.",
+};
+
+const TERMINAL_STATUS_TONE: Record<Exclude<Donation["status"], DonationProgressStatus>, string> = {
+  rejected: "border-red-200 bg-red-50 text-red-700",
+  cancelled: "border-slate-200 bg-slate-50 text-slate-700",
 };
 
 export default function DonorDonationDetailPage({ params }: Props) {
@@ -112,6 +128,14 @@ export default function DonorDonationDetailPage({ params }: Props) {
           {STATUS_NOTE[donation.status]}
         </p>
 
+        {isProgressStatus(donation.status) ? (
+          <StatusTimeline status={donation.status} />
+        ) : (
+          <div className={`mb-6 rounded-2xl border px-4 py-3 text-sm font-semibold ${TERMINAL_STATUS_TONE[donation.status]}`}>
+            Status akhir: {STATUS_LABEL[donation.status]}
+          </div>
+        )}
+
         <p className="mb-6 leading-relaxed text-[var(--text-mid)]">{donation.description}</p>
 
         <div className="mb-6 grid gap-3 sm:grid-cols-2">
@@ -172,6 +196,44 @@ function InfoRow({
       <div>
         <div className="text-xs uppercase tracking-wider text-[var(--text-mid)]">{label}</div>
         <div className="text-sm font-semibold text-[var(--brand-950)]">{value}</div>
+      </div>
+    </div>
+  );
+}
+
+function isProgressStatus(status: Donation["status"]): status is DonationProgressStatus {
+  return PROGRESS_KEYS.has(status as DonationProgressStatus);
+}
+
+function StatusTimeline({ status }: { status: DonationProgressStatus }) {
+  const currentIndex = PROGRESS_STEPS.findIndex((step) => step.key === status);
+
+  return (
+    <div className="mb-6 rounded-2xl border border-[var(--brand-100)] bg-white p-4">
+      <div className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-mid)]">
+        Progres donasi
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        {PROGRESS_STEPS.map((step, idx) => {
+          const state = idx < currentIndex ? "done" : idx === currentIndex ? "current" : "upcoming";
+          const tone =
+            state === "done"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+              : state === "current"
+                ? "border-[var(--brand-200)] bg-[var(--brand-50)] text-[var(--brand-700)]"
+                : "border-[var(--brand-100)] bg-[var(--cream)] text-[var(--text-mid)]";
+
+          return (
+            <div key={step.key} className={`rounded-2xl border px-3 py-3 ${tone}`}>
+              <div className="text-xs font-semibold uppercase tracking-[0.16em]">
+                {step.label}
+              </div>
+              <div className="mt-1 text-sm font-medium">
+                {step.note}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
