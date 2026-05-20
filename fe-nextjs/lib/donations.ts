@@ -31,6 +31,16 @@ export type ApiDonation = {
   category?: { id: number; name: string } | null;
 };
 
+export type PaginatedDonations = {
+  data: ApiDonation[];
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+  from: number | null;
+  to: number | null;
+};
+
 export type DonationDonor = {
   id: number;
   name: string;
