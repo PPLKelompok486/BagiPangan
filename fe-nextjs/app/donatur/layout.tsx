@@ -48,8 +48,8 @@ export default function DonaturLayout({ children }: { children: React.ReactNode 
       router.replace("/receiver/dashboard");
       return;
     }
-    setUser(u);
     // eslint-disable-next-line react-hooks/set-state-in-effect
+    setUser(u);
     fetchAvatar();
   }, [router]);
 

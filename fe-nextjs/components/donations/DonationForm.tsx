@@ -46,10 +46,7 @@ export type DonationPayload = {
   category_id: number | null;
 };
 
-type CategoryOption = {
-  id: number;
-  name: string;
-};
+type CategoryOption = { id: number; name: string };
 
 type DonationFormProps = {
   initialData?: Partial<DonationFormData>;
