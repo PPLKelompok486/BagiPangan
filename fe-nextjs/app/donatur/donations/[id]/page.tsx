@@ -5,11 +5,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CalendarClock, Clock, MapPin, Package, Tag } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
-import { formatPickupTime, type ApiDonation, type Donation, mapApiDonation, STATUS_LABEL, STATUS_TONE } from "@/lib/donations";
+import { formatPickupTime, type ApiDonation, type Donation, mapApiDonation } from "@/lib/donations";
+import {
+  donorStatusSummary,
+  STATUS_LABEL,
+  STATUS_TONE,
+} from "../../lib/mock-donations";
 
 type Props = { params: Promise<{ id: string }> };
 
-const EDITABLE_STATUSES = new Set(["pending", "approved"] as const);
+const EDITABLE_STATUSES = new Set<Donation["status"]>(["pending", "approved"]);
 const UNAUTHORIZED_NOTICE = "Anda tidak dapat mengakses detail donasi ini";
 
 type DonationProgressStatus = "pending" | "approved" | "claimed" | "completed";
@@ -22,15 +27,6 @@ const PROGRESS_STEPS: Array<{ key: DonationProgressStatus; label: string; note: 
 ];
 
 const PROGRESS_KEYS = new Set(PROGRESS_STEPS.map((step) => step.key));
-
-const STATUS_NOTE: Record<Donation["status"], string> = {
-  pending: "Donasi sedang menunggu verifikasi admin.",
-  approved: "Donasi sudah tayang dan dapat diklaim penerima.",
-  rejected: "Donasi ditolak admin. Silakan periksa detail donasi Anda.",
-  claimed: "Ada 1 penerima mengklaim donasi ini.",
-  completed: "Donasi sudah selesai didistribusikan.",
-  cancelled: "Donasi ini sudah dibatalkan.",
-};
 
 const TERMINAL_STATUS_TONE: Record<Exclude<Donation["status"], DonationProgressStatus>, string> = {
   rejected: "border-red-200 bg-red-50 text-red-700",
@@ -125,7 +121,7 @@ export default function DonorDonationDetailPage({ params }: Props) {
         </div>
 
         <p className="mb-4 rounded-2xl border border-[var(--brand-100)] bg-[var(--cream)] px-4 py-3 text-sm text-[var(--text-mid)]">
-          {STATUS_NOTE[donation.status]}
+          {donorStatusSummary(donation.status, donation.active_claims_count)}
         </p>
 
         {isProgressStatus(donation.status) ? (

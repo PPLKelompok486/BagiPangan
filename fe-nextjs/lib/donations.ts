@@ -20,6 +20,7 @@ export type ApiDonation = {
   available_until: string | null;
   portion_count: number;
   status: DonationStatus;
+  active_claims_count?: number;
   created_at: string;
   updated_at: string;
   user?: {
@@ -59,6 +60,7 @@ export type Donation = {
   address_detail: string | null;
   has_coordinates: boolean;
   status: DonationStatus;
+  active_claims_count: number;
   created_at: string;
   updated_at: string;
   user_id?: number;
@@ -154,6 +156,7 @@ export function mapApiDonation(donation: ApiDonation): Donation {
     address_detail: donation.address_detail ?? null,
     has_coordinates: Boolean(donation.latitude && donation.longitude),
     status: donation.status,
+    active_claims_count: donation.active_claims_count ?? 0,
     created_at: donation.created_at,
     updated_at: donation.updated_at,
     user_id: donation.user_id,

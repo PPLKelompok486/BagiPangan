@@ -193,6 +193,13 @@ class DonationController extends Controller
     public function mine(Request $request)
     {
         $donations = Donation::with('category')
+            ->withCount([
+                'claims as active_claims_count' => fn ($query) => $query->whereIn('status', [
+                    Claim::STATUS_REQUESTED,
+                    Claim::STATUS_APPROVED,
+                    Claim::STATUS_COMPLETED,
+                ]),
+            ])
             ->where('user_id', Auth::id())
             ->orderByDesc('created_at')
             ->get();
