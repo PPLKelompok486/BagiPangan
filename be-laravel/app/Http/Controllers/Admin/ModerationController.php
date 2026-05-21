@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Donation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ModerationController extends Controller
 {
@@ -30,20 +31,33 @@ class ModerationController extends Controller
 
     public function approve(Request $request, Donation $donation)
     {
-        $donation->update([
-            'status' => Donation::STATUS_APPROVED,
-            'approved_by' => $request->user()->id,
-            'approved_at' => now(),
-            'rejected_reason' => null,
-        ]);
+        $adminId = (int) $request->user()->id;
+        $previousStatus = $donation->status;
 
-        ActivityLog::record(
-            'donation.approved',
-            'donation',
-            $donation->id,
-            ['title' => $donation->title],
-            $request->user()->id,
-        );
+        DB::transaction(function () use ($request, $donation, $adminId, $previousStatus) {
+            $donation->update([
+                'status' => Donation::STATUS_APPROVED,
+                'approved_by' => $adminId,
+                'approved_at' => now(),
+                'rejected_reason' => null,
+            ]);
+
+            ActivityLog::record(
+                'donation.approved',
+                'donation',
+                $donation->id,
+                [
+                    'title' => $donation->title,
+                    'previous_status' => $previousStatus,
+                    'new_status' => Donation::STATUS_APPROVED,
+                    'reason' => null,
+                    'admin_id' => $adminId,
+                    'ip' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ],
+                $adminId,
+            );
+        });
 
         return response()->json([
             'message' => 'Donasi berhasil disetujui',
@@ -57,23 +71,33 @@ class ModerationController extends Controller
             'reason' => 'required|string|max:500',
         ]);
 
-        $donation->update([
-            'status' => Donation::STATUS_REJECTED,
-            'approved_by' => $request->user()->id,
-            'approved_at' => now(),
-            'rejected_reason' => $payload['reason'],
-        ]);
+        $adminId = (int) $request->user()->id;
+        $previousStatus = $donation->status;
 
-        ActivityLog::record(
-            'donation.rejected',
-            'donation',
-            $donation->id,
-            [
-                'reason' => $payload['reason'],
-                'title' => $donation->title,
-            ],
-            $request->user()->id,
-        );
+        DB::transaction(function () use ($request, $donation, $payload, $adminId, $previousStatus) {
+            $donation->update([
+                'status' => Donation::STATUS_REJECTED,
+                'approved_by' => $adminId,
+                'approved_at' => now(),
+                'rejected_reason' => $payload['reason'],
+            ]);
+
+            ActivityLog::record(
+                'donation.rejected',
+                'donation',
+                $donation->id,
+                [
+                    'title' => $donation->title,
+                    'previous_status' => $previousStatus,
+                    'new_status' => Donation::STATUS_REJECTED,
+                    'reason' => $payload['reason'],
+                    'admin_id' => $adminId,
+                    'ip' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ],
+                $adminId,
+            );
+        });
 
         return response()->json([
             'message' => 'Donasi ditolak',
