@@ -24,11 +24,13 @@ class MapController extends Controller
             'q' => ['nullable', 'string', 'max:120'],
             'bbox' => ['nullable', 'string'],
             'limit' => ['nullable', 'integer', 'min:1', 'max:' . self::MAX_LIMIT],
+            'context' => ['nullable', Rule::in(['receiver', 'donatur', 'admin', 'public'])],
         ]);
 
         $bbox = $this->parseBbox(Arr::get($validated, 'bbox'));
         $status = Arr::get($validated, 'status', 'available');
         $limit = (int) Arr::get($validated, 'limit', self::DEFAULT_LIMIT);
+        $context = Arr::get($validated, 'context', 'receiver');
 
         // Build a deterministic cache key from all query parameters.
         // The map_cache_version counter is incremented by DonationObserver
@@ -40,9 +42,10 @@ class MapController extends Controller
             'q'           => Arr::get($validated, 'q'),
             'bbox'        => $bbox,
             'limit'       => $limit,
+            'context'     => $context,
         ]));
 
-        $features = Cache::remember($cacheKey, 60, function () use ($status, $validated, $bbox, $limit): array {
+        $mapPayload = Cache::remember($cacheKey, 60, function () use ($status, $validated, $bbox, $limit, $context): array {
             $donations = Donation::query()
                 ->with(['category:id,name', 'user:id,name,city'])
                 ->whereNotNull('latitude')
@@ -69,12 +72,25 @@ class MapController extends Controller
                 ->limit($limit)
                 ->get();
 
-            return $donations->map(fn (Donation $donation) => $this->toFeature($donation))->values()->all();
+            $features = $donations->map(fn (Donation $donation) => $this->toFeature($donation, $context))->values()->all();
+            $counts = Donation::query()
+                ->selectRaw("COUNT(CASE WHEN status = 'approved' THEN 1 END) as total_approved")
+                ->selectRaw("COUNT(CASE WHEN status = 'approved' AND (latitude IS NULL OR longitude IS NULL) THEN 1 END) as without_coords")
+                ->first();
+
+            return [
+                'features' => $features,
+                'meta' => [
+                    'total_approved' => (int) ($counts?->total_approved ?? 0),
+                    'without_coords' => (int) ($counts?->without_coords ?? 0),
+                ],
+            ];
         });
 
         return response()->json([
             'type'     => 'FeatureCollection',
-            'features' => $features,
+            'features' => $mapPayload['features'],
+            'meta'     => $mapPayload['meta'],
         ]);
     }
 
@@ -138,8 +154,14 @@ class MapController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function toFeature(Donation $donation): array
+    private function toFeature(Donation $donation, string $context = 'receiver'): array
     {
+        $detailUrl = match ($context) {
+            'donatur' => '/donatur/donations/' . $donation->id,
+            'admin' => '/admin/donations/' . $donation->id,
+            default => '/receiver/donations/' . $donation->id,
+        };
+
         return [
             'type' => 'Feature',
             'geometry' => [
@@ -163,7 +185,7 @@ class MapController extends Controller
                 'donor_name' => $donation->user?->name ?? 'Donatur',
                 'donor_city' => $donation->user?->city,
                 'address' => $donation->address_detail ?: $donation->location_address,
-                'detail_url' => '/receiver/donations/' . $donation->id,
+                'detail_url' => $detailUrl,
             ],
         ];
     }

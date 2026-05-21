@@ -33,3 +33,26 @@ export type UsersResponse = {
     }>;
   };
 };
+
+export type ActivityLogsResponse = {
+  message: string;
+  data: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+    data: Array<{
+      id: number;
+      action: string;
+      entity_type: string;
+      entity_id: number | null;
+      metadata: Record<string, unknown> | null;
+      created_at: string;
+      actor: {
+        id: number;
+        name: string;
+        email: string;
+      } | null;
+    }>;
+  };
+};

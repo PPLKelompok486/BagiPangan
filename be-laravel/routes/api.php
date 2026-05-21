@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DonationManagementController;
 use App\Http\Controllers\Admin\ModerationController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\UserManagementController;
+use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\ClaimController;
 use App\Http\Controllers\DonationController;
 use App\Http\Controllers\LoginController;
@@ -59,6 +61,7 @@ Route::prefix('admin')->middleware(['web', 'auth:web', 'admin'])->group(function
 
     Route::get('/users', [UserManagementController::class, 'index']);
     Route::patch('/users/{user}', [UserManagementController::class, 'update']);
+    Route::get('/activity-logs', [ActivityLogController::class, 'index']);
 
     Route::get('/reports/export/csv', [ReportController::class, 'exportCsv']);
 });
@@ -69,5 +72,7 @@ Route::middleware('token.auth')->group(function () {
 });
 
 Route::prefix('admin')->middleware(['token.auth', 'admin'])->group(function () {
+    Route::get('/dashboard', [AdminDashboardController::class, 'index']);
     Route::get('/fund-donations/monitoring', [\App\Http\Controllers\Api\FundDonationController::class, 'index']);
+    Route::get('/reports/analytics', [ReportController::class, 'analytics']);
 });
