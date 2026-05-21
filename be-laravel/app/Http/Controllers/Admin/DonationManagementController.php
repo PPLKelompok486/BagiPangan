@@ -47,15 +47,13 @@ class DonationManagementController extends Controller
             'status' => Donation::STATUS_PENDING,
         ]);
 
-        ActivityLog::create([
-            'actor_user_id' => $request->user()->id,
-            'action' => 'donation.created',
-            'entity_type' => 'donation',
-            'entity_id' => $donation->id,
-            'metadata' => [
-                'title' => $donation->title,
-            ],
-        ]);
+        ActivityLog::record(
+            'donation.created',
+            'donation',
+            $donation->id,
+            ['title' => $donation->title],
+            $request->user()->id,
+        );
 
         return response()->json([
             'message' => 'Donasi berhasil dibuat',
@@ -104,13 +102,13 @@ class DonationManagementController extends Controller
 
         $donation->update($payload);
 
-        ActivityLog::create([
-            'actor_user_id' => $request->user()->id,
-            'action' => 'donation.updated',
-            'entity_type' => 'donation',
-            'entity_id' => $donation->id,
-            'metadata' => $payload,
-        ]);
+        ActivityLog::record(
+            'donation.updated',
+            'donation',
+            $donation->id,
+            $payload,
+            $request->user()->id,
+        );
 
         return response()->json([
             'message' => 'Donasi berhasil diperbarui',
@@ -125,15 +123,13 @@ class DonationManagementController extends Controller
 
         $donation->delete();
 
-        ActivityLog::create([
-            'actor_user_id' => $request->user()->id,
-            'action' => 'donation.deleted',
-            'entity_type' => 'donation',
-            'entity_id' => $donationId,
-            'metadata' => [
-                'title' => $title,
-            ],
-        ]);
+        ActivityLog::record(
+            'donation.deleted',
+            'donation',
+            $donationId,
+            ['title' => $title],
+            $request->user()->id,
+        );
 
         return response()->json([
             'message' => 'Donasi berhasil dihapus',

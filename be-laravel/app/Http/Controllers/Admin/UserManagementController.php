@@ -59,13 +59,13 @@ class UserManagementController extends Controller
 
         $user->update($payload);
 
-        ActivityLog::create([
-            'actor_user_id' => $request->user()->id,
-            'action' => 'user.updated',
-            'entity_type' => 'user',
-            'entity_id' => $user->id,
-            'metadata' => $payload,
-        ]);
+        ActivityLog::record(
+            'user.updated',
+            'user',
+            $user->id,
+            $payload,
+            $request->user()->id,
+        );
 
         return response()->json([
             'message' => 'Data pengguna berhasil diperbarui',

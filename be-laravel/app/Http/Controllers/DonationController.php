@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Claim;
 use App\Models\Donation;
+use App\Models\DonationCategory;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -25,12 +27,55 @@ class DonationController extends Controller
 
     public function index(Request $request)
     {
-        $donations = Donation::with(['user:id,name,city', 'category'])
-            ->where('status', 'approved')
-            ->orderByDesc('created_at')
-            ->paginate(15);
+        $request->validate([
+            'q' => ['nullable', 'string', 'max:120'],
+            'category_id' => ['nullable', 'integer', 'exists:donation_categories,id'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'sort' => ['nullable', 'in:newest,oldest,expiry_soon'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
+        ]);
 
-        return response()->json($donations);
+        $query = Donation::with(['user:id,name,city', 'category:id,name'])
+            ->where('status', Donation::STATUS_APPROVED);
+
+        if ($request->filled('q')) {
+            $normalizedQuery = strtolower(trim((string) $request->input('q')));
+            if ($normalizedQuery !== '') {
+                $escaped = $this->escapeLikeValue($normalizedQuery);
+                $needle = '%' . $escaped . '%';
+                $query->where(function ($sub) use ($needle) {
+                    $sub->whereRaw("LOWER(title) LIKE ? ESCAPE '!'", [$needle])
+                        ->orWhereRaw("LOWER(description) LIKE ? ESCAPE '!'", [$needle]);
+                });
+            }
+        }
+
+        if ($categoryId = $request->input('category_id')) {
+            $query->where('category_id', $categoryId);
+        }
+
+        if ($request->filled('city')) {
+            $normalizedCity = strtolower(trim((string) $request->input('city')));
+            if ($normalizedCity !== '') {
+                $escapedCity = $this->escapeLikeValue($normalizedCity);
+                $cityNeedle = '%' . $escapedCity . '%';
+                $query->where(function ($sub) use ($cityNeedle) {
+                    $sub->whereRaw("LOWER(location_city) LIKE ? ESCAPE '!'", [$cityNeedle])
+                        ->orWhereHas('user', fn ($userQuery) => $userQuery->whereRaw("LOWER(city) LIKE ? ESCAPE '!'", [$cityNeedle]));
+                });
+            }
+        }
+
+        $sort = $request->input('sort', 'newest');
+        match ($sort) {
+            'oldest' => $query->orderBy('created_at'),
+            'expiry_soon' => $query->orderByRaw('available_until IS NULL')->orderBy('available_until'),
+            default => $query->orderByDesc('created_at'),
+        };
+
+        $perPage = (int) $request->input('per_page', 15);
+
+        return response()->json($query->paginate($perPage));
     }
 
     public function store(Request $request)
@@ -85,13 +130,40 @@ class DonationController extends Controller
 
     public function show($id)
     {
-        $donation = Donation::with(['user', 'category'])->find($id);
+        $donation = Donation::with([
+            'user:id,name,city,phone',
+            'category:id,name',
+        ])->find($id);
 
         if (!$donation) {
             return response()->json(['message' => 'Donasi tidak ditemukan'], 404);
         }
 
-        return response()->json(['data' => $donation]);
+        $userId = Auth::id();
+        if (!$userId) {
+            $token = request()->bearerToken();
+            if ($token) {
+                $userId = User::where('remember_token', $token)->value('id');
+            }
+        }
+
+        $currentClaim = null;
+        if ($userId) {
+            $currentClaim = Claim::where('donation_id', $donation->id)
+                ->where('receiver_id', $userId)
+                ->whereIn('status', [
+                    Claim::STATUS_REQUESTED,
+                    Claim::STATUS_APPROVED,
+                    Claim::STATUS_COMPLETED,
+                ])
+                ->select(['id', 'status', 'proof_image_url', 'claimed_at', 'completed_at'])
+                ->first();
+        }
+
+        return response()->json([
+            'data' => $donation,
+            'my_claim' => $currentClaim,
+        ]);
     }
 
     public function update(Request $request, $id)
@@ -237,5 +309,15 @@ class DonationController extends Controller
         $donation->update(['status' => 'cancelled']);
 
         return response()->json(['message' => 'Donasi berhasil dibatalkan']);
+    }
+
+    /**
+     * Escape LIKE wildcard characters so user input is matched literally.
+     *
+     * This is paired with SQL `ESCAPE '!'` in LIKE clauses.
+     */
+    private function escapeLikeValue(string $value): string
+    {
+        return str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $value);
     }
 }

@@ -69,6 +69,28 @@ function FitDonationBounds({
   return null;
 }
 
+function FlyToUserLocationButton({ location }: { location: UserLocation | null }) {
+  const map = useMap();
+
+  if (!location) return null;
+
+  return (
+    <div className="leaflet-bottom leaflet-right" style={{ zIndex: 500 }}>
+      <div className="leaflet-control leaflet-bar !mb-20 !mr-3 overflow-hidden rounded-lg border border-black/20 bg-white shadow-md">
+        <button
+          type="button"
+          title="Pergi ke lokasi saya"
+          aria-label="Pergi ke lokasi saya"
+          className="flex h-10 w-10 items-center justify-center bg-white text-lg transition-colors hover:bg-gray-100"
+          onClick={() => map.flyTo([location.lat, location.lng], 15, { animate: true })}
+        >
+          📍
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function DonationMap({
   features,
   userLocation,
@@ -100,6 +122,7 @@ export default function DonationMap({
         <DonationClusterLayer features={features} />
         <FitDonationBounds features={features} userLocation={userLocation} />
         <UserLocationMarker location={userLocation} />
+        <FlyToUserLocationButton location={userLocation} />
       </MapContainer>
 
       <MapLegend />

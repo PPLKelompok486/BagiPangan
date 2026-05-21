@@ -11,6 +11,7 @@ import {
   FileText,
   Tag,
   Loader2,
+  LocateFixed,
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
@@ -43,6 +44,11 @@ export type DonationPayload = {
   available_until: string;
   portion_count: number;
   category_id: number | null;
+};
+
+type CategoryOption = {
+  id: number;
+  name: string;
 };
 
 type DonationFormProps = {
@@ -80,6 +86,17 @@ function buildFormData(initialData?: Partial<DonationFormData>): DonationFormDat
   };
 }
 
+function normalizeCategories(payload: unknown): CategoryOption[] {
+  if (Array.isArray(payload)) {
+    return payload as CategoryOption[];
+  }
+  if (payload && typeof payload === "object" && "data" in payload) {
+    const data = (payload as { data: unknown }).data;
+    return Array.isArray(data) ? (data as CategoryOption[]) : [];
+  }
+  return [];
+}
+
 export default function DonationForm({
   initialData,
   onSubmit,
@@ -95,9 +112,11 @@ export default function DonationForm({
 }: DonationFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [gettingLocation, setGettingLocation] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [categoriesError, setCategoriesError] = useState("");
 
   const [formData, setFormData] = useState<DonationFormData>(() => buildFormData(initialData));
 
@@ -116,21 +135,46 @@ export default function DonationForm({
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await apiFetch<{ data: { id: number; name: string }[] }>(
-          "/donations/categories",
+        const res = await apiFetch("/donations/categories");
+        const nextCategories = normalizeCategories(res);
+        setCategories(nextCategories);
+        setCategoriesError(
+          nextCategories.length === 0
+            ? "Kategori belum tersedia. Donasi tetap bisa dikirim tanpa memilih kategori."
+            : "",
         );
-        setCategories(res.data);
       } catch {
-        setCategories([
-          { id: 2, name: "Makanan Siap Saji" },
-          { id: 3, name: "Bahan Pokok" },
-          { id: 4, name: "Sayur & Buah" },
-          { id: 5, name: "Roti & Kue" },
-        ]);
+        setCategories([]);
+        setCategoriesError("Gagal memuat kategori. Silakan muat ulang halaman.");
       }
     };
     fetchCategories();
   }, []);
+
+  const handleUseMyLocation = () => {
+    if (!("geolocation" in navigator)) {
+      setError("Browser tidak mendukung deteksi lokasi.");
+      return;
+    }
+
+    setGettingLocation(true);
+    setError("");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setFormData((prev) => ({
+          ...prev,
+          latitude: position.coords.latitude.toFixed(7),
+          longitude: position.coords.longitude.toFixed(7),
+        }));
+        setGettingLocation(false);
+      },
+      () => {
+        setError("Gagal mendapatkan lokasi. Pastikan izin lokasi sudah aktif.");
+        setGettingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 8_000 },
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -220,7 +264,8 @@ export default function DonationForm({
                 <div className="relative">
                   <Tag className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-mid)]" />
                   <select
-                    required
+                    required={categories.length > 0}
+                    disabled={categories.length === 0}
                     value={formData.category_id}
                     onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
                     className="w-full appearance-none rounded-2xl border border-[var(--brand-100)] bg-[var(--brand-50)]/30 py-4 pl-12 pr-5 outline-none transition-all focus:bg-white focus:ring-2 focus:ring-[var(--brand-500)]"
@@ -232,6 +277,11 @@ export default function DonationForm({
                       </option>
                     ))}
                   </select>
+                  {categoriesError && (
+                    <p className="mt-2 text-xs font-semibold text-red-600">
+                      {categoriesError}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="space-y-2">
@@ -298,6 +348,16 @@ export default function DonationForm({
                 placeholder="Sebutkan jalan, nomor rumah, atau patokan..."
               />
             </div>
+
+            <button
+              type="button"
+              onClick={handleUseMyLocation}
+              disabled={gettingLocation}
+              className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--brand-700)] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {gettingLocation ? <Loader2 className="h-4 w-4 animate-spin" /> : <LocateFixed className="h-4 w-4" />}
+              {gettingLocation ? "Mendeteksi lokasi..." : "Gunakan lokasi saya"}
+            </button>
 
             <div className="space-y-2">
               <label className="ml-1 text-sm font-bold text-[var(--brand-900)]">Detail Patokan</label>

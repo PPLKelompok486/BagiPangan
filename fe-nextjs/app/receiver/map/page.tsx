@@ -1,5 +1,5 @@
 import DonationMapPageContent from "@/components/map/DonationMapPageContent";
 
 export default function ReceiverDonationMapPage() {
-  return <DonationMapPageContent />;
+  return <DonationMapPageContent context="receiver" />;
 }

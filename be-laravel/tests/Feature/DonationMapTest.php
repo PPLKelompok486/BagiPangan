@@ -55,7 +55,29 @@ class DonationMapTest extends TestCase
             ->assertJsonPath('features.0.properties.title', 'Nasi Kotak Sisa Acara')
             ->assertJsonPath('features.0.properties.category', 'Makanan Siap Saji')
             ->assertJsonPath('features.0.properties.status', 'available')
-            ->assertJsonPath('features.0.properties.portion', 15);
+            ->assertJsonPath('features.0.properties.portion', 15)
+            ->assertJsonPath('features.0.properties.detail_url', '/receiver/donations/' . $visible->id)
+            ->assertJsonPath('meta.total_approved', 1)
+            ->assertJsonPath('meta.without_coords', 2);
+    }
+
+    public function test_map_endpoint_builds_role_specific_detail_url_from_context(): void
+    {
+        $donation = Donation::factory()->create([
+            'status' => 'approved',
+            'latitude' => -6.2000,
+            'longitude' => 106.8200,
+        ]);
+
+        $this->withMapAuth()
+            ->getJson('/api/donations/map?context=donatur')
+            ->assertOk()
+            ->assertJsonPath('features.0.properties.detail_url', '/donatur/donations/' . $donation->id);
+
+        $this->withMapAuth()
+            ->getJson('/api/donations/map?context=admin')
+            ->assertOk()
+            ->assertJsonPath('features.0.properties.detail_url', '/admin/donations/' . $donation->id);
     }
 
     public function test_map_endpoint_filters_by_category_status_keyword_and_bbox(): void
