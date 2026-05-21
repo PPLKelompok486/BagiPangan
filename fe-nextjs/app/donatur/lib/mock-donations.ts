@@ -16,6 +16,7 @@ export type ApiDonation = {
   available_until: string | null;
   portion_count: number;
   status: DonorDonationStatus;
+  active_claims_count?: number;
   created_at: string;
   updated_at: string;
   category?: { id: number; name: string } | null;
@@ -29,6 +30,7 @@ export type DonorDonation = {
   pickup_address: string;
   pickup_time: string; // ISO
   status: DonorDonationStatus;
+  active_claims_count: number;
   created_at: string;
   estimated_meals: number;
   receiver?: {
@@ -66,6 +68,27 @@ export const STATUS_TONE: Record<DonorDonationStatus, string> = {
   cancelled: "bg-slate-100 text-slate-600 border-slate-200",
 };
 
+export const STATUS_SUMMARY: Record<DonorDonationStatus, string> = {
+  pending: "Menunggu verifikasi admin sebelum donasi tampil untuk penerima.",
+  approved: "Donasi sudah tayang dan bisa diklaim penerima.",
+  rejected: "Donasi ditolak admin. Periksa alasan penolakan sebelum membuat ulang.",
+  claimed: "Penerima sudah mengajukan klaim. Tunggu proses penjemputan dan bukti selesai.",
+  completed: "Donasi sudah selesai disalurkan dan bukti pengambilan tercatat.",
+  cancelled: "Donasi dibatalkan dan tidak lagi tersedia untuk penerima.",
+};
+
+export function donorStatusSummary(status: DonorDonationStatus, activeClaimsCount = 0): string {
+  if (status === "claimed" && activeClaimsCount > 0) {
+    return `${activeClaimsCount} penerima sedang memproses donasi ini.`;
+  }
+
+  if (status === "completed" && activeClaimsCount > 0) {
+    return `${activeClaimsCount} klaim selesai tercatat untuk donasi ini.`;
+  }
+
+  return STATUS_SUMMARY[status];
+}
+
 function resolvePickupTime(donation: ApiDonation): string {
   return donation.available_until ?? donation.available_from ?? donation.created_at;
 }
@@ -84,6 +107,7 @@ export function mapApiDonationToDonor(donation: ApiDonation): DonorDonation {
     pickup_address: resolvePickupAddress(donation),
     pickup_time: resolvePickupTime(donation),
     status: donation.status,
+    active_claims_count: donation.active_claims_count ?? 0,
     created_at: donation.created_at,
     estimated_meals: donation.portion_count,
     receiver: null,

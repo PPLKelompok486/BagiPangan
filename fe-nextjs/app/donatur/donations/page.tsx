@@ -11,6 +11,7 @@ import {
   mapApiDonationToDonor,
   STATUS_LABEL,
   STATUS_TONE,
+  donorStatusSummary,
   type ApiDonation,
   type DonorDonation,
   type DonorDonationStatus,
@@ -259,6 +260,9 @@ function DonationCard({ donation, index }: { donation: DonorDonation; index: num
         </span>
       </div>
       <p className="mt-2 text-sm text-[var(--text-mid)] line-clamp-2">{donation.description}</p>
+      <p className="mt-2 text-xs font-medium leading-5 text-[var(--text-mid)]">
+        {donorStatusSummary(donation.status, donation.active_claims_count)}
+      </p>
 
       <div className="mt-4 space-y-1.5 text-sm text-[var(--brand-950)]">
         <div className="flex items-start gap-2">

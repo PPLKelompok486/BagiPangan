@@ -24,6 +24,7 @@ import {
 import { ApiError, apiFetch, getUser, type AuthUser } from "@/lib/api";
 import {
   buildImpactEvents,
+  donorStatusSummary,
   mapApiDonationToDonor,
   STATUS_LABEL,
   STATUS_TONE,
@@ -449,6 +450,9 @@ function DonationRow({ donation, index }: { donation: DonorDonation; index: numb
         </span>
       </div>
       <p className="mt-2 text-sm text-[var(--text-mid)] line-clamp-2">{donation.description}</p>
+      <p className="mt-2 text-xs font-medium leading-5 text-[var(--text-mid)]">
+        {donorStatusSummary(donation.status, donation.active_claims_count)}
+      </p>
 
       <div className="mt-4 space-y-1.5 text-sm text-[var(--brand-950)]">
         <div className="flex items-start gap-2">
@@ -670,9 +674,14 @@ function ReceiverEngagement({
                   <Clock className="h-3 w-3" /> {d.receiver?.pickup_eta ?? "Menunggu konfirmasi"}
                 </div>
               </div>
-              <span className={`text-[10px] font-semibold px-2 py-1 rounded-full border ${STATUS_TONE[d.status]}`}>
-                {STATUS_LABEL[d.status]}
-              </span>
+              <div className="max-w-36 text-right">
+                <span className={`text-[10px] font-semibold px-2 py-1 rounded-full border ${STATUS_TONE[d.status]}`}>
+                  {STATUS_LABEL[d.status]}
+                </span>
+                <p className="mt-1 text-[11px] leading-4 text-[var(--text-mid)]">
+                  {donorStatusSummary(d.status, d.active_claims_count)}
+                </p>
+              </div>
             </li>
           ))}
         </ul>
