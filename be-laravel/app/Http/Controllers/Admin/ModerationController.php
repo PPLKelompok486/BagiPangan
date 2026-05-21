@@ -42,12 +42,11 @@ class ModerationController extends Controller
                 'rejected_reason' => null,
             ]);
 
-            ActivityLog::create([
-                'actor_user_id' => $adminId,
-                'action' => 'donation.approved',
-                'entity_type' => 'donation',
-                'entity_id' => $donation->id,
-                'metadata' => [
+            ActivityLog::record(
+                'donation.approved',
+                'donation',
+                $donation->id,
+                [
                     'title' => $donation->title,
                     'previous_status' => $previousStatus,
                     'new_status' => Donation::STATUS_APPROVED,
@@ -56,7 +55,8 @@ class ModerationController extends Controller
                     'ip' => $request->ip(),
                     'user_agent' => $request->userAgent(),
                 ],
-            ]);
+                $adminId,
+            );
         });
 
         return response()->json([
@@ -82,12 +82,11 @@ class ModerationController extends Controller
                 'rejected_reason' => $payload['reason'],
             ]);
 
-            ActivityLog::create([
-                'actor_user_id' => $adminId,
-                'action' => 'donation.rejected',
-                'entity_type' => 'donation',
-                'entity_id' => $donation->id,
-                'metadata' => [
+            ActivityLog::record(
+                'donation.rejected',
+                'donation',
+                $donation->id,
+                [
                     'title' => $donation->title,
                     'previous_status' => $previousStatus,
                     'new_status' => Donation::STATUS_REJECTED,
@@ -96,7 +95,8 @@ class ModerationController extends Controller
                     'ip' => $request->ip(),
                     'user_agent' => $request->userAgent(),
                 ],
-            ]);
+                $adminId,
+            );
         });
 
         return response()->json([
