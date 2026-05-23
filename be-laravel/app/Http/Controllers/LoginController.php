@@ -27,7 +27,7 @@ class LoginController extends Controller
             }
 
             $token = Str::random(64);
-            $user->forceFill(['remember_token' => $token])->save();
+            $user->forceFill(['remember_token' => hash('sha256', $token)])->save();
 
             return response()->json([
                 'message' => 'Login berhasil',
@@ -50,7 +50,6 @@ class LoginController extends Controller
             \Log::error('Login Error: ' . $e->getMessage(), ['exception' => $e]);
             return response()->json([
                 'message' => 'Login gagal',
-                'error' => $e->getMessage(),
             ], 500);
         }
     }

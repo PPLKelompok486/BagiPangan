@@ -22,9 +22,9 @@ class FundDonationTest extends TestCase
         $this->user = User::factory()->create(['role' => 'donatur']);
         $this->admin = User::factory()->create(['role' => 'admin']);
         
-        // Ensure they have tokens
-        $this->user->forceFill(['remember_token' => 'user-token'])->save();
-        $this->admin->forceFill(['remember_token' => 'admin-token'])->save();
+        // Tokens are sent plaintext on the wire and stored hashed at rest.
+        $this->user->forceFill(['remember_token' => hash('sha256', 'user-token')])->save();
+        $this->admin->forceFill(['remember_token' => hash('sha256', 'admin-token')])->save();
     }
 
     public function test_user_can_create_donation()

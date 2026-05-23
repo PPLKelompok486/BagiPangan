@@ -62,7 +62,6 @@ class AdminAuthController extends Controller
             \Log::error('Admin Login Error: ' . $e->getMessage(), ['exception' => $e]);
             return response()->json([
                 'message' => 'Login admin gagal',
-                'error' => $e->getMessage(),
             ], 500);
         }
     }

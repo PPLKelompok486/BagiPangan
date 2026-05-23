@@ -60,10 +60,13 @@ function DonationMapScreen({ context }: { context: DonationMapFilters["context"]
   const { location, error: locationError, isLocating } = useUserGeolocation();
 
   useEffect(() => {
-    apiFetch<{ data: CategoryOption[] }>("/donations/categories")
+    apiFetch<CategoryOption[] | { data?: CategoryOption[] }>("/donations/categories")
       .then((payload) => {
-        const cats = payload && payload.data && Array.isArray(payload.data) ? payload.data : [];
-        setCategories(cats);
+        if (Array.isArray(payload)) {
+          setCategories(payload);
+          return;
+        }
+        setCategories(Array.isArray(payload.data) ? payload.data : []);
       })
       .catch(() => setCategories([]));
   }, []);

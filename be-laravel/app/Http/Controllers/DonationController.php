@@ -91,7 +91,7 @@ class DonationController extends Controller
             'available_from' => 'required|date',
             'available_until' => 'required|date|after:available_from',
             'portion_count' => 'required|integer|min:1',
-            'category_id' => 'nullable', // Temporarily relaxed to prevent blocking
+            'category_id' => 'nullable|integer|exists:donation_categories,id',
         ]);
 
         if ($validator->fails()) {
@@ -139,11 +139,15 @@ class DonationController extends Controller
             return response()->json(['message' => 'Donasi tidak ditemukan'], 404);
         }
 
+        // Public endpoint, but receivers viewing the detail want to see their
+        // own claim status. Accept an optional bearer token and resolve it via
+        // the same hashed-storage scheme used by TokenAuth middleware; never
+        // bubble up a 401 here — anonymous viewers are first-class.
         $userId = Auth::id();
         if (!$userId) {
             $token = request()->bearerToken();
             if ($token) {
-                $userId = User::where('remember_token', $token)->value('id');
+                $userId = User::where('remember_token', hash('sha256', $token))->value('id');
             }
         }
 

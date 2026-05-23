@@ -97,7 +97,16 @@ class ClaimController extends Controller
             mkdir($dir, 0755, true);
         }
 
-        $fileName = 'claim_' . $claim->id . '_' . time() . '.' . $proof->getClientOriginalExtension();
+        // Use the server-side extension guessed from the validated MIME type,
+        // not the client-supplied original extension, to prevent attackers
+        // from naming a valid JPEG `evil.php` and dropping executable code
+        // into a publicly-served directory.
+        $extension = $proof->extension() ?: 'bin';
+        $allowedExtensions = ['jpeg', 'jpg', 'png', 'webp'];
+        if (!in_array($extension, $allowedExtensions, true)) {
+            return response()->json(['message' => 'Format bukti tidak didukung'], 422);
+        }
+        $fileName = 'claim_' . $claim->id . '_' . time() . '.' . $extension;
         $proof->move($dir, $fileName);
         $publicPath = '/uploads/claims/' . $fileName;
 

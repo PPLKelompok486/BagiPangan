@@ -14,7 +14,7 @@ import {
 
 type Props = { params: Promise<{ id: string }> };
 
-const EDITABLE_STATUSES = new Set<Donation["status"]>(["pending", "approved"]);
+const EDITABLE_STATUSES: ReadonlySet<Donation["status"]> = new Set(["pending", "approved"]);
 const UNAUTHORIZED_NOTICE = "Anda tidak dapat mengakses detail donasi ini";
 
 type DonationProgressStatus = "pending" | "approved" | "claimed" | "completed";
