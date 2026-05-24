@@ -34,6 +34,11 @@ class TokenAuth
             return response()->json(['message' => 'Unauthenticated - Invalid token'], 401);
         }
 
+        if (!$user->is_active) {
+            Log::warning('User account is deactivated', ['user_id' => $user->id]);
+            return response()->json(['message' => 'Akun Anda telah dinonaktifkan. Silakan hubungi admin.'], 403);
+        }
+
         Log::info('User authenticated successfully', ['user_id' => $user->id]);
         $request->setUserResolver(fn () => $user);
         \Illuminate\Support\Facades\Auth::setUser($user);
