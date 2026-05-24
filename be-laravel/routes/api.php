@@ -67,6 +67,10 @@ Route::prefix('admin')->middleware(['web', 'auth:web', 'admin'])->group(function
 
     Route::get('/users', [UserManagementController::class, 'index']);
     Route::patch('/users/{user}', [UserManagementController::class, 'update']);
+    Route::patch('/users/{user}/deactivate', [UserManagementController::class, 'deactivate']);
+    Route::patch('/users/{user}/activate', [UserManagementController::class, 'activate']);
+    Route::post('/users/{id}/restore', [UserManagementController::class, 'restore']);
+    Route::delete('/users/{user}', [UserManagementController::class, 'destroy']);
     Route::get('/activity-logs', [ActivityLogController::class, 'index']);
 
     Route::get('/reports/export/csv', [ReportController::class, 'exportCsv']);
