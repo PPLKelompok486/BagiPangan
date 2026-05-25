@@ -32,6 +32,16 @@ class MapController extends Controller
         $limit = (int) Arr::get($validated, 'limit', self::DEFAULT_LIMIT);
         $context = Arr::get($validated, 'context', 'receiver');
 
+        // Normalize free-text search before hashing so that "mie", " mie", and
+        // "MIE" map to the same cache entry. Avoids cache pollution under
+        // whitespace/case variation.
+        $rawQ = Arr::get($validated, 'q');
+        $q = $rawQ !== null ? mb_strtolower(trim($rawQ)) : null;
+        if ($q === '') {
+            $q = null;
+        }
+        $validated['q'] = $q;
+
         // Build a deterministic cache key from all query parameters.
         // The map_cache_version counter is incremented by DonationObserver
         // on every mutation, effectively invalidating all prior map entries.
@@ -39,7 +49,7 @@ class MapController extends Controller
         $cacheKey = 'map:v' . $version . ':' . md5(json_encode([
             'status'      => $status,
             'category_id' => Arr::get($validated, 'category_id'),
-            'q'           => Arr::get($validated, 'q'),
+            'q'           => $q,
             'bbox'        => $bbox,
             'limit'       => $limit,
             'context'     => $context,

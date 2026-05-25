@@ -30,7 +30,7 @@ class DonationDetailTest extends TestCase
     {
         $donation = Donation::factory()->create();
         $receiver = User::factory()->create(['role' => 'penerima']);
-        $receiver->forceFill(['remember_token' => 'detail-token'])->save();
+        $receiver->forceFill(['remember_token' => hash('sha256', 'detail-token')])->save();
 
         $claim = Claim::create([
             'donation_id' => $donation->id,

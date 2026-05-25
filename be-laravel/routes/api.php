@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DonationManagementController;
 use App\Http\Controllers\Admin\CategoryManagementController;
 use App\Http\Controllers\Admin\ModerationController;
+use App\Http\Controllers\Admin\ExportReportController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Admin\ActivityLogController;
@@ -19,6 +20,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [RegisterController::class, 'register']);
 Route::post('/login', [LoginController::class, 'login']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
     Route::get('/donations', [DonationController::class, 'index']);
     Route::get('/donations/categories', [DonationController::class, 'categories']);
@@ -73,7 +76,10 @@ Route::prefix('admin')->middleware(['web', 'auth:web', 'admin'])->group(function
     Route::delete('/users/{user}', [UserManagementController::class, 'destroy']);
     Route::get('/activity-logs', [ActivityLogController::class, 'index']);
 
-    Route::get('/reports/export/csv', [ReportController::class, 'exportCsv']);
+    // Filtered, validated, audit-logged donation export.
+    // Bound to /reports/export to match the frontend admin reports page,
+    // which sends date_from/date_to/status/donor_id query params.
+    Route::get('/reports/export', [ExportReportController::class, 'export']);
 });
 
 Route::middleware('token.auth')->group(function () {

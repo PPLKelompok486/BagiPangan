@@ -6,56 +6,41 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Schema;
 
 class AuthController extends Controller
 {
-    public function login(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
-
-        $user = User::where('email', $request->email)->first();
-
-        if (! $user || ! Hash::check($request->password, $user->password)) {
-            return response()->json([
-                'message' => 'Email atau password salah.',
-            ], 401);
-        }
-
-        return response()->json([
-            'message' => 'Login berhasil',
-            'user' => $user,
-        ]);
-    }
+    private const RESET_TABLE = 'password_reset_tokens';
 
     public function forgotPassword(Request $request)
     {
         $request->validate(['email' => 'required|email']);
-        
+
         $user = User::where('email', $request->email)->first();
-        
+
         if (!$user) {
             return response()->json(['message' => 'Email tidak ditemukan.'], 404);
         }
 
         $token = Str::random(60);
-        
-        // Cek nama tabel yang benar
-        $tableName = Schema::hasTable('password_reset_tokens') ? 'password_reset_tokens' : 'password_resets';
 
-        DB::table($tableName)->updateOrInsert(
+        DB::table(self::RESET_TABLE)->updateOrInsert(
             ['email' => $request->email],
             ['token' => Hash::make($token), 'created_at' => now()]
         );
 
-        return response()->json([
-            'message' => 'Link reset password telah dibuat (Simulasi)',
-            'debug_token' => $token
-        ]);
+        $payload = [
+            'message' => 'Permintaan reset password telah diproses. Silakan periksa email Anda.',
+        ];
+
+        // Only expose the raw token to local/dev runs. In production the token
+        // must reach the user out-of-band (email) — see backlog B-EMAIL.
+        if (config('app.debug')) {
+            $payload['debug_token'] = $token;
+        }
+
+        return response()->json($payload);
     }
 
     public function resetPassword(Request $request)
@@ -67,8 +52,7 @@ class AuthController extends Controller
                 'password' => 'required|min:8|confirmed',
             ]);
 
-            $tableName = Schema::hasTable('password_reset_tokens') ? 'password_reset_tokens' : 'password_resets';
-            $reset = DB::table($tableName)->where('email', $request->email)->first();
+            $reset = DB::table(self::RESET_TABLE)->where('email', $request->email)->first();
 
             if (!$reset) {
                 return response()->json(['message' => 'Permintaan reset tidak ditemukan untuk email ini.'], 400);
@@ -86,13 +70,14 @@ class AuthController extends Controller
             $user->password = Hash::make($request->password);
             $user->save();
 
-            DB::table($tableName)->where('email', $request->email)->delete();
+            DB::table(self::RESET_TABLE)->where('email', $request->email)->delete();
 
             return response()->json(['message' => 'Password berhasil diperbarui.']);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['message' => 'Validasi gagal: ' . implode(', ', $e->validator->errors()->all())], 422);
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Terjadi kesalahan server: ' . $e->getMessage()], 500);
+            Log::error('reset_password failed', ['exception' => $e]);
+            return response()->json(['message' => 'Terjadi kesalahan server.'], 500);
         }
     }
 }

@@ -20,7 +20,7 @@ class DonationMapTest extends TestCase
         parent::setUp();
 
         $this->user = User::factory()->create(['role' => 'penerima']);
-        $this->user->forceFill(['remember_token' => $this->token])->save();
+        $this->user->forceFill(['remember_token' => hash('sha256', $this->token)])->save();
     }
 
     public function test_map_endpoint_requires_authentication(): void
@@ -145,7 +145,7 @@ class DonationMapTest extends TestCase
     public function test_map_endpoint_is_rate_limited(): void
     {
         $limitedUser = User::factory()->create(['role' => 'penerima']);
-        $limitedUser->forceFill(['remember_token' => 'limited-map-token'])->save();
+        $limitedUser->forceFill(['remember_token' => hash('sha256', 'limited-map-token')])->save();
 
         $pendingResponse = null;
         for ($i = 0; $i < 61; $i++) {

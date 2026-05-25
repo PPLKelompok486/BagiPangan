@@ -4,6 +4,7 @@ import { Suspense, useDeferredValue, useEffect, useMemo, useState } from "react"
 import dynamic from "next/dynamic";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle, Loader2, LocateFixed, MapPin, RefreshCw } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 import { useDonationMap } from "@/hooks/useDonationMap";
 import { useUserGeolocation } from "@/hooks/useUserGeolocation";
 import type { DonationMapFilters, DonationMapStatus } from "@/types/donation-map";
@@ -59,18 +60,13 @@ function DonationMapScreen({ context }: { context: DonationMapFilters["context"]
   const { location, error: locationError, isLocating } = useUserGeolocation();
 
   useEffect(() => {
-    fetch("/api/categories", { cache: "no-store" })
-      .then(async (res) => {
-        const payload = await res.json();
-        if (!res.ok) {
-          throw new Error(
-            payload && typeof payload === "object" && "message" in payload
-              ? String((payload as { message: unknown }).message)
-              : "Gagal memuat kategori.",
-          );
+    apiFetch<CategoryOption[] | { data?: CategoryOption[] }>("/donations/categories")
+      .then((payload) => {
+        if (Array.isArray(payload)) {
+          setCategories(payload);
+          return;
         }
-        const cats = payload && payload.data && Array.isArray(payload.data) ? payload.data : [];
-        setCategories(cats);
+        setCategories(Array.isArray(payload.data) ? payload.data : []);
       })
       .catch(() => setCategories([]));
   }, []);
