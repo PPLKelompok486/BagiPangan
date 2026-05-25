@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -34,12 +35,13 @@ use Illuminate\Notifications\Notifiable;
     'need_description',
     'is_verified_receiver',
     'verification_date',
+    'deleted_at',
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
     /**
      * Get the attributes that should be cast.
@@ -56,6 +58,7 @@ class User extends Authenticatable
             'deactivated_at' => 'datetime',
             'is_verified_receiver' => 'boolean',
             'verification_date' => 'datetime',
+            'deleted_at' => 'datetime',
         ];
     }
 

@@ -28,6 +28,9 @@ class TokenAuth
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
+        if (!$user->is_active) {
+            return response()->json(['message' => 'Akun Anda telah dinonaktifkan. Silakan hubungi admin.'], 403);
+        }
         $request->setUserResolver(fn () => $user);
         Auth::setUser($user);
         return $next($request);

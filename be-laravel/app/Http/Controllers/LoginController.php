@@ -26,6 +26,12 @@ class LoginController extends Controller
                 ], 401);
             }
 
+            if (!$user->is_active) {
+                return response()->json([
+                    'message' => 'Akun Anda telah dinonaktifkan. Silakan hubungi admin.',
+                ], 403);
+            }
+
             $token = Str::random(64);
             $user->forceFill(['remember_token' => hash('sha256', $token)])->save();
 

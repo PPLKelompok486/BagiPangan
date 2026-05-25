@@ -30,6 +30,7 @@ export type UsersResponse = {
       is_active: boolean;
       city?: string | null;
       created_at: string;
+      deleted_at?: string | null;
     }>;
   };
 };
