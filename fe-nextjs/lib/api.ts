@@ -62,9 +62,15 @@ export async function apiFetch<T = unknown>(
   }
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
-  const res = await fetch(`/api/proxy${path.startsWith("/") ? path : `/${path}`}`, {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const endpoint = normalizedPath.startsWith("/admin")
+    ? `/api${normalizedPath}`
+    : `/api/proxy${normalizedPath}`;
+
+  const res = await fetch(endpoint, {
     ...opts,
     headers,
+    credentials: "same-origin",
   });
 
   const text = await res.text();

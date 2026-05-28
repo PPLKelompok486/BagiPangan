@@ -28,14 +28,17 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json(data, { status: res.status });
     const headerBag = res.headers as unknown as { getSetCookie?: () => string[] };
     const setCookies = headerBag.getSetCookie?.() ?? [];
-    const fallbackCookie = res.headers.get("set-cookie");
 
-    if (setCookies.length > 0) {
-      for (const cookie of setCookies) {
-        response.headers.append("set-cookie", cookie);
+    if (setCookies.length === 0) {
+      for (const [name, value] of res.headers.entries()) {
+        if (name.toLowerCase() === "set-cookie") {
+          setCookies.push(value);
+        }
       }
-    } else if (fallbackCookie) {
-      response.headers.set("set-cookie", fallbackCookie);
+    }
+
+    for (const cookie of setCookies) {
+      response.headers.append("set-cookie", cookie);
     }
 
     return response;

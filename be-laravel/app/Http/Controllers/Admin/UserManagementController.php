@@ -12,6 +12,15 @@ class UserManagementController extends Controller
     public function index(Request $request)
     {
         $search = $request->query('search');
+        // normalize search: trim and ignore empty string
+        if (is_string($search)) {
+            $search = trim($search);
+            if ($search === '') $search = null;
+        }
+        $role = $request->query('role');
+        $status = $request->query('status'); // active|inactive|all
+        $registeredFrom = $request->query('registered_from'); // YYYY-MM-DD
+        $registeredTo = $request->query('registered_to'); // YYYY-MM-DD
         $perPage = $this->resolvePerPage($request->query('per_page'));
 
         $users = User::withTrashed()
@@ -20,6 +29,28 @@ class UserManagementController extends Controller
                     $inner->where('name', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%");
                 });
+            })
+            ->when($role, function ($query) use ($role) {
+                if ($role === 'admin') {
+                    $query->where('is_admin', true);
+                } else {
+                    $query->where('role', $role);
+                }
+            })
+            ->when($status && $status !== 'all', function ($query) use ($status) {
+                if ($status === 'active') {
+                    $query->where('is_active', true)->whereNull('deleted_at');
+                } elseif ($status === 'inactive') {
+                    $query->where(function ($q) {
+                        $q->where('is_active', false)->orWhereNotNull('deleted_at');
+                    });
+                }
+            })
+            ->when($registeredFrom, function ($query) use ($registeredFrom) {
+                $query->whereDate('created_at', '>=', $registeredFrom);
+            })
+            ->when($registeredTo, function ($query) use ($registeredTo) {
+                $query->whereDate('created_at', '<=', $registeredTo);
             })
             ->latest()
             ->paginate($perPage);

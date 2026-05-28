@@ -175,6 +175,7 @@ export function UsersTable({ users }: UsersTableProps) {
                 <th className="px-4 py-2">Nama & Email</th>
                 <th className="px-4 py-2">Peran</th>
                 <th className="px-4 py-2">Kota</th>
+                <th className="px-4 py-2">Terdaftar</th>
                 <th className="px-4 py-2">Status Akun</th>
                 <th className="px-4 py-2 text-right">Tindakan</th>
               </tr>
@@ -218,6 +219,7 @@ export function UsersTable({ users }: UsersTableProps) {
                         {user.is_admin ? "Administrator" : user.role}
                       </td>
                       <td className="px-4 py-3.5">{user.city ?? "-"}</td>
+                      <td className="px-4 py-3.5">{user.created_at ? new Date(user.created_at).toLocaleDateString('id-ID') : '-'}</td>
                       <td className="px-4 py-3.5">
                         {isDeleted ? (
                           <div className="flex flex-col gap-0.5">
