@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, type CSSProperties } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Lock, ArrowLeft, ArrowRight, Loader2, CheckCircle2, Eye, EyeOff, ShieldCheck } from "lucide-react";
@@ -279,10 +279,9 @@ function LoginForm() {
       style={{
         /* Font CSS vars injected by layout.tsx via next/font — no @import needed */
         fontFamily: "var(--font-login-sans, 'Plus Jakarta Sans', sans-serif)",
-        // @ts-ignore
         "--font-serif": "var(--font-login-serif, 'Newsreader', serif)",
         "--font-sans": "var(--font-login-sans, 'Plus Jakarta Sans', sans-serif)",
-      }}
+      } as CSSProperties & Record<"--font-serif" | "--font-sans", string>}
     >
 
       {/* Background Image with Overlay */}

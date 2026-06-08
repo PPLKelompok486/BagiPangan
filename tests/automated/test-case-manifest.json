@@ -1,0 +1,1426 @@
+{
+  "sourceWorkbook": "E:/Donlot/test_case_v4 (1).xlsx",
+  "generatedFrom": "test_case_v4 (1).xlsx",
+  "baseline": {
+    "total": 80,
+    "functional": 64,
+    "nonFunctional": 16
+  },
+  "cases": [
+    {
+      "id": "TC-FR02-01",
+      "title": "Registrasi akun baru berhasil",
+      "sheet": "FR - Functional",
+      "requirement": "FR-02",
+      "requirementTitle": "Registrasi Akun",
+      "jiraTickets": [
+        "SCRUM-1",
+        "SCRUM-66"
+      ],
+      "type": "Positive",
+      "steps": "1. Buka halaman registrasi\n2. Input nama, email, password, dan role (donor/receiver)\n3. Klik tombol Daftar",
+      "expected": "Akun baru berhasil dibuat; user diarahkan ke halaman login atau dashboard",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR02-02",
+      "title": "Registrasi dengan email yang sudah terdaftar",
+      "sheet": "FR - Functional",
+      "requirement": "FR-02",
+      "requirementTitle": "Registrasi Akun",
+      "jiraTickets": [
+        "SCRUM-1",
+        "SCRUM-66"
+      ],
+      "type": "Negative",
+      "steps": "1. Buka halaman registrasi\n2. Input email yang sudah ada di sistem\n3. Klik tombol Daftar",
+      "expected": "Sistem menampilkan pesan error bahwa email sudah terdaftar",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR02-03",
+      "title": "Registrasi dengan field wajib kosong",
+      "sheet": "FR - Functional",
+      "requirement": "FR-02",
+      "requirementTitle": "Registrasi Akun",
+      "jiraTickets": [
+        "SCRUM-1",
+        "SCRUM-66"
+      ],
+      "type": "Negative",
+      "steps": "1. Buka halaman registrasi\n2. Biarkan satu atau lebih field wajib kosong\n3. Klik Daftar",
+      "expected": "Sistem menampilkan validasi error pada setiap field yang kosong",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR02-04",
+      "title": "Kolom pendaftaran muncul dengan benar  [SCRUM-66]",
+      "sheet": "FR - Functional",
+      "requirement": "FR-02",
+      "requirementTitle": "Registrasi Akun",
+      "jiraTickets": [
+        "SCRUM-1",
+        "SCRUM-66"
+      ],
+      "type": "Positive",
+      "steps": "1. Buka halaman registrasi\n2. Periksa tampilan semua field/kolom input",
+      "expected": "Semua kolom input pada form pendaftaran muncul dan dapat diisi dengan benar",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR02-05",
+      "title": "Teks label pada halaman registrasi terlihat jelas  [SCRUM-58]",
+      "sheet": "FR - Functional",
+      "requirement": "FR-02",
+      "requirementTitle": "Registrasi Akun",
+      "jiraTickets": [
+        "SCRUM-1",
+        "SCRUM-58",
+        "SCRUM-66"
+      ],
+      "type": "Positive",
+      "steps": "1. Buka halaman registrasi\n2. Periksa visibilitas semua teks label dan placeholder",
+      "expected": "Semua teks pada halaman registrasi terlihat jelas dan tidak tertutup elemen lain",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR03-01",
+      "title": "Login berhasil dengan kredensial valid",
+      "sheet": "FR - Functional",
+      "requirement": "FR-03",
+      "requirementTitle": "Login",
+      "jiraTickets": [
+        "SCRUM-21",
+        "SCRUM-24"
+      ],
+      "type": "Positive",
+      "steps": "1. Buka halaman login\n2. Input email & password yang benar\n3. Klik Login",
+      "expected": "User berhasil masuk dan diarahkan ke dashboard sesuai perannya",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR03-02",
+      "title": "Login dengan password salah",
+      "sheet": "FR - Functional",
+      "requirement": "FR-03",
+      "requirementTitle": "Login",
+      "jiraTickets": [
+        "SCRUM-21",
+        "SCRUM-24"
+      ],
+      "type": "Negative",
+      "steps": "1. Buka halaman login\n2. Input email valid dengan password salah\n3. Klik Login",
+      "expected": "Sistem menampilkan pesan 'Kredensial tidak valid'",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR03-03",
+      "title": "Login dengan akun yang dinonaktifkan",
+      "sheet": "FR - Functional",
+      "requirement": "FR-03",
+      "requirementTitle": "Login",
+      "jiraTickets": [
+        "SCRUM-21",
+        "SCRUM-24"
+      ],
+      "type": "Negative",
+      "steps": "1. Buka halaman login\n2. Input akun yang sudah dinonaktifkan admin\n3. Klik Login",
+      "expected": "Sistem menolak login dan menampilkan pesan akun tidak aktif",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR03-04",
+      "title": "Akun terkunci setelah beberapa kali gagal login  [SCRUM-24]",
+      "sheet": "FR - Functional",
+      "requirement": "FR-03",
+      "requirementTitle": "Login",
+      "jiraTickets": [
+        "SCRUM-21",
+        "SCRUM-24"
+      ],
+      "type": "Negative",
+      "steps": "1. Buka halaman login\n2. Masukkan password salah secara berulang (misal 5x)\n3. Coba login kembali",
+      "expected": "Akun terkunci sementara; sistem menampilkan pesan bahwa akun dikunci setelah percobaan gagal berulang",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR03-05",
+      "title": "Durasi penguncian akun berakhir dan bisa login kembali  [SCRUM-24]",
+      "sheet": "FR - Functional",
+      "requirement": "FR-03",
+      "requirementTitle": "Login",
+      "jiraTickets": [
+        "SCRUM-21",
+        "SCRUM-24"
+      ],
+      "type": "Positive",
+      "steps": "1. Tunggu durasi penguncian akun berakhir\n2. Buka halaman login\n3. Login dengan kredensial yang benar",
+      "expected": "Setelah durasi kunci berakhir, user dapat login kembali dengan kredensial yang valid",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR03-06",
+      "title": "Logout berhasil",
+      "sheet": "FR - Functional",
+      "requirement": "FR-03",
+      "requirementTitle": "Logout",
+      "jiraTickets": [
+        "SCRUM-22"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai user\n2. Klik tombol Logout",
+      "expected": "Sesi user berakhir; user diarahkan ke halaman login dan tidak bisa akses halaman terproteksi",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR03-07",
+      "title": "Akses halaman terproteksi setelah logout",
+      "sheet": "FR - Functional",
+      "requirement": "FR-03",
+      "requirementTitle": "Logout",
+      "jiraTickets": [
+        "SCRUM-22"
+      ],
+      "type": "Negative",
+      "steps": "1. Login lalu logout\n2. Salin URL halaman dashboard\n3. Buka URL tersebut langsung di browser",
+      "expected": "Sistem mengarahkan kembali ke halaman login; halaman terproteksi tidak dapat diakses",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR03-08",
+      "title": "Reset password berhasil",
+      "sheet": "FR - Functional",
+      "requirement": "FR-03",
+      "requirementTitle": "Reset Password",
+      "jiraTickets": [
+        "SCRUM-23"
+      ],
+      "type": "Positive",
+      "steps": "1. Buka halaman login\n2. Klik 'Lupa Password'\n3. Input email terdaftar\n4. Ikuti instruksi reset di email",
+      "expected": "Password berhasil diubah; user dapat login dengan password baru",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR03-09",
+      "title": "Reset password dengan email tidak terdaftar",
+      "sheet": "FR - Functional",
+      "requirement": "FR-03",
+      "requirementTitle": "Reset Password",
+      "jiraTickets": [
+        "SCRUM-23"
+      ],
+      "type": "Negative",
+      "steps": "1. Buka halaman lupa password\n2. Input email yang tidak ada di sistem\n3. Submit",
+      "expected": "Sistem menampilkan pesan bahwa email tidak ditemukan di sistem",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR04-01",
+      "title": "Update informasi profil berhasil",
+      "sheet": "FR - Functional",
+      "requirement": "FR-04",
+      "requirementTitle": "Manajemen Profil",
+      "jiraTickets": [
+        "SCRUM-33",
+        "SCRUM-74"
+      ],
+      "type": "Positive",
+      "steps": "1. Login\n2. Buka halaman profil\n3. Ubah data (nama, foto, dll.)\n4. Klik Simpan",
+      "expected": "Profil berhasil diperbarui; perubahan tampil di halaman profil",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR04-02",
+      "title": "Update profil dengan nama kosong",
+      "sheet": "FR - Functional",
+      "requirement": "FR-04",
+      "requirementTitle": "Manajemen Profil",
+      "jiraTickets": [
+        "SCRUM-33",
+        "SCRUM-74"
+      ],
+      "type": "Negative",
+      "steps": "1. Login\n2. Buka halaman profil\n3. Hapus isian nama\n4. Klik Simpan",
+      "expected": "Sistem menampilkan validasi error bahwa nama tidak boleh kosong",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR04-03",
+      "title": "Status profil dan tombol dashboard tampil di landing page  [SCRUM-74]",
+      "sheet": "FR - Functional",
+      "requirement": "FR-04",
+      "requirementTitle": "Manajemen Profil",
+      "jiraTickets": [
+        "SCRUM-33",
+        "SCRUM-74"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai user\n2. Buka halaman utama (landing page)\n3. Periksa area header/navbar",
+      "expected": "Status profil user dan tombol 'Dashboard' tampil dengan benar di halaman utama setelah login",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR05-01",
+      "title": "Admin tambah kategori baru",
+      "sheet": "FR - Functional",
+      "requirement": "FR-05",
+      "requirementTitle": "Manajemen Kategori",
+      "jiraTickets": [
+        "SCRUM-57"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai admin\n2. Buka menu Kategori\n3. Klik Tambah\n4. Input nama kategori\n5. Simpan",
+      "expected": "Kategori baru berhasil dibuat dan tampil di daftar kategori serta form posting",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR05-02",
+      "title": "Admin edit nama kategori",
+      "sheet": "FR - Functional",
+      "requirement": "FR-05",
+      "requirementTitle": "Manajemen Kategori",
+      "jiraTickets": [
+        "SCRUM-57"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai admin\n2. Buka menu Kategori\n3. Pilih kategori & klik Edit\n4. Ubah nama lalu Simpan",
+      "expected": "Nama kategori berhasil diperbarui; data donasi yang terhubung tidak berubah",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR05-03",
+      "title": "Admin hapus kategori yang terhubung donasi",
+      "sheet": "FR - Functional",
+      "requirement": "FR-05",
+      "requirementTitle": "Manajemen Kategori",
+      "jiraTickets": [
+        "SCRUM-57"
+      ],
+      "type": "Negative",
+      "steps": "1. Login sebagai admin\n2. Buka menu Kategori\n3. Pilih kategori yang ada donasi terhubung\n4. Klik Hapus",
+      "expected": "Sistem memperingatkan; data donasi terkait tidak ikut terhapus",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR06-01",
+      "title": "Donor buat posting donasi berhasil",
+      "sheet": "FR - Functional",
+      "requirement": "FR-06",
+      "requirementTitle": "Manajemen Posting Donasi",
+      "jiraTickets": [
+        "SCRUM-37",
+        "SCRUM-79"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai donor\n2. Klik Buat Donasi\n3. Isi judul, deskripsi, kategori, porsi, lokasi, expire, foto\n4. Submit",
+      "expected": "Posting donasi berhasil dibuat dengan status 'Menunggu Persetujuan'",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR06-02",
+      "title": "Buat donasi tanpa foto",
+      "sheet": "FR - Functional",
+      "requirement": "FR-06",
+      "requirementTitle": "Manajemen Posting Donasi",
+      "jiraTickets": [
+        "SCRUM-37",
+        "SCRUM-79"
+      ],
+      "type": "Negative",
+      "steps": "1. Login sebagai donor\n2. Klik Buat Donasi\n3. Isi semua field kecuali foto\n4. Submit",
+      "expected": "Sistem menampilkan validasi error bahwa foto wajib diunggah",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR06-03",
+      "title": "Buat donasi dengan tanggal expired lampau",
+      "sheet": "FR - Functional",
+      "requirement": "FR-06",
+      "requirementTitle": "Manajemen Posting Donasi",
+      "jiraTickets": [
+        "SCRUM-37",
+        "SCRUM-79"
+      ],
+      "type": "Negative",
+      "steps": "1. Login sebagai donor\n2. Klik Buat Donasi\n3. Isi tanggal kedaluwarsa yang sudah lewat\n4. Submit",
+      "expected": "Sistem menampilkan validasi error bahwa tanggal harus di masa depan",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR06-04",
+      "title": "Halaman buat donasi tanpa hydration error  [SCRUM-78, 79]",
+      "sheet": "FR - Functional",
+      "requirement": "FR-06",
+      "requirementTitle": "Manajemen Posting Donasi",
+      "jiraTickets": [
+        "SCRUM-37",
+        "SCRUM-78",
+        "SCRUM-79"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai donor\n2. Buka halaman Buat Donasi\n3. Cek browser console",
+      "expected": "Halaman tampil sempurna tanpa hydration mismatch error di console browser",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR07-01",
+      "title": "Donor edit donasi berstatus tersedia",
+      "sheet": "FR - Functional",
+      "requirement": "FR-07",
+      "requirementTitle": "Edit & Pembatalan Donasi",
+      "jiraTickets": [
+        "SCRUM-43"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai donor\n2. Buka posting donasi aktif\n3. Klik Edit\n4. Ubah deskripsi/porsi\n5. Simpan",
+      "expected": "Perubahan berhasil disimpan dan tampil di halaman detail donasi",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR07-02",
+      "title": "Donor batalkan donasi aktif",
+      "sheet": "FR - Functional",
+      "requirement": "FR-07",
+      "requirementTitle": "Edit & Pembatalan Donasi",
+      "jiraTickets": [
+        "SCRUM-43"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai donor\n2. Buka posting donasi aktif\n3. Klik Batalkan & konfirmasi",
+      "expected": "Status donasi berubah menjadi 'Dibatalkan'; posting tidak muncul di pencarian publik",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR07-03",
+      "title": "Edit donasi yang sudah diklaim",
+      "sheet": "FR - Functional",
+      "requirement": "FR-07",
+      "requirementTitle": "Edit & Pembatalan Donasi",
+      "jiraTickets": [
+        "SCRUM-43"
+      ],
+      "type": "Negative",
+      "steps": "1. Login sebagai donor\n2. Buka donasi berstatus 'Diklaim'\n3. Coba klik Edit",
+      "expected": "Sistem tidak memperbolehkan edit; menampilkan notifikasi bahwa status tidak dapat diubah",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR08-01",
+      "title": "Filter donasi berdasarkan kategori",
+      "sheet": "FR - Functional",
+      "requirement": "FR-08",
+      "requirementTitle": "Pencarian & Filter Donasi",
+      "jiraTickets": [
+        "SCRUM-62"
+      ],
+      "type": "Positive",
+      "steps": "1. Buka halaman pencarian\n2. Pilih filter kategori tertentu\n3. Klik Cari",
+      "expected": "Sistem menampilkan daftar donasi yang sesuai kategori yang dipilih",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR08-02",
+      "title": "Cari donasi dengan kata kunci",
+      "sheet": "FR - Functional",
+      "requirement": "FR-08",
+      "requirementTitle": "Pencarian & Filter Donasi",
+      "jiraTickets": [
+        "SCRUM-62"
+      ],
+      "type": "Positive",
+      "steps": "1. Buka halaman pencarian\n2. Input kata kunci di search bar\n3. Klik Cari",
+      "expected": "Sistem menampilkan hasil pencarian yang relevan dengan kata kunci",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR08-03",
+      "title": "Cari donasi dengan kata kunci tidak ditemukan",
+      "sheet": "FR - Functional",
+      "requirement": "FR-08",
+      "requirementTitle": "Pencarian & Filter Donasi",
+      "jiraTickets": [
+        "SCRUM-62"
+      ],
+      "type": "Negative",
+      "steps": "1. Buka halaman pencarian\n2. Input kata kunci yang tidak cocok data apapun\n3. Klik Cari",
+      "expected": "Sistem menampilkan pesan 'Tidak ada donasi yang ditemukan'",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR09-01",
+      "title": "Lihat detail donasi berhasil",
+      "sheet": "FR - Functional",
+      "requirement": "FR-09",
+      "requirementTitle": "Lihat Detail Posting Donasi",
+      "jiraTickets": [
+        "SCRUM-61"
+      ],
+      "type": "Positive",
+      "steps": "1. Buka daftar donasi\n2. Klik salah satu item donasi",
+      "expected": "Halaman detail menampilkan info donatur, jumlah porsi tersisa, tanggal kedaluwarsa, dan foto",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR09-02",
+      "title": "Akses detail donasi yang sudah dibatalkan",
+      "sheet": "FR - Functional",
+      "requirement": "FR-09",
+      "requirementTitle": "Lihat Detail Posting Donasi",
+      "jiraTickets": [
+        "SCRUM-61"
+      ],
+      "type": "Negative",
+      "steps": "1. Gunakan URL langsung donasi yang dibatalkan\n2. Buka di browser",
+      "expected": "Sistem menampilkan pesan bahwa donasi tidak tersedia atau redirect ke daftar donasi",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR10-01",
+      "title": "Receiver klaim donasi tersedia",
+      "sheet": "FR - Functional",
+      "requirement": "FR-10",
+      "requirementTitle": "Klaim Donasi",
+      "jiraTickets": [
+        "SCRUM-45"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai receiver\n2. Buka detail donasi dengan status tersedia\n3. Klik Klaim\n4. Konfirmasi",
+      "expected": "Klaim berhasil dicatat; status donasi diperbarui otomatis; notifikasi dikirim ke donor",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR10-02",
+      "title": "Klaim donasi yang sudah habis/diklaim",
+      "sheet": "FR - Functional",
+      "requirement": "FR-10",
+      "requirementTitle": "Klaim Donasi",
+      "jiraTickets": [
+        "SCRUM-45"
+      ],
+      "type": "Negative",
+      "steps": "1. Login sebagai receiver\n2. Buka detail donasi yang sudah habis\n3. Coba klik Klaim",
+      "expected": "Sistem menolak klaim dan menampilkan pesan donasi sudah tidak tersedia",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR11-01",
+      "title": "Upload bukti pengambilan berhasil",
+      "sheet": "FR - Functional",
+      "requirement": "FR-11",
+      "requirementTitle": "Unggah Bukti Pengambilan",
+      "jiraTickets": [
+        "SCRUM-46"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai receiver\n2. Buka riwayat klaim\n3. Pilih klaim aktif\n4. Upload foto bukti\n5. Submit",
+      "expected": "File gambar berhasil diupload dan terhubung ke data klaim untuk verifikasi",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR11-02",
+      "title": "Upload bukti dengan format bukan gambar",
+      "sheet": "FR - Functional",
+      "requirement": "FR-11",
+      "requirementTitle": "Unggah Bukti Pengambilan",
+      "jiraTickets": [
+        "SCRUM-46"
+      ],
+      "type": "Negative",
+      "steps": "1. Login sebagai receiver\n2. Buka riwayat klaim\n3. Pilih klaim aktif\n4. Upload file PDF lalu Submit",
+      "expected": "Sistem menolak dan menampilkan pesan bahwa hanya file gambar yang diizinkan",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR12-01",
+      "title": "Donor terima notifikasi saat donasi diklaim",
+      "sheet": "FR - Functional",
+      "requirement": "FR-12",
+      "requirementTitle": "Notifikasi Klaim Donasi",
+      "jiraTickets": [],
+      "type": "Positive",
+      "steps": "1. Receiver lakukan klaim donasi\n2. Cek inbox notifikasi donor",
+      "expected": "Donor menerima notifikasi bahwa donasi telah diklaim oleh receiver",
+      "automation": {
+        "kind": "documented-gap-contract",
+        "file": "documentation/PROGRESS_VS_PROPOSAL.md and tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR12-02",
+      "title": "Tandai notifikasi sebagai telah dibaca",
+      "sheet": "FR - Functional",
+      "requirement": "FR-12",
+      "requirementTitle": "Notifikasi Klaim Donasi",
+      "jiraTickets": [],
+      "type": "Positive",
+      "steps": "1. Login sebagai donor\n2. Buka halaman notifikasi\n3. Klik notifikasi yang belum dibaca",
+      "expected": "Status notifikasi berubah menjadi 'Telah Dibaca'",
+      "automation": {
+        "kind": "documented-gap-contract",
+        "file": "documentation/PROGRESS_VS_PROPOSAL.md and tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR13-01",
+      "title": "Donor lihat riwayat donasi yang dibuat",
+      "sheet": "FR - Functional",
+      "requirement": "FR-13",
+      "requirementTitle": "Riwayat Donasi Donor",
+      "jiraTickets": [
+        "SCRUM-38"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai donor\n2. Buka menu Riwayat Donasi",
+      "expected": "Sistem menampilkan daftar seluruh donasi yang pernah dibuat beserta statusnya",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR14-01",
+      "title": "Receiver lihat riwayat klaim",
+      "sheet": "FR - Functional",
+      "requirement": "FR-14",
+      "requirementTitle": "Riwayat Klaim Receiver",
+      "jiraTickets": [
+        "SCRUM-49"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai receiver\n2. Buka menu Riwayat Klaim",
+      "expected": "Sistem menampilkan daftar klaim yang pernah dilakukan beserta status masing-masing",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR15-01",
+      "title": "Admin lihat dashboard ringkasan donasi",
+      "sheet": "FR - Functional",
+      "requirement": "FR-15",
+      "requirementTitle": "Dashboard & Laporan Singkat",
+      "jiraTickets": [
+        "SCRUM-40",
+        "SCRUM-68"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai admin\n2. Buka halaman Dashboard",
+      "expected": "Dashboard menampilkan jumlah donasi per periode, distribusi status, dan donor aktif dalam visualisasi",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR15-02",
+      "title": "Panel admin memuat semua komponen dengan benar  [SCRUM-68]",
+      "sheet": "FR - Functional",
+      "requirement": "FR-15",
+      "requirementTitle": "Dashboard & Laporan Singkat",
+      "jiraTickets": [
+        "SCRUM-40",
+        "SCRUM-68"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai admin\n2. Buka halaman Panel Admin\n3. Periksa semua komponen (tabel, grafik, menu)",
+      "expected": "Semua komponen panel admin tampil dan berfungsi tanpa error",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR15-03",
+      "title": "Visualisasi data donasi akurat",
+      "sheet": "FR - Functional",
+      "requirement": "FR-15",
+      "requirementTitle": "Dashboard & Laporan Singkat",
+      "jiraTickets": [
+        "SCRUM-40",
+        "SCRUM-68"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai admin\n2. Buka dashboard\n3. Bandingkan data grafik dengan data donasi aktual",
+      "expected": "Data pada grafik/visualisasi sesuai dengan data donasi yang ada di sistem",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR16-01",
+      "title": "Admin setujui posting donasi",
+      "sheet": "FR - Functional",
+      "requirement": "FR-16",
+      "requirementTitle": "Manajemen & Moderasi Admin",
+      "jiraTickets": [
+        "SCRUM-31",
+        "SCRUM-35",
+        "SCRUM-36",
+        "SCRUM-73",
+        "SCRUM-75"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai admin\n2. Buka daftar donasi pending\n3. Pilih donasi\n4. Klik Setujui",
+      "expected": "Status donasi berubah menjadi 'Tersedia' dan tampil di halaman publik",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR16-02",
+      "title": "Admin tolak posting donasi",
+      "sheet": "FR - Functional",
+      "requirement": "FR-16",
+      "requirementTitle": "Manajemen & Moderasi Admin",
+      "jiraTickets": [
+        "SCRUM-31",
+        "SCRUM-35",
+        "SCRUM-36",
+        "SCRUM-73",
+        "SCRUM-75"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai admin\n2. Buka daftar donasi pending\n3. Pilih donasi\n4. Klik Tolak\n5. Isi alasan penolakan",
+      "expected": "Status donasi berubah menjadi 'Ditolak'; donor mendapat notifikasi penolakan",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR16-03",
+      "title": "Admin nonaktifkan akun pengguna",
+      "sheet": "FR - Functional",
+      "requirement": "FR-16",
+      "requirementTitle": "Manajemen & Moderasi Admin",
+      "jiraTickets": [
+        "SCRUM-31",
+        "SCRUM-35",
+        "SCRUM-36",
+        "SCRUM-73",
+        "SCRUM-75"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai admin\n2. Buka manajemen pengguna\n3. Pilih user\n4. Klik Nonaktifkan",
+      "expected": "Akun berhasil dinonaktifkan; pengguna tidak dapat login",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR16-04",
+      "title": "Admin hapus akun pengguna",
+      "sheet": "FR - Functional",
+      "requirement": "FR-16",
+      "requirementTitle": "Manajemen & Moderasi Admin",
+      "jiraTickets": [
+        "SCRUM-31",
+        "SCRUM-35",
+        "SCRUM-36",
+        "SCRUM-73",
+        "SCRUM-75"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai admin\n2. Buka manajemen pengguna\n3. Pilih user\n4. Klik Hapus & konfirmasi",
+      "expected": "Akun pengguna berhasil dihapus dari sistem",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR16-05",
+      "title": "Admin lihat daftar seluruh pengguna  [SCRUM-35]",
+      "sheet": "FR - Functional",
+      "requirement": "FR-16",
+      "requirementTitle": "Manajemen & Moderasi Admin",
+      "jiraTickets": [
+        "SCRUM-31",
+        "SCRUM-35",
+        "SCRUM-36",
+        "SCRUM-73",
+        "SCRUM-75"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai admin\n2. Buka menu Manajemen Pengguna",
+      "expected": "Sistem menampilkan daftar seluruh pengguna terdaftar (donor, receiver)",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR16-06",
+      "title": "Admin cari dan filter pengguna  [SCRUM-36]",
+      "sheet": "FR - Functional",
+      "requirement": "FR-16",
+      "requirementTitle": "Manajemen & Moderasi Admin",
+      "jiraTickets": [
+        "SCRUM-31",
+        "SCRUM-35",
+        "SCRUM-36",
+        "SCRUM-73",
+        "SCRUM-75"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai admin\n2. Buka menu Manajemen Pengguna\n3. Gunakan filter berdasarkan nama, role, atau status",
+      "expected": "Sistem menampilkan daftar pengguna yang sesuai dengan kriteria filter",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR16-07",
+      "title": "Rute dan halaman admin dapat diakses dengan benar  [SCRUM-73]",
+      "sheet": "FR - Functional",
+      "requirement": "FR-16",
+      "requirementTitle": "Manajemen & Moderasi Admin",
+      "jiraTickets": [
+        "SCRUM-31",
+        "SCRUM-35",
+        "SCRUM-36",
+        "SCRUM-73",
+        "SCRUM-75"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai admin\n2. Navigasi ke setiap rute admin (dashboard, user, donasi, kategori)\n3. Periksa tiap halaman",
+      "expected": "Semua rute dan halaman admin dapat diakses, tampil dengan benar, dan tidak ada halaman error 404/500",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR16-08",
+      "title": "Rute admin tidak dapat diakses oleh non-admin  [SCRUM-73]",
+      "sheet": "FR - Functional",
+      "requirement": "FR-16",
+      "requirementTitle": "Manajemen & Moderasi Admin",
+      "jiraTickets": [
+        "SCRUM-31",
+        "SCRUM-35",
+        "SCRUM-36",
+        "SCRUM-73",
+        "SCRUM-75"
+      ],
+      "type": "Negative",
+      "steps": "1. Login sebagai donor atau receiver\n2. Coba akses URL rute admin secara langsung\n3. Periksa respons sistem",
+      "expected": "Sistem menolak akses dan menampilkan pesan tidak diizinkan atau redirect ke halaman sesuai role",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR17-01",
+      "title": "Export laporan donasi ke file",
+      "sheet": "FR - Functional",
+      "requirement": "FR-17",
+      "requirementTitle": "Export Laporan",
+      "jiraTickets": [
+        "SCRUM-51"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai admin\n2. Buka menu Laporan\n3. Pilih parameter laporan\n4. Klik Export",
+      "expected": "File laporan berhasil diunduh dalam format yang ditentukan (CSV/Excel)",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR17-02",
+      "title": "Export dengan rentang tanggal tidak valid",
+      "sheet": "FR - Functional",
+      "requirement": "FR-17",
+      "requirementTitle": "Export Laporan",
+      "jiraTickets": [
+        "SCRUM-51"
+      ],
+      "type": "Negative",
+      "steps": "1. Login sebagai admin\n2. Buka menu Laporan\n3. Input tanggal akhir lebih awal dari tanggal mulai",
+      "expected": "Sistem menampilkan validasi error bahwa rentang tanggal tidak valid",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR18-01",
+      "title": "Log aktivitas klaim tercatat",
+      "sheet": "FR - Functional",
+      "requirement": "FR-18",
+      "requirementTitle": "Audit Trail & Logging",
+      "jiraTickets": [
+        "SCRUM-32"
+      ],
+      "type": "Positive",
+      "steps": "1. Receiver lakukan klaim donasi\n2. Admin buka menu Audit Trail",
+      "expected": "Log mencatat detail klaim: waktu, user, dan aksi yang dilakukan",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR18-02",
+      "title": "Log aktivitas pembuatan posting tercatat",
+      "sheet": "FR - Functional",
+      "requirement": "FR-18",
+      "requirementTitle": "Audit Trail & Logging",
+      "jiraTickets": [
+        "SCRUM-32"
+      ],
+      "type": "Positive",
+      "steps": "1. Donor buat posting donasi\n2. Admin buka menu Audit Trail",
+      "expected": "Log mencatat detail posting: waktu, donor, dan data donasi yang dibuat",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR18-03",
+      "title": "Log aksi moderasi admin tercatat",
+      "sheet": "FR - Functional",
+      "requirement": "FR-18",
+      "requirementTitle": "Audit Trail & Logging",
+      "jiraTickets": [
+        "SCRUM-32"
+      ],
+      "type": "Positive",
+      "steps": "1. Admin lakukan approve/reject donasi\n2. Buka menu Audit Trail",
+      "expected": "Log mencatat aksi admin: waktu, admin, jenis aksi, dan donasi yang dimoderasi",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR19-01",
+      "title": "Peta menampilkan titik lokasi donasi",
+      "sheet": "FR - Functional",
+      "requirement": "FR-19",
+      "requirementTitle": "Visualisasi Peta Lokasi Donasi",
+      "jiraTickets": [
+        "SCRUM-63"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai pengguna\n2. Buka fitur Visualisasi Peta",
+      "expected": "Peta berhasil tampil dengan titik-titik lokasi donasi yang tersedia",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-FR19-02",
+      "title": "Klik titik lokasi menampilkan info donasi",
+      "sheet": "FR - Functional",
+      "requirement": "FR-19",
+      "requirementTitle": "Visualisasi Peta Lokasi Donasi",
+      "jiraTickets": [
+        "SCRUM-63"
+      ],
+      "type": "Positive",
+      "steps": "1. Buka fitur Visualisasi Peta\n2. Klik salah satu titik lokasi di peta\n3. Periksa popup informasi",
+      "expected": "Popup menampilkan info singkat donasi (judul, donatur, jarak) di titik yang diklik",
+      "automation": {
+        "kind": "phpunit-or-node-contract",
+        "file": "be-laravel/tests/Feature plus tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-LP01",
+      "title": "Halaman utama dapat diakses tanpa login",
+      "sheet": "FR - Functional",
+      "requirement": "FR-19",
+      "requirementTitle": "Visualisasi Peta Lokasi Donasi",
+      "jiraTickets": [
+        "SCRUM-63"
+      ],
+      "type": "Positive",
+      "steps": "1. Buka URL sistem tanpa login\n2. Periksa tampilan halaman utama",
+      "expected": "Halaman utama tampil dengan benar; menampilkan informasi umum dan tombol masuk/daftar",
+      "automation": {
+        "kind": "node-static-contract",
+        "file": "tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-LP02",
+      "title": "Tampilan antarmuka halaman utama responsif dan rapi  [SCRUM-67]",
+      "sheet": "FR - Functional",
+      "requirement": "FR-19",
+      "requirementTitle": "Visualisasi Peta Lokasi Donasi",
+      "jiraTickets": [
+        "SCRUM-63",
+        "SCRUM-67"
+      ],
+      "type": "Positive",
+      "steps": "1. Buka halaman utama di browser desktop\n2. Resize ke ukuran mobile\n3. Periksa tampilan",
+      "expected": "Tampilan halaman utama rapi dan responsif di berbagai ukuran layar tanpa elemen yang rusak",
+      "automation": {
+        "kind": "node-static-contract",
+        "file": "tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-LP03",
+      "title": "Tombol navigasi di halaman utama berfungsi",
+      "sheet": "FR - Functional",
+      "requirement": "FR-19",
+      "requirementTitle": "Visualisasi Peta Lokasi Donasi",
+      "jiraTickets": [
+        "SCRUM-63"
+      ],
+      "type": "Positive",
+      "steps": "1. Buka halaman utama\n2. Klik setiap tombol navigasi (Daftar, Masuk, dll.)",
+      "expected": "Setiap tombol mengarahkan ke halaman yang sesuai",
+      "automation": {
+        "kind": "node-static-contract",
+        "file": "tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-INT01",
+      "title": "Alur lengkap donor — buat donasi hingga diklaim",
+      "sheet": "FR - Functional",
+      "requirement": "FR-19",
+      "requirementTitle": "Visualisasi Peta Lokasi Donasi",
+      "jiraTickets": [
+        "SCRUM-63"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai donor & buat posting donasi\n2. Admin approve donasi\n3. Login sebagai receiver & klaim donasi\n4. Receiver upload bukti\n5. Cek status di semua akun",
+      "expected": "Seluruh alur berjalan terintegrasi; status donasi, notifikasi, dan riwayat terbaru di semua sisi",
+      "automation": {
+        "kind": "node-static-contract",
+        "file": "tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-INT02",
+      "title": "Alur lengkap admin — moderasi hingga laporan",
+      "sheet": "FR - Functional",
+      "requirement": "FR-19",
+      "requirementTitle": "Visualisasi Peta Lokasi Donasi",
+      "jiraTickets": [
+        "SCRUM-63"
+      ],
+      "type": "Positive",
+      "steps": "1. Login sebagai admin\n2. Approve & reject beberapa donasi\n3. Buka dashboard\n4. Export laporan",
+      "expected": "Data moderasi langsung tercermin di dashboard dan laporan yang diekspor",
+      "automation": {
+        "kind": "node-static-contract",
+        "file": "tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-INT03",
+      "title": "Fitur frontend dan backend terintegrasi tanpa error  [SCRUM-59]",
+      "sheet": "FR - Functional",
+      "requirement": "FR-19",
+      "requirementTitle": "Visualisasi Peta Lokasi Donasi",
+      "jiraTickets": [
+        "SCRUM-59",
+        "SCRUM-63"
+      ],
+      "type": "Positive",
+      "steps": "1. Lakukan operasi CRUD pada setiap fitur utama\n2. Periksa browser console\n3. Periksa server log",
+      "expected": "Tidak ada error koneksi antara frontend (Next.js) dan backend (Laravel); data tersimpan dan tampil konsisten",
+      "automation": {
+        "kind": "node-static-contract",
+        "file": "tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-NFR01-01",
+      "title": "Sistem diakses menggunakan HTTPS",
+      "sheet": "NFR - Non-Functional",
+      "requirement": "NFR-01",
+      "requirementTitle": "Keamanan Data (Security)",
+      "jiraTickets": [
+        "SCRUM-77"
+      ],
+      "type": "Security",
+      "steps": "1. Buka URL sistem di browser\n2. Periksa protokol di address bar",
+      "expected": "URL menggunakan HTTPS dan koneksi terenkripsi (ikon gembok tampil di browser)",
+      "automation": {
+        "kind": "node-static-contract",
+        "file": "tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-NFR01-02",
+      "title": "Token autentikasi tidak dapat dimanipulasi",
+      "sheet": "NFR - Non-Functional",
+      "requirement": "NFR-01",
+      "requirementTitle": "Keamanan Data (Security)",
+      "jiraTickets": [
+        "SCRUM-77"
+      ],
+      "type": "Security",
+      "steps": "1. Login sebagai user\n2. Coba modifikasi token di storage browser\n3. Reload halaman",
+      "expected": "Sistem menolak token tidak valid dan memaksa logout otomatis",
+      "automation": {
+        "kind": "node-static-contract",
+        "file": "tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-NFR02-01",
+      "title": "Waktu muat halaman utama < 5 detik",
+      "sheet": "NFR - Non-Functional",
+      "requirement": "NFR-02",
+      "requirementTitle": "Kinerja (Performance)",
+      "jiraTickets": [
+        "SCRUM-77"
+      ],
+      "type": "Performance",
+      "steps": "1. Buka halaman utama/dashboard\n2. Catat waktu loading menggunakan DevTools Network",
+      "expected": "Halaman berhasil dimuat dalam waktu kurang dari 5 detik",
+      "automation": {
+        "kind": "node-static-contract",
+        "file": "tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-NFR02-02",
+      "title": "Waktu proses klaim donasi < 5 detik",
+      "sheet": "NFR - Non-Functional",
+      "requirement": "NFR-02",
+      "requirementTitle": "Kinerja (Performance)",
+      "jiraTickets": [
+        "SCRUM-77"
+      ],
+      "type": "Performance",
+      "steps": "1. Login sebagai receiver\n2. Lakukan klaim donasi\n3. Catat waktu respons server",
+      "expected": "Operasi klaim selesai dan respons diterima dalam waktu kurang dari 5 detik",
+      "automation": {
+        "kind": "node-static-contract",
+        "file": "tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-NFR02-03",
+      "title": "Waktu upload bukti pengambilan < 5 detik",
+      "sheet": "NFR - Non-Functional",
+      "requirement": "NFR-02",
+      "requirementTitle": "Kinerja (Performance)",
+      "jiraTickets": [
+        "SCRUM-77"
+      ],
+      "type": "Performance",
+      "steps": "1. Upload file gambar bukti (< 5 MB)\n2. Catat durasi proses upload hingga respons",
+      "expected": "Upload selesai dan respons diterima dalam waktu kurang dari 5 detik",
+      "automation": {
+        "kind": "node-static-contract",
+        "file": "tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-NFR03-01",
+      "title": "Posting donasi berjalan stabil tanpa error",
+      "sheet": "NFR - Non-Functional",
+      "requirement": "NFR-03",
+      "requirementTitle": "Keandalan (Reliability)",
+      "jiraTickets": [],
+      "type": "Reliability",
+      "steps": "1. Login sebagai donor\n2. Buat 5 posting donasi berturut-turut\n3. Periksa hasilnya",
+      "expected": "Semua posting berhasil disimpan tanpa error atau crash",
+      "automation": {
+        "kind": "node-static-contract",
+        "file": "tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-NFR03-02",
+      "title": "Klaim donasi berjalan stabil",
+      "sheet": "NFR - Non-Functional",
+      "requirement": "NFR-03",
+      "requirementTitle": "Keandalan (Reliability)",
+      "jiraTickets": [],
+      "type": "Reliability",
+      "steps": "1. Login sebagai receiver\n2. Lakukan klaim pada 3 donasi berbeda secara berurutan",
+      "expected": "Semua klaim berhasil diproses tanpa gangguan atau error sistem",
+      "automation": {
+        "kind": "node-static-contract",
+        "file": "tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-NFR04-01",
+      "title": "Alur posting donasi tanpa panduan",
+      "sheet": "NFR - Non-Functional",
+      "requirement": "NFR-04",
+      "requirementTitle": "Kemudahan Penggunaan (Usability)",
+      "jiraTickets": [],
+      "type": "Usability",
+      "steps": "1. Siapkan pengguna baru sebagai donor\n2. Minta pengguna selesaikan proses buat donasi tanpa bantuan",
+      "expected": "Pengguna berhasil membuat donasi dalam waktu wajar tanpa kebingungan",
+      "automation": {
+        "kind": "node-static-contract",
+        "file": "tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-NFR04-02",
+      "title": "Alur klaim donasi tanpa panduan",
+      "sheet": "NFR - Non-Functional",
+      "requirement": "NFR-04",
+      "requirementTitle": "Kemudahan Penggunaan (Usability)",
+      "jiraTickets": [],
+      "type": "Usability",
+      "steps": "1. Siapkan pengguna baru sebagai receiver\n2. Minta receiver lakukan klaim tanpa bantuan",
+      "expected": "Pengguna berhasil melakukan klaim tanpa memerlukan pelatihan khusus",
+      "automation": {
+        "kind": "node-static-contract",
+        "file": "tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-NFR05-01",
+      "title": "Sistem berjalan normal di Google Chrome",
+      "sheet": "NFR - Non-Functional",
+      "requirement": "NFR-05",
+      "requirementTitle": "Kompatibilitas (Compatibility)",
+      "jiraTickets": [],
+      "type": "Compatibility",
+      "steps": "1. Buka sistem di Google Chrome versi terbaru\n2. Uji fungsi utama (login, posting, klaim)",
+      "expected": "Semua fitur berjalan normal tanpa instalasi tambahan di Chrome",
+      "automation": {
+        "kind": "node-static-contract",
+        "file": "tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-NFR05-02",
+      "title": "Sistem berjalan normal di Microsoft Edge",
+      "sheet": "NFR - Non-Functional",
+      "requirement": "NFR-05",
+      "requirementTitle": "Kompatibilitas (Compatibility)",
+      "jiraTickets": [],
+      "type": "Compatibility",
+      "steps": "1. Buka sistem di Microsoft Edge versi terbaru\n2. Uji fungsi utama (login, posting, klaim)",
+      "expected": "Semua fitur berjalan normal tanpa instalasi tambahan di Edge",
+      "automation": {
+        "kind": "node-static-contract",
+        "file": "tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-NFR06-01",
+      "title": "Struktur kode backend sesuai standar Laravel",
+      "sheet": "NFR - Non-Functional",
+      "requirement": "NFR-06",
+      "requirementTitle": "Maintainability",
+      "jiraTickets": [
+        "SCRUM-55",
+        "SCRUM-59",
+        "SCRUM-60",
+        "SCRUM-71"
+      ],
+      "type": "Maintainability",
+      "steps": "1. Review struktur folder backend\n2. Cek penerapan MVC, naming convention, dan route",
+      "expected": "Struktur kode sesuai standar Laravel: folder app, routes, controller, model terdefinisi dengan baik",
+      "automation": {
+        "kind": "node-static-contract",
+        "file": "tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-NFR06-02",
+      "title": "Struktur kode frontend sesuai standar NextJS",
+      "sheet": "NFR - Non-Functional",
+      "requirement": "NFR-06",
+      "requirementTitle": "Maintainability",
+      "jiraTickets": [
+        "SCRUM-55",
+        "SCRUM-59",
+        "SCRUM-60",
+        "SCRUM-71"
+      ],
+      "type": "Maintainability",
+      "steps": "1. Review struktur folder frontend\n2. Cek penamaan komponen, pages, dan API routes",
+      "expected": "Struktur kode sesuai standar NextJS: folder pages/app, components, dan API routes tertata dengan benar",
+      "automation": {
+        "kind": "node-static-contract",
+        "file": "tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-NFR06-03",
+      "title": "File .env contoh menggunakan konfigurasi PostgreSQL  [SCRUM-55]",
+      "sheet": "NFR - Non-Functional",
+      "requirement": "NFR-06",
+      "requirementTitle": "Maintainability",
+      "jiraTickets": [
+        "SCRUM-55",
+        "SCRUM-59",
+        "SCRUM-60",
+        "SCRUM-71"
+      ],
+      "type": "Maintainability",
+      "steps": "1. Buka file .env.example di repositori\n2. Periksa konfigurasi koneksi database",
+      "expected": "File .env.example menggunakan konfigurasi PostgreSQL yang benar (host, port, DB_CONNECTION=pgsql)",
+      "automation": {
+        "kind": "node-static-contract",
+        "file": "tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-NFR06-04",
+      "title": "Setup Laravel dan Next.js berjalan sesuai panduan  [SCRUM-59, SCRUM-60]",
+      "sheet": "NFR - Non-Functional",
+      "requirement": "NFR-06",
+      "requirementTitle": "Maintainability",
+      "jiraTickets": [
+        "SCRUM-55",
+        "SCRUM-59",
+        "SCRUM-60",
+        "SCRUM-71"
+      ],
+      "type": "Maintainability",
+      "steps": "1. Ikuti panduan pengaturan proyek di README\n2. Jalankan perintah setup\n3. Verifikasi aplikasi berjalan",
+      "expected": "Aplikasi berhasil dijalankan mengikuti panduan tanpa langkah tambahan di luar dokumentasi",
+      "automation": {
+        "kind": "node-static-contract",
+        "file": "tests/automated/source-contract.test.mjs"
+      }
+    },
+    {
+      "id": "TC-NFR06-05",
+      "title": "Dokumentasi arsitektur tersedia dan akurat  [SCRUM-71]",
+      "sheet": "NFR - Non-Functional",
+      "requirement": "NFR-06",
+      "requirementTitle": "Maintainability",
+      "jiraTickets": [
+        "SCRUM-55",
+        "SCRUM-59",
+        "SCRUM-60",
+        "SCRUM-71"
+      ],
+      "type": "Maintainability",
+      "steps": "1. Buka dokumentasi arsitektur di repositori\n2. Bandingkan dengan struktur aktual sistem",
+      "expected": "Dokumentasi arsitektur tersedia, lengkap, dan sesuai dengan implementasi sistem yang berjalan",
+      "automation": {
+        "kind": "node-static-contract",
+        "file": "tests/automated/source-contract.test.mjs"
+      }
+    }
+  ]
+}

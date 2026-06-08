@@ -13,8 +13,14 @@ const emptyUsers: UsersResponse = {
 
 async function getUsersData(params?: Record<string, string | undefined>) {
   try {
+    const searchParams = new URLSearchParams();
+    for (const [key, value] of Object.entries(params ?? {})) {
+      if (value) {
+        searchParams.set(key, value);
+      }
+    }
     const qs = params
-      ? '?' + new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([,v]) => v != null && v !== '')))
+      ? `?${searchParams.toString()}`
       : '';
 
     const res = await fetch(`/api/admin/users${qs}`, {
