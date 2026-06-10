@@ -1,0 +1,56 @@
+name: Deploy to Ubuntu VM
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-vm-main
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy main to VM
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH || '/var/www/bagipangan' }}
+      VM_PORT: ${{ secrets.VM_PORT || '22' }}
+      REPO_URL: ${{ secrets.DEPLOY_REPO_URL || format('https://github.com/{0}.git', github.repository) }}
+      RUN_MIGRATIONS: ${{ secrets.RUN_MIGRATIONS || 'true' }}
+
+    steps:
+      - name: Prepare SSH key
+        run: |
+          mkdir -p ~/.ssh
+          install -m 600 /dev/null ~/.ssh/deploy_key
+          printf '%s\n' "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/deploy_key
+          ssh-keyscan -p "$VM_PORT" "${{ secrets.VM_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy over SSH
+        run: |
+          ssh \
+            -i ~/.ssh/deploy_key \
+            -p "$VM_PORT" \
+            -o IdentitiesOnly=yes \
+            "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" \
+            "APP_NAME=bagipangan DEPLOY_PATH='$DEPLOY_PATH' REPO_URL='$REPO_URL' BRANCH='main' RUN_MIGRATIONS='$RUN_MIGRATIONS' bash -s" <<'REMOTE'
+          set -Eeuo pipefail
+
+          APP_DIR="${DEPLOY_PATH}/current"
+          mkdir -p "$DEPLOY_PATH"
+
+          if [ ! -d "${APP_DIR}/.git" ]; then
+            rm -rf "$APP_DIR"
+            git clone --branch "$BRANCH" --single-branch "$REPO_URL" "$APP_DIR"
+          fi
+
+          cd "$APP_DIR"
+          git fetch origin "$BRANCH"
+          git reset --hard "origin/${BRANCH}"
+          chmod +x scripts/deploy/vm/*.sh
+          bash scripts/deploy/vm/deploy.sh
+          REMOTE
