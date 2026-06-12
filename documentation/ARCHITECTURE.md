@@ -186,7 +186,6 @@ The detailed deployment procedure is documented in:
 
 ```text
 documentation/DEPLOYMENT.md
-docs/deployment/ubuntu-vm-deploy.md
 ```
 
 ## Automated Testing

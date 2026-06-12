@@ -22,7 +22,6 @@ deploy/           Nginx, systemd, and environment examples
 scripts/deploy/   VM bootstrap and deployment scripts
 tests/automated/  test-case traceability tests
 documentation/    architecture, deployment, proposal, and testing docs
-docs/deployment/  detailed Ubuntu VM deployment guide
 ```
 
 ## Runtime Architecture
@@ -136,7 +135,6 @@ scripts/deploy/vm/full-deploy-ubuntu.sh
 Canonical deployment docs:
 
 - `documentation/DEPLOYMENT.md`
-- `docs/deployment/ubuntu-vm-deploy.md`
 
 The production services are:
 
@@ -152,7 +150,7 @@ The production services are:
 - `documentation/ARCHITECTURE.md`: current system architecture
 - `documentation/DEPLOYMENT.md`: current Azure VM deployment process
 - `documentation/AUTOMATED_TESTING_WORKFLOW.md`: automated testing and CI workflow
-- `documentation/PROGRESS_VS_PROPOSAL.md`: proposal tracking notes
+- `documentation/PROGRESS_VS_PROPOSAL.md`: proposal traceability evidence used by automated tests
 
 ## Git Convention
 
