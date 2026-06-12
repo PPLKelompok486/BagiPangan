@@ -79,10 +79,16 @@ install_packages() {
     "php${PHP_VERSION}-xml" \
     "php${PHP_VERSION}-zip" \
     "php${PHP_VERSION}-bcmath" \
-    "php${PHP_VERSION}-intl"
+    "php${PHP_VERSION}-gd" \
+    "php${PHP_VERSION}-intl" \
+    "php${PHP_VERSION}-redis"
 
   $SUDO update-alternatives --set php "/usr/bin/php${PHP_VERSION}" || true
   $SUDO systemctl enable --now "php${PHP_VERSION}-fpm"
+
+  log "Installing Redis"
+  $SUDO apt-get install -y redis-server
+  $SUDO systemctl enable --now redis-server
 
   if ! command -v composer >/dev/null 2>&1; then
     log "Installing Composer"

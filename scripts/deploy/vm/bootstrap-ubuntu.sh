@@ -68,6 +68,7 @@ install_php() {
     "php${PHP_VERSION}-xml" \
     "php${PHP_VERSION}-zip" \
     "php${PHP_VERSION}-bcmath" \
+    "php${PHP_VERSION}-gd" \
     "php${PHP_VERSION}-intl" \
     "php${PHP_VERSION}-redis"
 
