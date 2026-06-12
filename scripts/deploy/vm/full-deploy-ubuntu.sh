@@ -35,6 +35,14 @@ log() {
   printf '\n[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"
 }
 
+run_as_deploy() {
+  if [[ "$(id -un)" == "$DEPLOY_USER" ]]; then
+    "$@"
+  else
+    sudo -u "$DEPLOY_USER" "$@"
+  fi
+}
+
 require_file() {
   [[ -f "$1" ]] || {
     echo "Missing required file: $1" >&2
@@ -117,11 +125,11 @@ prepare_user_and_repo() {
   $SUDO chmod -R 775 "$DEPLOY_PATH"
 
   if [[ -d "${APP_DIR}/.git" ]]; then
-    $SUDO -u "$DEPLOY_USER" git -C "$APP_DIR" fetch origin "$BRANCH"
-    $SUDO -u "$DEPLOY_USER" git -C "$APP_DIR" reset --hard "origin/${BRANCH}"
+    run_as_deploy git -C "$APP_DIR" fetch origin "$BRANCH"
+    run_as_deploy git -C "$APP_DIR" reset --hard "origin/${BRANCH}"
   else
     $SUDO rm -rf "$APP_DIR"
-    $SUDO -u "$DEPLOY_USER" git clone --branch "$BRANCH" --single-branch "$REPO_URL" "$APP_DIR"
+    run_as_deploy git clone --branch "$BRANCH" --single-branch "$REPO_URL" "$APP_DIR"
   fi
 }
 
@@ -129,27 +137,27 @@ link_env_files() {
   log "Linking production env files"
   require_file "${SHARED_DIR}/backend.env"
   require_file "${SHARED_DIR}/frontend.env"
-  $SUDO -u "$DEPLOY_USER" ln -sfn "${SHARED_DIR}/backend.env" "${APP_DIR}/be-laravel/.env"
-  $SUDO -u "$DEPLOY_USER" ln -sfn "${SHARED_DIR}/frontend.env" "${APP_DIR}/fe-nextjs/.env.production.local"
+  run_as_deploy ln -sfn "${SHARED_DIR}/backend.env" "${APP_DIR}/be-laravel/.env"
+  run_as_deploy ln -sfn "${SHARED_DIR}/frontend.env" "${APP_DIR}/fe-nextjs/.env.production.local"
 }
 
 deploy_laravel() {
   log "Deploying Laravel"
   cd "${APP_DIR}/be-laravel"
-  $SUDO -u "$DEPLOY_USER" composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
-  $SUDO -u "$DEPLOY_USER" php artisan config:clear
-  $SUDO -u "$DEPLOY_USER" php artisan route:clear
-  $SUDO -u "$DEPLOY_USER" php artisan view:clear
-  $SUDO -u "$DEPLOY_USER" php artisan cache:clear
+  run_as_deploy composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+  run_as_deploy php artisan config:clear
+  run_as_deploy php artisan route:clear
+  run_as_deploy php artisan view:clear
+  run_as_deploy php artisan cache:clear
 
   if [[ "$RUN_MIGRATIONS" == "true" ]]; then
-    $SUDO -u "$DEPLOY_USER" php artisan migrate --force
+    run_as_deploy php artisan migrate --force
   fi
 
-  $SUDO -u "$DEPLOY_USER" php artisan storage:link || true
-  $SUDO -u "$DEPLOY_USER" php artisan config:cache
-  $SUDO -u "$DEPLOY_USER" php artisan route:cache
-  $SUDO -u "$DEPLOY_USER" php artisan view:cache
+  run_as_deploy php artisan storage:link || true
+  run_as_deploy php artisan config:cache
+  run_as_deploy php artisan route:cache
+  run_as_deploy php artisan view:cache
   $SUDO chown -R "$DEPLOY_USER:www-data" storage bootstrap/cache
   $SUDO chmod -R ug+rwX storage bootstrap/cache
 }
@@ -157,8 +165,8 @@ deploy_laravel() {
 deploy_nextjs() {
   log "Deploying Next.js"
   cd "${APP_DIR}/fe-nextjs"
-  $SUDO -u "$DEPLOY_USER" npm ci --no-audit --no-fund
-  $SUDO -u "$DEPLOY_USER" npm run build
+  run_as_deploy npm ci --no-audit --no-fund
+  run_as_deploy npm run build
 }
 
 write_systemd_units() {
