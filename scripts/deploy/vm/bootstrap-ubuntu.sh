@@ -65,9 +65,16 @@ install_php() {
     "php${PHP_VERSION}-xml" \
     "php${PHP_VERSION}-zip" \
     "php${PHP_VERSION}-bcmath" \
-    "php${PHP_VERSION}-intl"
+    "php${PHP_VERSION}-intl" \
+    "php${PHP_VERSION}-redis"
 
   $SUDO systemctl enable --now "php${PHP_VERSION}-fpm"
+}
+
+install_redis() {
+  log "Installing Redis (cache + rate limiter store)"
+  $SUDO apt-get install -y redis-server
+  $SUDO systemctl enable --now redis-server
 }
 
 install_composer() {
@@ -123,6 +130,7 @@ main() {
   require_ubuntu
   install_base_packages
   install_php
+  install_redis
   install_composer
   install_node
   install_certbot
