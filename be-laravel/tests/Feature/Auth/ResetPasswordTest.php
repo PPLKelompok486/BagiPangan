@@ -43,6 +43,31 @@ class ResetPasswordTest extends TestCase
         $this->assertStringNotContainsString('SQLSTATE', $body);
     }
 
+    public function test_reset_password_rejects_expired_token(): void
+    {
+        $user = User::factory()->create(['email' => 'expired@example.com']);
+
+        $token = 'expired-token';
+        DB::table('password_reset_tokens')->insert([
+            'email' => $user->email,
+            'token' => Hash::make($token),
+            'created_at' => now()->subMinutes(61),
+        ]);
+
+        $response = $this->postJson('/api/reset-password', [
+            'email' => $user->email,
+            'token' => $token,
+            'password' => 'new-password-456',
+            'password_confirmation' => 'new-password-456',
+        ]);
+
+        $response->assertStatus(400);
+        // The stale row is purged so the user must request a fresh token.
+        $this->assertDatabaseMissing('password_reset_tokens', [
+            'email' => $user->email,
+        ]);
+    }
+
     public function test_reset_password_succeeds_against_password_reset_tokens_table(): void
     {
         $user = User::factory()->create([

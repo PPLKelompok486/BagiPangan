@@ -45,13 +45,23 @@ class ForgotPasswordTest extends TestCase
         $this->assertNotEmpty($response->json('debug_token'));
     }
 
-    public function test_forgot_password_returns_404_for_unknown_email(): void
+    public function test_forgot_password_does_not_reveal_whether_email_exists(): void
     {
+        // Even with debug enabled, an unknown email must get the exact same
+        // response as a known one (sans token) so the endpoint cannot be used
+        // to enumerate registered accounts.
+        config(['app.debug' => true]);
+
         $response = $this->postJson('/api/forgot-password', [
             'email' => 'missing@example.com',
         ]);
 
-        $response->assertStatus(404);
+        $response->assertOk();
         $response->assertJsonMissingPath('debug_token');
+        $response->assertJsonStructure(['message']);
+
+        $this->assertDatabaseMissing('password_reset_tokens', [
+            'email' => 'missing@example.com',
+        ]);
     }
 }
