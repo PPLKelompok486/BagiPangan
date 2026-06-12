@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -16,7 +16,7 @@ export default function DonaturLayout({ children }: { children: React.ReactNode 
   const [user, setUser] = useState<AuthUser | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
-  const fetchAvatar = async () => {
+  const fetchAvatar = useCallback(async () => {
     // Check session cache first — avoids waterfall request on every navigation
     const cached = sessionStorage.getItem("__bp_avatar_url");
     if (cached) {
@@ -35,23 +35,32 @@ export default function DonaturLayout({ children }: { children: React.ReactNode 
     } catch (error) {
       console.error("Failed to fetch avatar:", error);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    setHydrated(true);
-    const u = getUser();
-    if (!u) {
-      router.replace("/login");
-      return;
-    }
-    if (u.role !== "donatur") {
-      router.replace("/receiver/dashboard");
-      return;
-    }
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setUser(u);
-    fetchAvatar();
-  }, [router]);
+    let cancelled = false;
+
+    queueMicrotask(() => {
+      if (cancelled) return;
+
+      setHydrated(true);
+      const u = getUser();
+      if (!u) {
+        router.replace("/login");
+        return;
+      }
+      if (u.role !== "donatur") {
+        router.replace("/receiver/dashboard");
+        return;
+      }
+      setUser(u);
+      void fetchAvatar();
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchAvatar, router]);
 
   const handleLogout = async () => {
     setShowLogoutConfirm(true);

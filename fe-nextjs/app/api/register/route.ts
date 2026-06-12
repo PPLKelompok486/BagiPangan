@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Ganti URL berikut sesuai alamat backend Laravel Anda
-const BACKEND_URL = "http://localhost:8000/api/register";
+const BACKEND_BASE_URL = process.env.BAGIPANGAN_BACKEND_URL ?? "http://localhost:8000";
+const API_BASE = BACKEND_BASE_URL.endsWith("/api")
+  ? BACKEND_BASE_URL
+  : `${BACKEND_BASE_URL}/api`;
+const BACKEND_URL = `${API_BASE}/register`;
 
 export async function POST(req: NextRequest) {
   try {
