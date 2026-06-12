@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { LogOut, Package, ListChecks, Map as MapIcon, User } from "lucide-react";
 import "../bagipangan/landing.css";
+import NotificationBell from "@/components/NotificationBell";
 import { apiFetch, clearAuth, getUser, type AuthUser } from "@/lib/api";
 
 export default function ReceiverLayout({ children }: { children: React.ReactNode }) {
@@ -113,6 +114,7 @@ export default function ReceiverLayout({ children }: { children: React.ReactNode
           </nav>
 
           <div className="flex items-center gap-3">
+            <NotificationBell />
             <Link href="/profile" className="flex items-center gap-3 hidden sm:block hover:opacity-80 transition-opacity">
               {avatarUrl ? (
                 <Image

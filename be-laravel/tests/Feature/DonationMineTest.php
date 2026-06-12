@@ -14,10 +14,8 @@ class DonationMineTest extends TestCase
 
     public function test_mine_returns_donor_donations_with_active_claim_count(): void
     {
-        $donor = User::factory()->create([
-            'role' => 'donatur',
-            'remember_token' => 'donor-status-token',
-        ]);
+        $donor = User::factory()->create(['role' => 'donatur']);
+        $donor->forceFill(['remember_token' => hash('sha256', 'donor-status-token')])->save();
         $receiver = User::factory()->create(['role' => 'penerima']);
 
         $claimedDonation = Donation::factory()->create([

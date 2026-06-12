@@ -52,11 +52,13 @@ class ActivityLogControllerTest extends TestCase
             'metadata' => [
                 'title' => 'Nasi Kotak Komunitas',
             ],
+        ]);
+        $matching->forceFill([
             'created_at' => Carbon::parse('2026-05-20 10:00:00'),
             'updated_at' => Carbon::parse('2026-05-20 10:00:00'),
-        ]);
+        ])->save();
 
-        ActivityLog::create([
+        $other = ActivityLog::create([
             'actor_user_id' => $actor->id,
             'action' => 'user.updated',
             'entity_type' => 'user',
@@ -64,9 +66,11 @@ class ActivityLogControllerTest extends TestCase
             'metadata' => [
                 'title' => 'Profile Update',
             ],
+        ]);
+        $other->forceFill([
             'created_at' => Carbon::parse('2026-05-18 10:00:00'),
             'updated_at' => Carbon::parse('2026-05-18 10:00:00'),
-        ]);
+        ])->save();
 
         $response = $this->actingAs($admin)->getJson(
             '/api/admin/activity-logs?search=approver&action=donation.approved&entity_type=donation&date_from=2026-05-19&date_to=2026-05-21&per_page=5'
@@ -84,4 +88,3 @@ class ActivityLogControllerTest extends TestCase
             ->assertJsonPath('data.data.0.metadata.title', 'Nasi Kotak Komunitas');
     }
 }
-

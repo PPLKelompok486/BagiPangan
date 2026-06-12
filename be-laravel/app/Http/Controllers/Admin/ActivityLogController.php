@@ -33,14 +33,15 @@ class ActivityLogController extends Controller
             ->when($dateFrom, fn ($query) => $query->whereDate('created_at', '>=', $dateFrom))
             ->when($dateTo, fn ($query) => $query->whereDate('created_at', '<=', $dateTo))
             ->when($search, function ($query) use ($search) {
-                $query->where(function ($inner) use ($search) {
-                    $inner->where('action', 'like', "%{$search}%")
-                        ->orWhere('entity_type', 'like', "%{$search}%")
-                        ->orWhere('entity_id', 'like', "%{$search}%")
-                        ->orWhereRaw('CAST(metadata AS CHAR) LIKE ?', ["%{$search}%"])
-                        ->orWhereHas('actor', function ($actorQuery) use ($search) {
-                            $actorQuery->where('name', 'like', "%{$search}%")
-                                ->orWhere('email', 'like', "%{$search}%");
+                $needle = '%' . strtolower($search) . '%';
+                $query->where(function ($inner) use ($needle) {
+                    $inner->whereRaw('LOWER(action) LIKE ?', [$needle])
+                        ->orWhereRaw('LOWER(entity_type) LIKE ?', [$needle])
+                        ->orWhereRaw('CAST(entity_id AS CHAR) LIKE ?', [$needle])
+                        ->orWhereRaw('LOWER(CAST(metadata AS CHAR)) LIKE ?', [$needle])
+                        ->orWhereHas('actor', function ($actorQuery) use ($needle) {
+                            $actorQuery->whereRaw('LOWER(name) LIKE ?', [$needle])
+                                ->orWhereRaw('LOWER(email) LIKE ?', [$needle]);
                         });
                 });
             })
@@ -71,4 +72,3 @@ class ActivityLogController extends Controller
         ]);
     }
 }
-

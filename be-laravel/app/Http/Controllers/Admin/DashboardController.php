@@ -12,12 +12,9 @@ class DashboardController extends Controller
 {
     public function summary()
     {
-        // Single grouped query replaces two full-table COUNTs + a SUM. The
-        // status FILTER is a Postgres-specific aggregate that lets the DB
-        // bucket totals in one scan.
         $donationStats = Donation::query()
             ->select(DB::raw('COUNT(*) AS total'))
-            ->selectRaw('COUNT(*) FILTER (WHERE status = ?) AS completed', [Donation::STATUS_COMPLETED])
+            ->selectRaw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) AS completed', [Donation::STATUS_COMPLETED])
             ->selectRaw('COALESCE(SUM(portion_count), 0) AS portions')
             ->first();
 
@@ -28,14 +25,15 @@ class DashboardController extends Controller
             ? (int) round(($completedDonations / $totalDonations) * 100)
             : 0;
 
-        // Postgres EXTRACT(EPOCH FROM interval) gives seconds; divide by 60 for
-        // minutes. This used to iterate every claim in PHP and was O(N) in
-        // memory; now the DB returns a single scalar.
-        $averageClaimMinutes = (int) round(
-            Claim::whereNotNull('claimed_at')
-                ->whereNotNull('completed_at')
-                ->value(DB::raw('COALESCE(AVG(EXTRACT(EPOCH FROM (completed_at - claimed_at)) / 60), 0)'))
-        );
+        $claimDurations = Claim::query()
+            ->whereNotNull('claimed_at')
+            ->whereNotNull('completed_at')
+            ->get(['claimed_at', 'completed_at'])
+            ->map(fn (Claim $claim) => $claim->claimed_at->diffInMinutes($claim->completed_at, true));
+
+        $averageClaimMinutes = $claimDurations->isEmpty()
+            ? 0
+            : (int) round($claimDurations->avg());
 
         $activity = ActivityLog::query()
             ->latest()

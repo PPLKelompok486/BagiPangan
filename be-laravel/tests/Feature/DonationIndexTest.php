@@ -34,7 +34,7 @@ class DonationIndexTest extends TestCase
     public function test_it_searches_for_literal_zero_string(): void
     {
         Donation::factory()->create([
-            'title' => 'Paket 2026',
+            'title' => 'Paket tahun ini',
             'description' => 'Nasi untuk acara',
             'status' => Donation::STATUS_APPROVED,
         ]);

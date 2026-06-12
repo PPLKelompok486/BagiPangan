@@ -170,6 +170,19 @@ const checks = {
     assert.equal(await exists("fe-nextjs/app/receiver/my-claims/page.tsx"), true);
   },
 
+  async "FR-14-notifications"() {
+    await contains("be-laravel/app/Http/Controllers/ClaimController.php", [
+      "new ClaimCompleted($claim)",
+      "$claim->donation?->user?->notify(new ClaimRejected($claim))",
+    ]);
+    const claimController = await text("be-laravel/app/Http/Controllers/ClaimController.php");
+    assert.doesNotMatch(
+      claimController,
+      /\$claim->receiver\?->notify\(new ClaimRejected\(\$claim\)\)/,
+      "claim cancellation should notify the donor, not the receiver who cancelled",
+    );
+  },
+
   async "FR-15"() {
     await contains("be-laravel/routes/api.php", [
       "Route::get('/dashboard/summary'",
@@ -257,6 +270,10 @@ test("all TC requirements are backed by source-code or documented-gap contracts"
       await checks[item.requirement]();
     });
   }
+});
+
+test("SCRUM-48 notification wiring covers donor-facing claim cancellation", async () => {
+  await checks["FR-14-notifications"]();
 });
 
 test("existing Laravel feature test suite has real behavioral coverage", async () => {

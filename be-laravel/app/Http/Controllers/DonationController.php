@@ -6,6 +6,8 @@ use App\Models\Claim;
 use App\Models\Donation;
 use App\Models\DonationCategory;
 use App\Models\User;
+use App\Notifications\DonationClaimed;
+use App\Notifications\NewDonationPending;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -121,6 +123,12 @@ class DonationController extends Controller
             'category_id' => $categoryId,
             'status' => 'pending', // Needs admin approval
         ]);
+
+        $donation->load('user');
+        User::query()
+            ->where('is_admin', true)
+            ->orWhere('role', 'admin')
+            ->each(fn (User $admin) => $admin->notify(new NewDonationPending($donation)));
 
         return response()->json([
             'message' => 'Donasi berhasil diajukan dan sedang menunggu verifikasi.',
@@ -287,7 +295,7 @@ class DonationController extends Controller
                 return response()->json(['message' => 'Donasi sudah diklaim'], 409);
             }
 
-            Claim::create([
+            $claim = Claim::create([
                 'donation_id' => $donation->id,
                 'receiver_id' => $receiverId,
                 'status' => Claim::STATUS_REQUESTED,
@@ -297,6 +305,10 @@ class DonationController extends Controller
             $donation->update([
                 'status' => Donation::STATUS_CLAIMED,
             ]);
+
+            $claim->load('receiver');
+            $donation->load('user');
+            $donation->user?->notify(new DonationClaimed($donation, $claim));
 
             return response()->json([
                 'message' => 'Donasi berhasil diklaim',
