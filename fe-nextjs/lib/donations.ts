@@ -9,6 +9,7 @@ export type DonationStatus =
 export type ApiDonation = {
   id: number;
   user_id?: number;
+  category_id?: number | null;
   title: string;
   description: string;
   location_city: string;
@@ -58,6 +59,7 @@ export type Donation = {
   pickup_address: string;
   pickup_time: string;
   available_from: string | null;
+  available_until: string | null;
   address_detail: string | null;
   has_coordinates: boolean;
   status: DonationStatus;
@@ -155,6 +157,7 @@ export function mapApiDonation(donation: ApiDonation): Donation {
     pickup_address: resolvePickupAddress(donation),
     pickup_time: resolvePickupTime(donation),
     available_from: donation.available_from,
+    available_until: donation.available_until,
     address_detail: donation.address_detail ?? null,
     has_coordinates: Boolean(donation.latitude && donation.longitude),
     status: donation.status,
