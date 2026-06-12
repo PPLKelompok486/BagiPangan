@@ -5,7 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class TokenAuth
@@ -14,29 +14,25 @@ class TokenAuth
     {
         $header = $request->header('Authorization', '');
 
-        // Log for debugging
-        Log::info('TokenAuth middleware called', ['header' => $header]);
-
         if (!str_starts_with($header, 'Bearer ')) {
-            Log::warning('Invalid authorization header format');
-            return response()->json(['message' => 'Unauthenticated - Invalid header format'], 401);
+            return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
         $token = trim(substr($header, 7));
         if ($token === '') {
-            Log::warning('Empty token');
-            return response()->json(['message' => 'Unauthenticated - Empty token'], 401);
+            return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        $user = User::where('remember_token', $token)->first();
+        $user = User::where('remember_token', hash('sha256', $token))->first();
         if (!$user) {
-            Log::warning('User not found for token', ['token' => substr($token, 0, 10) . '...']);
-            return response()->json(['message' => 'Unauthenticated - Invalid token'], 401);
+            return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        Log::info('User authenticated successfully', ['user_id' => $user->id]);
+        if (!$user->is_active) {
+            return response()->json(['message' => 'Akun Anda telah dinonaktifkan. Silakan hubungi admin.'], 403);
+        }
         $request->setUserResolver(fn () => $user);
-        \Illuminate\Support\Facades\Auth::setUser($user);
+        Auth::setUser($user);
         return $next($request);
     }
 }

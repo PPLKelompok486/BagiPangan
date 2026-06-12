@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, type CSSProperties } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Lock, ArrowLeft, ArrowRight, Loader2, CheckCircle2, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { saveAuth, type AuthUser } from "@/lib/api";
 
@@ -195,13 +196,23 @@ function LoginForm() {
       setLoading(false);
 
       if (res.ok) {
-        // Simpan token dan langsung lanjut ke step 2
-        setResetToken(data.debug_token);
-        setNotification({
-          type: "success",
-          message: "Verifikasi berhasil! Silakan buat password baru.",
-        });
-        setMode("reset-step2");
+        if (data.debug_token) {
+          // Local/dev runs only — backend exposes the token directly so we can
+          // advance straight to step 2 without an email round-trip.
+          setResetToken(data.debug_token);
+          setNotification({
+            type: "success",
+            message: "Verifikasi berhasil! Silakan buat password baru.",
+          });
+          setMode("reset-step2");
+        } else {
+          setNotification({
+            type: "success",
+            message:
+              data.message ||
+              "Permintaan reset password terkirim. Silakan periksa email Anda untuk melanjutkan.",
+          });
+        }
       } else {
         setNotification({ type: "error", message: data.message || "Gagal mengirim link reset." });
       }
@@ -263,33 +274,29 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden bg-[#111412] text-[#e1e3de] font-sans selection:bg-[#ccff80] selection:text-[#213600]">
-      {/* Dynamic Google Fonts Import */}
-      <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
-        
-        :root {
-          --brand-primary: #ccff80;
-          --brand-primary-container: #a3e635;
-          --brand-surface: #111412;
-          --brand-on-surface: #e1e3de;
-          --brand-on-surface-variant: #c2cab0;
-          --font-serif: 'Newsreader', serif;
-          --font-sans: 'Plus Jakarta Sans', sans-serif;
-        }
-
-        .font-serif { font-family: var(--font-serif); }
-        .font-sans { font-family: var(--font-sans); }
-      `}</style>
+    <div
+      className="min-h-screen flex flex-col relative overflow-hidden bg-[#111412] text-[#e1e3de] selection:bg-[#ccff80] selection:text-[#213600]"
+      style={{
+        /* Font CSS vars injected by layout.tsx via next/font — no @import needed */
+        fontFamily: "var(--font-login-sans, 'Plus Jakarta Sans', sans-serif)",
+        "--font-serif": "var(--font-login-serif, 'Newsreader', serif)",
+        "--font-sans": "var(--font-login-sans, 'Plus Jakarta Sans', sans-serif)",
+      } as CSSProperties & Record<"--font-serif" | "--font-sans", string>}
+    >
 
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0 opacity-55">
-        <img
-          alt="Relawan menyalurkan donasi pangan kepada komunitas"
-          src="/images/auth/helping-community.jpg"
-          className="w-full h-full object-cover scale-105"
-          style={{ objectPosition: "50% 40%" }}
-        />
+        <div className="absolute inset-0 scale-105">
+          <Image
+            alt="Relawan menyalurkan donasi pangan kepada komunitas"
+            src="/images/auth/helping-community.jpg"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+            style={{ objectPosition: "50% 40%" }}
+          />
+        </div>
         <div className="absolute inset-0 bg-gradient-to-b from-[#111412]/90 via-[#111412]/70 to-[#111412]"></div>
         <div className="absolute inset-0 bg-gradient-to-r from-[#111412]/50 via-transparent to-[#111412]/50"></div>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(204,255,128,0.10),transparent_55%)]"></div>
@@ -342,11 +349,14 @@ function LoginForm() {
 
                 <form onSubmit={handleLogin} className="space-y-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-[0.2em] text-[#c2cab0] font-bold ml-1">Email Address</label>
+                    <label htmlFor="login-email" className="text-[10px] uppercase tracking-[0.2em] text-[#c2cab0] font-bold ml-1">Alamat Email</label>
                     <div className="relative group">
                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#c2cab0]/40 group-focus-within:text-[#ccff80] transition-colors" />
                       <input
+                        id="login-email"
                         type="email"
+                        name="email"
+                        autoComplete="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="hello@bagipangan.org"
@@ -357,19 +367,22 @@ function LoginForm() {
 
                   <div className="space-y-2">
                     <div className="flex justify-between items-center ml-1">
-                      <label className="text-[10px] uppercase tracking-[0.2em] text-[#c2cab0] font-bold">Password</label>
-                      <button 
+                      <label htmlFor="login-password" className="text-[10px] uppercase tracking-[0.2em] text-[#c2cab0] font-bold">Kata Sandi</label>
+                      <button
                         type="button"
                         onClick={() => setMode("reset-step1")}
                         className="text-[10px] uppercase tracking-[0.2em] text-[#ccff80] font-bold hover:text-white transition-colors"
                       >
-                        Forgot password?
+                        Lupa kata sandi?
                       </button>
                     </div>
                     <div className="relative group">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#c2cab0]/40 group-focus-within:text-[#ccff80] transition-colors" />
                       <input
+                        id="login-password"
                         type={showPassword ? "text" : "password"}
+                        name="password"
+                        autoComplete="current-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
@@ -444,19 +457,20 @@ function LoginForm() {
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.4 }}
               >
-                <button 
+                <button
+                  type="button"
                   onClick={() => setMode("login")}
                   className="flex items-center gap-2 text-[#c2cab0] hover:text-[#ccff80] transition-colors mb-10 text-[10px] font-bold uppercase tracking-widest"
                 >
-                  <ArrowLeft className="h-4 w-4" /> Back to login
+                  <ArrowLeft className="h-4 w-4" /> Kembali ke halaman masuk
                 </button>
 
                 <div className="text-center mb-10">
                   <div className="inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-[#ccff80]/10 text-[#ccff80] mb-6">
                     <ShieldCheck className="h-8 w-8" />
                   </div>
-                  <h1 className="font-serif text-4xl text-[#e1e3de] mb-2">Reset Password</h1>
-                  <p className="font-sans text-[#c2cab0] text-sm leading-relaxed">Enter your email to receive a password reset link.</p>
+                  <h1 className="font-serif text-4xl text-[#e1e3de] mb-2">Reset kata sandi</h1>
+                  <p className="font-sans text-[#c2cab0] text-sm leading-relaxed">Masukkan email Anda untuk menerima tautan reset kata sandi.</p>
                 </div>
 
                 {notification.message && (
@@ -469,11 +483,14 @@ function LoginForm() {
 
                 <form onSubmit={handleResetStep1} className="space-y-8">
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-[0.2em] text-[#c2cab0] font-bold ml-1">Email Address</label>
+                    <label htmlFor="reset-email" className="text-[10px] uppercase tracking-[0.2em] text-[#c2cab0] font-bold ml-1">Alamat Email</label>
                     <div className="relative group">
                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#c2cab0]/40 group-focus-within:text-[#ccff80] transition-colors" />
                       <input
+                        id="reset-email"
                         type="email"
+                        name="email"
+                        autoComplete="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="hello@bagipangan.org"
@@ -487,7 +504,7 @@ function LoginForm() {
                     disabled={loading}
                     className="w-full bg-[#ccff80] text-[#213600] py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 group"
                   >
-                    {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Send Reset Link"}
+                    {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Kirim tautan reset"}
                     {!loading && <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />}
                   </button>
                 </form>
@@ -507,8 +524,8 @@ function LoginForm() {
                   <div className="inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-[#ccff80]/10 text-[#ccff80] mb-6">
                     <Lock className="h-8 w-8" />
                   </div>
-                  <h1 className="font-serif text-4xl text-[#e1e3de] mb-2">New Password</h1>
-                  <p className="font-sans text-[#c2cab0] text-sm leading-relaxed">Account verified! Create a strong new password.</p>
+                  <h1 className="font-serif text-4xl text-[#e1e3de] mb-2">Kata sandi baru</h1>
+                  <p className="font-sans text-[#c2cab0] text-sm leading-relaxed">Akun terverifikasi. Buat kata sandi baru yang kuat.</p>
                 </div>
 
                 {notification.message && (
@@ -521,11 +538,14 @@ function LoginForm() {
 
                 <form onSubmit={handleResetStep2} className="space-y-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-[0.2em] text-[#c2cab0] font-bold ml-1">New Password</label>
+                    <label htmlFor="new-password" className="text-[10px] uppercase tracking-[0.2em] text-[#c2cab0] font-bold ml-1">Kata Sandi Baru</label>
                     <div className="relative group">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#c2cab0]/40 group-focus-within:text-[#ccff80] transition-colors" />
                       <input
+                        id="new-password"
                         type="password"
+                        name="new-password"
+                        autoComplete="new-password"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="••••••••"
@@ -535,11 +555,14 @@ function LoginForm() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-[0.2em] text-[#c2cab0] font-bold ml-1">Confirm Password</label>
+                    <label htmlFor="confirm-password" className="text-[10px] uppercase tracking-[0.2em] text-[#c2cab0] font-bold ml-1">Konfirmasi Kata Sandi</label>
                     <div className="relative group">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#c2cab0]/40 group-focus-within:text-[#ccff80] transition-colors" />
                       <input
+                        id="confirm-password"
                         type="password"
+                        name="confirm-password"
+                        autoComplete="new-password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="••••••••"
@@ -553,7 +576,7 @@ function LoginForm() {
                     disabled={loading}
                     className="w-full bg-[#ccff80] text-[#213600] py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 group mt-4"
                   >
-                    {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Update Password"}
+                    {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Perbarui kata sandi"}
                     {!loading && <CheckCircle2 className="h-4 w-4" />}
                   </button>
                 </form>
@@ -567,19 +590,8 @@ function LoginForm() {
       <footer className="w-full py-12 mt-auto bg-[#1A3A32]/40 backdrop-blur-md border-t border-white/5 relative z-10 flex flex-col items-center px-8 gap-6">
         <div className="flex flex-col md:flex-row justify-between items-center w-full max-w-7xl gap-6">
           <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-[#c2cab0]/40 text-center md:text-left">
-            © 2024 BagiPangan. Cultivating Community Sustainability.
+            © {new Date().getFullYear()} BagiPangan. Menumbuhkan keberlanjutan komunitas.
           </p>
-          <div className="flex gap-8">
-            {["Privacy Policy", "Terms of Service", "Support"].map((item) => (
-              <Link 
-                key={item} 
-                href="#" 
-                className="font-sans text-[10px] uppercase tracking-[0.3em] text-[#c2cab0]/40 hover:text-[#ccff80] transition-colors"
-              >
-                {item}
-              </Link>
-            ))}
-          </div>
         </div>
       </footer>
     </div>

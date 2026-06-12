@@ -32,15 +32,19 @@ function filtersFromParams(params: URLSearchParams): DonationMapFilters {
   };
 }
 
-export default function DonationMapPageContent() {
+type DonationMapPageContentProps = {
+  context?: DonationMapFilters["context"];
+};
+
+export default function DonationMapPageContent({ context = "receiver" }: DonationMapPageContentProps) {
   return (
     <Suspense fallback={<MapSkeleton />}>
-      <DonationMapScreen />
+      <DonationMapScreen context={context} />
     </Suspense>
   );
 }
 
-function DonationMapScreen() {
+function DonationMapScreen({ context }: { context: DonationMapFilters["context"] }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -49,15 +53,21 @@ function DonationMapScreen() {
   const [filterOpen, setFilterOpen] = useState(false);
   const deferredQuery = useDeferredValue(filters.q);
   const requestFilters = useMemo(
-    () => ({ ...filters, q: deferredQuery }),
-    [filters, deferredQuery],
+    () => ({ ...filters, q: deferredQuery, context }),
+    [filters, deferredQuery, context],
   );
   const { data, error, isLoading, isRefreshing, retry } = useDonationMap(requestFilters);
   const { location, error: locationError, isLocating } = useUserGeolocation();
 
   useEffect(() => {
-    apiFetch<{ data: CategoryOption[] }>("/donations/categories")
-      .then((payload) => setCategories(payload.data))
+    apiFetch<CategoryOption[] | { data?: CategoryOption[] }>("/donations/categories")
+      .then((payload) => {
+        if (Array.isArray(payload)) {
+          setCategories(payload);
+          return;
+        }
+        setCategories(Array.isArray(payload.data) ? payload.data : []);
+      })
       .catch(() => setCategories([]));
   }, []);
 
@@ -72,9 +82,13 @@ function DonationMapScreen() {
 
   const features = data?.features ?? [];
   const hasActiveFilter = filters.category_id !== "" || filters.status !== "available" || filters.q.trim() !== "";
-  const emptyMessage = hasActiveFilter
-    ? "Tidak ada donasi yang sesuai dengan filter Anda."
-    : "Data lokasi tidak ditemukan.";
+  const totalApproved = data?.meta?.total_approved ?? 0;
+  const withoutCoords = data?.meta?.without_coords ?? 0;
+  const emptyMessage = totalApproved > 0 && withoutCoords === totalApproved
+    ? `Ada ${totalApproved} donasi tersedia, namun belum ada yang memiliki koordinat lokasi.`
+    : hasActiveFilter
+      ? "Tidak ada donasi yang sesuai dengan filter Anda."
+      : "Belum ada donasi tersedia di peta.";
 
   return (
     <div className="space-y-5">

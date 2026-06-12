@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion, useInView, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { Clock } from "lucide-react";
 import { useRef } from "react";
@@ -75,10 +76,12 @@ export function HowItWorks() {
                   transition={{ type: "spring", stiffness: 260, damping: 25 }}
                 >
                   <div className="relative h-44 overflow-hidden bg-[var(--brand-50)]">
-                    <img
+                    <Image
                       alt={step.imageAlt}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                      className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                      fill
                       loading="lazy"
+                      sizes="(max-width: 1024px) 100vw, 33vw"
                       src={step.image}
                     />
                     <div

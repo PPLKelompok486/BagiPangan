@@ -8,14 +8,19 @@ export type DonationStatus =
 
 export type ApiDonation = {
   id: number;
+  user_id?: number;
   title: string;
   description: string;
   location_city: string;
   location_address: string | null;
+  address_detail?: string | null;
+  latitude?: string | number | null;
+  longitude?: string | number | null;
   available_from: string | null;
   available_until: string | null;
   portion_count: number;
   status: DonationStatus;
+  active_claims_count?: number;
   created_at: string;
   updated_at: string;
   user?: {
@@ -25,6 +30,16 @@ export type ApiDonation = {
     phone?: string | null;
   } | null;
   category?: { id: number; name: string } | null;
+};
+
+export type PaginatedDonations = {
+  data: ApiDonation[];
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+  from: number | null;
+  to: number | null;
 };
 
 export type DonationDonor = {
@@ -41,9 +56,14 @@ export type Donation = {
   quantity: string;
   pickup_address: string;
   pickup_time: string;
+  available_from: string | null;
+  address_detail: string | null;
+  has_coordinates: boolean;
   status: DonationStatus;
+  active_claims_count: number;
   created_at: string;
   updated_at: string;
+  user_id?: number;
   donor?: DonationDonor;
   category?: { id: number; name: string } | null;
 };
@@ -120,7 +140,7 @@ function resolvePickupTime(donation: ApiDonation): string {
 }
 
 function resolvePickupAddress(donation: ApiDonation): string {
-  const parts = [donation.location_address, donation.location_city].filter(Boolean);
+  const parts = [donation.address_detail, donation.location_address, donation.location_city].filter(Boolean);
   return parts.join(", ") || donation.location_city || "Lokasi belum diisi";
 }
 
@@ -132,9 +152,14 @@ export function mapApiDonation(donation: ApiDonation): Donation {
     quantity: `${donation.portion_count} porsi`,
     pickup_address: resolvePickupAddress(donation),
     pickup_time: resolvePickupTime(donation),
+    available_from: donation.available_from,
+    address_detail: donation.address_detail ?? null,
+    has_coordinates: Boolean(donation.latitude && donation.longitude),
     status: donation.status,
+    active_claims_count: donation.active_claims_count ?? 0,
     created_at: donation.created_at,
     updated_at: donation.updated_at,
+    user_id: donation.user_id,
     donor: donation.user
       ? {
           id: donation.user.id,

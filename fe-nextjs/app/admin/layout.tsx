@@ -33,8 +33,8 @@ export default function AdminLayout({ children }: Readonly<{ children: React.Rea
     <div
       className={`${fraunces.variable} ${plusJakartaSans.variable} bagi-theme min-h-screen bg-(--cream) text-(--text-dark)`}
     >
-      <div className="grid min-h-screen w-full gap-0 lg:gap-6 lg:grid-cols-[260px_1fr]">
-        <aside className="rounded-lg border border-(--brand-100) bg-[linear-gradient(160deg,var(--brand-900),var(--brand-700))] p-5 text-white shadow-(--shadow-soft) lg:sticky lg:top-0 lg:h-screen flex flex-col">
+      <div className="flex min-h-screen w-full">
+        <aside className="hidden lg:flex w-[260px] flex-col border-r border-(--brand-100) bg-[linear-gradient(160deg,var(--brand-900),var(--brand-700))] p-5 text-white shadow-(--shadow-soft) sticky top-0 h-screen">
           <p className="text-xs uppercase tracking-[0.15em] text-white/70">Admin Console</p>
           <h1 className="bagi-display mt-3 text-3xl">BagiPangan</h1>
           <p className="mt-3 text-sm leading-6 text-white/80">
@@ -54,8 +54,14 @@ export default function AdminLayout({ children }: Readonly<{ children: React.Rea
             <Link className="block rounded-xl border border-white/20 px-3 py-2 text-white/80 hover:bg-white/10" href="/admin/users">
               Manajemen User
             </Link>
+            <Link className="block rounded-xl border border-white/20 px-3 py-2 text-white/80 hover:bg-white/10" href="/admin/activity">
+              Log Aktivitas
+            </Link>
             <Link className="block rounded-xl border border-white/20 px-3 py-2 text-white/80 hover:bg-white/10" href="/admin/categories">
               Manajemen Kategori
+            </Link>
+            <Link className="block rounded-xl border border-white/20 px-3 py-2 text-white/80 hover:bg-white/10" href="/admin/reports">
+              Ekspor Laporan
             </Link>
           </nav>
 
@@ -82,9 +88,9 @@ export default function AdminLayout({ children }: Readonly<{ children: React.Rea
           </div>
         </aside>
 
-        <div className="flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0 p-4 lg:p-8">
           <AdminAuthGate>
-            <main className="space-y-6">{children}</main>
+            <main className="space-y-6 w-full max-w-[1600px] mx-auto">{children}</main>
           </AdminAuthGate>
         </div>
       </div>

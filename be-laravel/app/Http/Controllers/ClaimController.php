@@ -23,6 +23,55 @@ class ClaimController extends Controller
         return response()->json(['data' => $claims]);
     }
 
+    public function exportMine(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $receiverId = Auth::id();
+        $fileName = 'klaim-saya-' . now()->format('Ymd-His') . '.csv';
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
+            'Cache-Control'       => 'no-store, no-cache, must-revalidate',
+        ];
+
+        $callback = function () use ($receiverId) {
+            $file = fopen('php://output', 'wb');
+            fwrite($file, "\xEF\xBB\xBF");
+
+            fputcsv($file, [
+                'ID Klaim', 'ID Donasi', 'Judul Donasi', 'Kategori',
+                'Donatur', 'Kota', 'Status Klaim', 'Tgl Diklaim', 'Tgl Selesai',
+            ]);
+
+            Claim::query()
+                ->with([
+                    'donation:id,title,location_city,category_id,user_id',
+                    'donation.category:id,name',
+                    'donation.user:id,name',
+                ])
+                ->where('receiver_id', $receiverId)
+                ->orderByDesc('claimed_at')
+                ->lazy(200)
+                ->each(function (Claim $claim) use ($file) {
+                    fputcsv($file, [
+                        $claim->id,
+                        optional($claim->donation)->id ?? '',
+                        optional($claim->donation)->title ?? '',
+                        optional($claim->donation?->category)->name ?? '',
+                        optional($claim->donation?->user)->name ?? '',
+                        optional($claim->donation)->location_city ?? '',
+                        $claim->status,
+                        optional($claim->claimed_at)->toDateTimeString() ?? '',
+                        optional($claim->completed_at)->toDateTimeString() ?? '',
+                    ]);
+                });
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
     public function uploadProof(Request $request, Claim $claim)
     {
         if ($claim->receiver_id !== Auth::id()) {
@@ -50,7 +99,16 @@ class ClaimController extends Controller
             mkdir($dir, 0755, true);
         }
 
-        $fileName = 'claim_' . $claim->id . '_' . time() . '.' . $proof->getClientOriginalExtension();
+        // Use the server-side extension guessed from the validated MIME type,
+        // not the client-supplied original extension, to prevent attackers
+        // from naming a valid JPEG `evil.php` and dropping executable code
+        // into a publicly-served directory.
+        $extension = $proof->extension() ?: 'bin';
+        $allowedExtensions = ['jpeg', 'jpg', 'png', 'webp'];
+        if (!in_array($extension, $allowedExtensions, true)) {
+            return response()->json(['message' => 'Format bukti tidak didukung'], 422);
+        }
+        $fileName = 'claim_' . $claim->id . '_' . time() . '.' . $extension;
         $proof->move($dir, $fileName);
         $publicPath = '/uploads/claims/' . $fileName;
 
@@ -130,7 +188,7 @@ class ClaimController extends Controller
             }
 
             $claim->load(['donation.user:id,name,city,phone', 'donation.category']);
-            $claim->receiver?->notify(new ClaimRejected($claim));
+            $claim->donation?->user?->notify(new ClaimRejected($claim));
 
             return response()->json([
                 'message' => 'Klaim berhasil dibatalkan',

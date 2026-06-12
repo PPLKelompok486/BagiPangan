@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { LogOut, LayoutGrid, Map as MapIcon, Package, PlusCircle, User } from "lucide-react";
 import "../bagipangan/landing.css";
@@ -13,42 +14,54 @@ export default function DonaturLayout({ children }: { children: React.ReactNode 
   const pathname = usePathname();
   const [avatarUrl, setAvatarUrl] = useState<string>("");
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [hydrated, setHydrated] = useState(false);
 
-  const [user] = useState<AuthUser | null>(() => {
-    const u = getUser();
-    if (u?.role !== "donatur") {
-      return null;
+  const fetchAvatar = useCallback(async () => {
+    // Check session cache first — avoids waterfall request on every navigation
+    const cached = sessionStorage.getItem("__bp_avatar_url");
+    if (cached) {
+      setAvatarUrl(cached);
+      return;
     }
-    return u;
-  });
-
-  const fetchAvatar = async () => {
     try {
       const res = await fetch("/api/profile");
       if (res.ok) {
         const data = await res.json();
         if (data.user?.avatar) {
           setAvatarUrl(data.user.avatar);
+          sessionStorage.setItem("__bp_avatar_url", data.user.avatar);
         }
       }
     } catch (error) {
       console.error("Failed to fetch avatar:", error);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    const u = getUser();
-    if (!u) {
-      router.replace("/login");
-      return;
-    }
-    if (u.role !== "donatur") {
-      router.replace("/receiver/dashboard");
-      return;
-    }
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchAvatar();
-  }, [router]);
+    let cancelled = false;
+
+    queueMicrotask(() => {
+      if (cancelled) return;
+
+      setHydrated(true);
+      const u = getUser();
+      if (!u) {
+        router.replace("/login");
+        return;
+      }
+      if (u.role !== "donatur") {
+        router.replace("/receiver/dashboard");
+        return;
+      }
+      setUser(u);
+      void fetchAvatar();
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchAvatar, router]);
 
   const handleLogout = async () => {
     setShowLogoutConfirm(true);
@@ -60,11 +73,12 @@ export default function DonaturLayout({ children }: { children: React.ReactNode 
     } catch {
       // ignore — clear locally regardless
     }
+    sessionStorage.removeItem("__bp_avatar_url");
     clearAuth();
     router.replace("/login");
   };
 
-  if (!user) return null;
+  if (!hydrated || !user) return null;
 
   const navItems = [
     { href: "/donatur/dashboard", label: "Dashboard", icon: LayoutGrid },
@@ -109,9 +123,11 @@ export default function DonaturLayout({ children }: { children: React.ReactNode 
             <NotificationBell />
             <Link href="/profile" className="flex items-center gap-3 hidden sm:block hover:opacity-80 transition-opacity">
               {avatarUrl ? (
-                <img
+                <Image
                   src={`${process.env.LARAVEL_API_BASE ?? "http://localhost:8000"}${avatarUrl}`}
                   alt="Avatar"
+                  width={40}
+                  height={40}
                   className="w-10 h-10 rounded-full object-cover border-2 border-[var(--brand-200)]"
                 />
               ) : (

@@ -26,9 +26,19 @@ export async function POST(request: NextRequest) {
     }
 
     const response = NextResponse.json(data, { status: res.status });
-    const setCookie = res.headers.get("set-cookie");
-    if (setCookie) {
-      response.headers.set("set-cookie", setCookie);
+    const headerBag = res.headers as unknown as { getSetCookie?: () => string[] };
+    const setCookies = headerBag.getSetCookie?.() ?? [];
+
+    if (setCookies.length === 0) {
+      for (const [name, value] of res.headers.entries()) {
+        if (name.toLowerCase() === "set-cookie") {
+          setCookies.push(value);
+        }
+      }
+    }
+
+    for (const cookie of setCookies) {
+      response.headers.append("set-cookie", cookie);
     }
 
     return response;

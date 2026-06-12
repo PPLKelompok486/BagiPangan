@@ -8,6 +8,7 @@ use App\Models\Donation;
 use App\Notifications\DonationApproved;
 use App\Notifications\DonationRejected;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ModerationController extends Controller
 {
@@ -32,22 +33,33 @@ class ModerationController extends Controller
 
     public function approve(Request $request, Donation $donation)
     {
-        $donation->update([
-            'status' => Donation::STATUS_APPROVED,
-            'approved_by' => $request->user()->id,
-            'approved_at' => now(),
-            'rejected_reason' => null,
-        ]);
+        $adminId = (int) $request->user()->id;
+        $previousStatus = $donation->status;
 
-        ActivityLog::create([
-            'actor_user_id' => $request->user()->id,
-            'action' => 'donation.approved',
-            'entity_type' => 'donation',
-            'entity_id' => $donation->id,
-            'metadata' => [
-                'title' => $donation->title,
-            ],
-        ]);
+        DB::transaction(function () use ($request, $donation, $adminId, $previousStatus) {
+            $donation->update([
+                'status' => Donation::STATUS_APPROVED,
+                'approved_by' => $adminId,
+                'approved_at' => now(),
+                'rejected_reason' => null,
+            ]);
+
+            ActivityLog::record(
+                'donation.approved',
+                'donation',
+                $donation->id,
+                [
+                    'title' => $donation->title,
+                    'previous_status' => $previousStatus,
+                    'new_status' => Donation::STATUS_APPROVED,
+                    'reason' => null,
+                    'admin_id' => $adminId,
+                    'ip' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ],
+                $adminId,
+            );
+        });
 
         $donation->load('user');
         $donation->user?->notify(new DonationApproved($donation));
@@ -64,23 +76,33 @@ class ModerationController extends Controller
             'reason' => 'required|string|max:500',
         ]);
 
-        $donation->update([
-            'status' => Donation::STATUS_REJECTED,
-            'approved_by' => $request->user()->id,
-            'approved_at' => now(),
-            'rejected_reason' => $payload['reason'],
-        ]);
+        $adminId = (int) $request->user()->id;
+        $previousStatus = $donation->status;
 
-        ActivityLog::create([
-            'actor_user_id' => $request->user()->id,
-            'action' => 'donation.rejected',
-            'entity_type' => 'donation',
-            'entity_id' => $donation->id,
-            'metadata' => [
-                'reason' => $payload['reason'],
-                'title' => $donation->title,
-            ],
-        ]);
+        DB::transaction(function () use ($request, $donation, $payload, $adminId, $previousStatus) {
+            $donation->update([
+                'status' => Donation::STATUS_REJECTED,
+                'approved_by' => $adminId,
+                'approved_at' => now(),
+                'rejected_reason' => $payload['reason'],
+            ]);
+
+            ActivityLog::record(
+                'donation.rejected',
+                'donation',
+                $donation->id,
+                [
+                    'title' => $donation->title,
+                    'previous_status' => $previousStatus,
+                    'new_status' => Donation::STATUS_REJECTED,
+                    'reason' => $payload['reason'],
+                    'admin_id' => $adminId,
+                    'ip' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ],
+                $adminId,
+            );
+        });
 
         $donation->load('user');
         $donation->user?->notify(new DonationRejected($donation, $payload['reason']));

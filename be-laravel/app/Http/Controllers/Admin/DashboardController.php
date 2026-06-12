@@ -6,24 +6,35 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Claim;
 use App\Models\Donation;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     public function summary()
     {
-        $totalDonations = Donation::count();
-        $completedDonations = Donation::where('status', Donation::STATUS_COMPLETED)->count();
+        // Single grouped query replaces two full-table COUNTs + a SUM. The
+        // status FILTER is a Postgres-specific aggregate that lets the DB
+        // bucket totals in one scan.
+        $donationStats = Donation::query()
+            ->select(DB::raw('COUNT(*) AS total'))
+            ->selectRaw('COUNT(*) FILTER (WHERE status = ?) AS completed', [Donation::STATUS_COMPLETED])
+            ->selectRaw('COALESCE(SUM(portion_count), 0) AS portions')
+            ->first();
+
+        $totalDonations = (int) ($donationStats->total ?? 0);
+        $completedDonations = (int) ($donationStats->completed ?? 0);
+        $totalPortions = (int) ($donationStats->portions ?? 0);
         $completionRate = $totalDonations > 0
-            ? round(($completedDonations / $totalDonations) * 100)
+            ? (int) round(($completedDonations / $totalDonations) * 100)
             : 0;
-        $totalPortions = Donation::sum('portion_count');
+
+        // Postgres EXTRACT(EPOCH FROM interval) gives seconds; divide by 60 for
+        // minutes. This used to iterate every claim in PHP and was O(N) in
+        // memory; now the DB returns a single scalar.
         $averageClaimMinutes = (int) round(
             Claim::whereNotNull('claimed_at')
                 ->whereNotNull('completed_at')
-                ->get()
-                ->avg(function (Claim $claim) {
-                    return $claim->claimed_at?->diffInMinutes($claim->completed_at) ?? 0;
-                }) ?? 0
+                ->value(DB::raw('COALESCE(AVG(EXTRACT(EPOCH FROM (completed_at - claimed_at)) / 60), 0)'))
         );
 
         $activity = ActivityLog::query()
@@ -47,7 +58,7 @@ class DashboardController extends Controller
                 'kpis' => [
                     'total_donations' => $totalDonations,
                     'completion_rate' => $completionRate,
-                    'total_portions' => (int) $totalPortions,
+                    'total_portions' => $totalPortions,
                     'avg_claim_minutes' => $averageClaimMinutes,
                 ],
                 'activity_feed' => $activity,

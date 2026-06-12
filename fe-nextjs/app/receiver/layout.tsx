@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { LogOut, Package, ListChecks, Map as MapIcon, User } from "lucide-react";
 import "../bagipangan/landing.css";
@@ -23,12 +24,19 @@ export default function ReceiverLayout({ children }: { children: React.ReactNode
   });
 
   const fetchAvatar = async () => {
+    // Check session cache first — avoids waterfall request on every navigation
+    const cached = sessionStorage.getItem("__bp_avatar_url");
+    if (cached) {
+      setAvatarUrl(cached);
+      return;
+    }
     try {
       const res = await fetch("/api/profile");
       if (res.ok) {
         const data = await res.json();
         if (data.user?.avatar) {
           setAvatarUrl(data.user.avatar);
+          sessionStorage.setItem("__bp_avatar_url", data.user.avatar);
         }
       }
     } catch (error) {
@@ -60,6 +68,7 @@ export default function ReceiverLayout({ children }: { children: React.ReactNode
     } catch {
       // ignore — we'll clear locally anyway
     }
+    sessionStorage.removeItem("__bp_avatar_url");
     clearAuth();
     router.replace("/login");
   };
@@ -108,9 +117,11 @@ export default function ReceiverLayout({ children }: { children: React.ReactNode
             <NotificationBell />
             <Link href="/profile" className="flex items-center gap-3 hidden sm:block hover:opacity-80 transition-opacity">
               {avatarUrl ? (
-                <img
+                <Image
                   src={`${process.env.LARAVEL_API_BASE ?? "http://localhost:8000"}${avatarUrl}`}
                   alt="Avatar"
+                  width={40}
+                  height={40}
                   className="w-10 h-10 rounded-full object-cover border-2 border-[var(--brand-200)]"
                 />
               ) : (

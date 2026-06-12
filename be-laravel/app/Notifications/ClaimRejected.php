@@ -22,8 +22,8 @@ class ClaimRejected extends Notification
 
         return [
             'title' => 'Klaim Dibatalkan',
-            'body' => "Klaim Anda untuk '{$title}' dibatalkan.",
-            'action_url' => '/receiver/my-claims',
+            'body' => "Klaim untuk donasi '{$title}' dibatalkan oleh penerima.",
+            'action_url' => '/donatur/donations',
             'icon_type' => 'rejected',
             'meta' => [
                 'donation_id' => $this->claim->donation_id,

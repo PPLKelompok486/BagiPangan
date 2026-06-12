@@ -5,6 +5,10 @@ const API_BASE = BACKEND_BASE_URL.endsWith("/api")
   ? BACKEND_BASE_URL
   : `${BACKEND_BASE_URL}/api`;
 
+// Authenticated user requests carry an Authorization: Bearer ... header.
+// Cookies are forwarded only by the dedicated admin-session proxy routes
+// (e.g. app/api/admin/**/route.ts), not this generic passthrough, to avoid
+// leaking the full cookie jar to the backend.
 const PASSTHROUGH_HEADERS = ["authorization", "content-type", "accept"] as const;
 
 async function forward(req: NextRequest, segments: string[]) {

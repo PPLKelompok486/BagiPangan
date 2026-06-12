@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Claim;
 use App\Models\Donation;
+use App\Models\DonationCategory;
 use App\Models\User;
 use App\Notifications\DonationClaimed;
 use App\Notifications\NewDonationPending;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -16,19 +18,66 @@ class DonationController extends Controller
 {
     public function categories()
     {
-        return response()->json([
-            'data' => \App\Models\DonationCategory::where('is_active', true)->get(['id', 'name'])
-        ]);
+        $categories = Cache::remember('donation_categories', 300, function () {
+            return \App\Models\DonationCategory::where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name']);
+        });
+
+        return response()->json(['data' => $categories]);
     }
 
     public function index(Request $request)
     {
-        $donations = Donation::with(['user:id,name,city', 'category'])
-            ->where('status', 'approved')
-            ->orderByDesc('created_at')
-            ->paginate(15);
+        $request->validate([
+            'q' => ['nullable', 'string', 'max:120'],
+            'category_id' => ['nullable', 'integer', 'exists:donation_categories,id'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'sort' => ['nullable', 'in:newest,oldest,expiry_soon'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
+        ]);
 
-        return response()->json($donations);
+        $query = Donation::with(['user:id,name,city', 'category:id,name'])
+            ->where('status', Donation::STATUS_APPROVED);
+
+        if ($request->filled('q')) {
+            $normalizedQuery = strtolower(trim((string) $request->input('q')));
+            if ($normalizedQuery !== '') {
+                $escaped = $this->escapeLikeValue($normalizedQuery);
+                $needle = '%' . $escaped . '%';
+                $query->where(function ($sub) use ($needle) {
+                    $sub->whereRaw("LOWER(title) LIKE ? ESCAPE '!'", [$needle])
+                        ->orWhereRaw("LOWER(description) LIKE ? ESCAPE '!'", [$needle]);
+                });
+            }
+        }
+
+        if ($categoryId = $request->input('category_id')) {
+            $query->where('category_id', $categoryId);
+        }
+
+        if ($request->filled('city')) {
+            $normalizedCity = strtolower(trim((string) $request->input('city')));
+            if ($normalizedCity !== '') {
+                $escapedCity = $this->escapeLikeValue($normalizedCity);
+                $cityNeedle = '%' . $escapedCity . '%';
+                $query->where(function ($sub) use ($cityNeedle) {
+                    $sub->whereRaw("LOWER(location_city) LIKE ? ESCAPE '!'", [$cityNeedle])
+                        ->orWhereHas('user', fn ($userQuery) => $userQuery->whereRaw("LOWER(city) LIKE ? ESCAPE '!'", [$cityNeedle]));
+                });
+            }
+        }
+
+        $sort = $request->input('sort', 'newest');
+        match ($sort) {
+            'oldest' => $query->orderBy('created_at'),
+            'expiry_soon' => $query->orderByRaw('available_until IS NULL')->orderBy('available_until'),
+            default => $query->orderByDesc('created_at'),
+        };
+
+        $perPage = (int) $request->input('per_page', 15);
+
+        return response()->json($query->paginate($perPage));
     }
 
     public function store(Request $request)
@@ -44,7 +93,7 @@ class DonationController extends Controller
             'available_from' => 'required|date',
             'available_until' => 'required|date|after:available_from',
             'portion_count' => 'required|integer|min:1',
-            'category_id' => 'nullable', // Temporarily relaxed to prevent blocking
+            'category_id' => 'nullable|integer|exists:donation_categories,id',
         ]);
 
         if ($validator->fails()) {
@@ -89,13 +138,44 @@ class DonationController extends Controller
 
     public function show($id)
     {
-        $donation = Donation::with(['user', 'category'])->find($id);
+        $donation = Donation::with([
+            'user:id,name,city,phone',
+            'category:id,name',
+        ])->find($id);
 
         if (!$donation) {
             return response()->json(['message' => 'Donasi tidak ditemukan'], 404);
         }
 
-        return response()->json(['data' => $donation]);
+        // Public endpoint, but receivers viewing the detail want to see their
+        // own claim status. Accept an optional bearer token and resolve it via
+        // the same hashed-storage scheme used by TokenAuth middleware; never
+        // bubble up a 401 here — anonymous viewers are first-class.
+        $userId = Auth::id();
+        if (!$userId) {
+            $token = request()->bearerToken();
+            if ($token) {
+                $userId = User::where('remember_token', hash('sha256', $token))->value('id');
+            }
+        }
+
+        $currentClaim = null;
+        if ($userId) {
+            $currentClaim = Claim::where('donation_id', $donation->id)
+                ->where('receiver_id', $userId)
+                ->whereIn('status', [
+                    Claim::STATUS_REQUESTED,
+                    Claim::STATUS_APPROVED,
+                    Claim::STATUS_COMPLETED,
+                ])
+                ->select(['id', 'status', 'proof_image_url', 'claimed_at', 'completed_at'])
+                ->first();
+        }
+
+        return response()->json([
+            'data' => $donation,
+            'my_claim' => $currentClaim,
+        ]);
     }
 
     public function update(Request $request, $id)
@@ -125,11 +205,63 @@ class DonationController extends Controller
     public function mine(Request $request)
     {
         $donations = Donation::with('category')
+            ->withCount([
+                'claims as active_claims_count' => fn ($query) => $query->whereIn('status', [
+                    Claim::STATUS_REQUESTED,
+                    Claim::STATUS_APPROVED,
+                    Claim::STATUS_COMPLETED,
+                ]),
+            ])
             ->where('user_id', Auth::id())
             ->orderByDesc('created_at')
             ->get();
 
         return response()->json(['data' => $donations]);
+    }
+
+    public function exportMine(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $userId = Auth::id();
+        $fileName = 'donasi-saya-' . now()->format('Ymd-His') . '.csv';
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
+            'Cache-Control'       => 'no-store, no-cache, must-revalidate',
+        ];
+
+        $callback = function () use ($userId) {
+            $file = fopen('php://output', 'wb');
+            fwrite($file, "\xEF\xBB\xBF");
+
+            fputcsv($file, [
+                'ID', 'Judul', 'Kategori', 'Kota', 'Status',
+                'Jumlah Porsi', 'Tersedia Dari', 'Tersedia Hingga', 'Tgl Dibuat',
+            ]);
+
+            Donation::query()
+                ->with(['category:id,name'])
+                ->where('user_id', $userId)
+                ->orderByDesc('created_at')
+                ->lazy(200)
+                ->each(function (Donation $donation) use ($file) {
+                    fputcsv($file, [
+                        $donation->id,
+                        $donation->title,
+                        optional($donation->category)->name ?? '',
+                        $donation->location_city ?? '',
+                        $donation->status,
+                        $donation->portion_count,
+                        optional($donation->available_from)->toDateTimeString() ?? '',
+                        optional($donation->available_until)->toDateTimeString() ?? '',
+                        optional($donation->created_at)->toDateTimeString() ?? '',
+                    ]);
+                });
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     public function claim(Request $request, $id)
@@ -200,5 +332,15 @@ class DonationController extends Controller
         $donation->update(['status' => 'cancelled']);
 
         return response()->json(['message' => 'Donasi berhasil dibatalkan']);
+    }
+
+    /**
+     * Escape LIKE wildcard characters so user input is matched literally.
+     *
+     * This is paired with SQL `ESCAPE '!'` in LIKE clauses.
+     */
+    private function escapeLikeValue(string $value): string
+    {
+        return str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $value);
     }
 }

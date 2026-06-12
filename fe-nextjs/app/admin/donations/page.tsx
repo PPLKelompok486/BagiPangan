@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { formatPickupTime, STATUS_LABEL, STATUS_TONE, type DonationStatus } from "@/lib/donations";
 
@@ -88,27 +89,12 @@ export default function ManajemenDonasi() {
   const actionButtons = useMemo(
     () => (
       <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          disabled
-          className="cursor-not-allowed rounded-full border border-(--brand-100) bg-(--brand-50) px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-(--text-mid) opacity-50"
+        <Link
+          href="/admin/donations/new"
+          className="rounded-full border border-(--brand-100) bg-(--brand-50) px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-(--text-mid) hover:border-(--brand-300) hover:text-(--brand-700)"
         >
-          Create
-        </button>
-        <button
-          type="button"
-          disabled
-          className="cursor-not-allowed rounded-full border border-(--brand-100) bg-(--brand-50) px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-(--text-mid) opacity-50"
-        >
-          Update
-        </button>
-        <button
-          type="button"
-          disabled
-          className="cursor-not-allowed rounded-full border border-(--brand-100) bg-(--brand-50) px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-(--text-mid) opacity-50"
-        >
-          Delete
-        </button>
+          Tambah Donasi
+        </Link>
       </div>
     ),
     [],
@@ -158,6 +144,8 @@ export default function ManajemenDonasi() {
               </thead>
               <tbody>
                 {pendingList.map((donation) => {
+                  const donationId = Number(donation.id);
+                  const hasValidId = Number.isFinite(donationId);
                   const donor = getDonor(donation);
                   return (
                     <tr key={donation.id} className="rounded-2xl bg-(--brand-50) text-(--brand-900)">
@@ -184,30 +172,45 @@ export default function ManajemenDonasi() {
                       </td>
                       <td className="rounded-r-2xl px-3 py-3">
                         <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            disabled
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-(--brand-100) bg-(--brand-50) text-(--text-mid) opacity-50"
+                          <Link
+                            href="/admin/donations/new"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-(--brand-100) bg-(--brand-50) text-(--text-mid) hover:border-(--brand-300) hover:text-(--brand-700)"
                             aria-label="Create"
                           >
                             <Plus className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            disabled
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-(--brand-100) bg-(--brand-50) text-(--text-mid) opacity-50"
-                            aria-label="Update"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            disabled
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-(--brand-100) bg-(--brand-50) text-(--text-mid) opacity-50"
-                            aria-label="Delete"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          </Link>
+                          {hasValidId ? (
+                            <Link
+                              href={`/admin/donations/${donationId}/edit`}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-(--brand-100) bg-(--brand-50) text-(--text-mid) hover:border-(--brand-300) hover:text-(--brand-700)"
+                              aria-label="Update"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Link>
+                          ) : (
+                            <span
+                              className="inline-flex h-8 w-8 cursor-not-allowed items-center justify-center rounded-full border border-(--brand-100) bg-(--brand-50) text-(--text-mid) opacity-50"
+                              aria-label="Update"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </span>
+                          )}
+                          {hasValidId ? (
+                            <Link
+                              href={`/admin/donations/${donationId}/delete`}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-700 hover:border-red-300"
+                              aria-label="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Link>
+                          ) : (
+                            <span
+                              className="inline-flex h-8 w-8 cursor-not-allowed items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-700 opacity-50"
+                              aria-label="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </span>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -248,6 +251,8 @@ export default function ManajemenDonasi() {
                 </tr>
               ) : (
                 allList.map((donation) => {
+                  const donationId = Number(donation.id);
+                  const hasValidId = Number.isFinite(donationId);
                   const donor = getDonor(donation);
                   return (
                     <tr key={donation.id} className="rounded-2xl bg-(--brand-50) text-(--brand-900)">
@@ -274,30 +279,45 @@ export default function ManajemenDonasi() {
                       </td>
                       <td className="rounded-r-2xl px-3 py-3">
                         <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            disabled
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-(--brand-100) bg-(--brand-50) text-(--text-mid) opacity-50"
+                          <Link
+                            href="/admin/donations/new"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-(--brand-100) bg-(--brand-50) text-(--text-mid) hover:border-(--brand-300) hover:text-(--brand-700)"
                             aria-label="Create"
                           >
                             <Plus className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            disabled
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-(--brand-100) bg-(--brand-50) text-(--text-mid) opacity-50"
-                            aria-label="Update"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            disabled
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-(--brand-100) bg-(--brand-50) text-(--text-mid) opacity-50"
-                            aria-label="Delete"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          </Link>
+                          {hasValidId ? (
+                            <Link
+                              href={`/admin/donations/${donationId}/edit`}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-(--brand-100) bg-(--brand-50) text-(--text-mid) hover:border-(--brand-300) hover:text-(--brand-700)"
+                              aria-label="Update"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Link>
+                          ) : (
+                            <span
+                              className="inline-flex h-8 w-8 cursor-not-allowed items-center justify-center rounded-full border border-(--brand-100) bg-(--brand-50) text-(--text-mid) opacity-50"
+                              aria-label="Update"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </span>
+                          )}
+                          {hasValidId ? (
+                            <Link
+                              href={`/admin/donations/${donationId}/delete`}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-700 hover:border-red-300"
+                              aria-label="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Link>
+                          ) : (
+                            <span
+                              className="inline-flex h-8 w-8 cursor-not-allowed items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-700 opacity-50"
+                              aria-label="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </span>
+                          )}
                         </div>
                       </td>
                     </tr>

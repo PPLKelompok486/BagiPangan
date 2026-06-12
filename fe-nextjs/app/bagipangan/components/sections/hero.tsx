@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion, useReducedMotion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { useCallback, useRef } from "react";
@@ -37,18 +38,6 @@ const blobs: Array<{
     duration: 17,
     parallaxSpeed: 0.2,
   },
-  {
-    className: "right-[20%] bottom-[12%] h-[22rem] w-[22rem] bg-[var(--brand-300)]",
-    animate: { x: [0, -20, 14], y: [0, 18, -10], scale: [1, 0.94, 1.04] },
-    duration: 16,
-    parallaxSpeed: 0.3,
-  },
-  {
-    className: "left-[46%] top-[20%] h-[15rem] w-[15rem] bg-[var(--brand-600)]",
-    animate: { x: [0, 18, -12], y: [0, -14, 8], scale: [1, 1.03, 0.97] },
-    duration: 12,
-    parallaxSpeed: 0.1,
-  },
 ];
 
 const chips: Array<{
@@ -80,10 +69,12 @@ const chips: Array<{
 function HeroMealPhoto() {
   return (
     <>
-      <img
+      <Image
         alt="Seorang anak tersenyum saat menerima semangkuk makanan"
-        className="h-full w-full rounded-[1.5rem] object-cover"
-        loading="eager"
+        className="rounded-[1.5rem] object-cover"
+        fill
+        priority
+        sizes="(max-width: 1024px) 100vw, 50vw"
         src="/images/hero-meal.jpg"
         style={{ objectPosition: "50% 35%" }}
       />
@@ -164,7 +155,7 @@ export function Hero() {
             key={blob.className}
             animate={reducedMotion ? undefined : blob.animate}
             className={`absolute rounded-full opacity-8 blur-3xl ${blob.className}`}
-            style={{ y: reducedMotion ? 0 : blobParallax[index] }}
+          style={{ y: reducedMotion ? 0 : blobParallax[index], willChange: "transform" }}
             transition={
               reducedMotion
                 ? { duration: 0 }

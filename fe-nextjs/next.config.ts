@@ -1,5 +1,8 @@
 import type { NextConfig } from "next";
 
+const laravelImageHost =
+  process.env.NEXT_PUBLIC_LARAVEL_IMAGE_HOST ?? "api.bagipangan.example.com";
+
 const nextConfig: NextConfig = {
   // ── Turbopack workspace root ────────────────────────────────────────────────
   // Suppresses "multiple lockfiles" warning when the monorepo root also has
@@ -23,6 +26,11 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "*.laravel.cloud",
+        pathname: "/storage/**",
+      },
+      {
+        protocol: "https",
+        hostname: laravelImageHost,
         pathname: "/storage/**",
       },
     ],

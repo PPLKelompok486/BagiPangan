@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   Camera,
   MessageCircle,
+  Tag,
 } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
 import {
@@ -31,6 +32,7 @@ import {
 } from "@/lib/donations";
 
 type Props = { params: Promise<{ id: string }> };
+type ApiClaimWithoutDonation = Omit<ApiClaim, "donation">;
 
 function pickupCountdown(iso: string): string {
   const t = Date.parse(iso);
@@ -40,6 +42,11 @@ function pickupCountdown(iso: string): string {
   if (diff < 1) return `${Math.max(1, Math.round(diff * 60))} menit lagi`;
   if (diff < 24) return `${Math.round(diff)} jam lagi`;
   return `${Math.round(diff / 24)} hari lagi`;
+}
+
+function formatPickupWindow(availableFrom: string | null, pickupUntil: string): string {
+  const from = availableFrom ? formatPickupTime(availableFrom) : "—";
+  return `${from} – ${formatPickupTime(pickupUntil)}`;
 }
 
 const SAFETY_TIPS = [
@@ -70,37 +77,30 @@ export default function DonationDetailPage({ params }: Props) {
   const [claiming, setClaiming] = useState(false);
   const [uploadingProof, setUploadingProof] = useState(false);
   const [cancelingClaim, setCancelingClaim] = useState(false);
-  const [claimError, setClaimError] = useState("");
   const [notification, setNotification] = useState("");
 
   const load = async () => {
     try {
-      const res = await apiFetch<{ data: ApiDonation }>(`/donations/${id}`);
-      setDonation(mapApiDonation(res.data));
+      const res = await apiFetch<{ data: ApiDonation; my_claim: ApiClaimWithoutDonation | null }>(
+        `/donations/${id}`,
+      );
+      const mappedDonation = mapApiDonation(res.data);
+      setDonation(mappedDonation);
+      setClaim(
+        res.my_claim
+          ? {
+              ...res.my_claim,
+              donation: mappedDonation,
+            }
+          : null,
+      );
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Gagal memuat donasi");
     }
   };
 
-  const loadClaim = async () => {
-    try {
-      const res = await apiFetch<{ data: ApiClaim[] }>("/claims/mine");
-      const donationId = Number(id);
-      const found = res.data.find((item) => item.donation?.id === donationId);
-      setClaim(found ? mapApiClaim(found) : null);
-      setClaimError("");
-    } catch (err) {
-      if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
-        setClaim(null);
-        return;
-      }
-      setClaimError(err instanceof ApiError ? err.message : "Gagal memuat klaim");
-    }
-  };
-
   useEffect(() => {
     load();
-    loadClaim();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -275,13 +275,29 @@ export default function DonationDetailPage({ params }: Props) {
 
         <div className="grid sm:grid-cols-2 gap-3 mb-6">
           <InfoRow icon={<Package className="h-4 w-4" />} label="Jumlah" value={donation.quantity} />
-          <InfoRow icon={<Clock className="h-4 w-4" />} label="Waktu jemput" value={formatPickupTime(donation.pickup_time)} />
+          <InfoRow
+            icon={<Clock className="h-4 w-4" />}
+            label="Jendela jemput"
+            value={formatPickupWindow(donation.available_from, donation.pickup_time)}
+          />
           <InfoRow icon={<MapPin className="h-4 w-4" />} label="Alamat" value={donation.pickup_address} />
+          {donation.category && (
+            <InfoRow icon={<Tag className="h-4 w-4" />} label="Kategori" value={donation.category.name} />
+          )}
           <InfoRow icon={<User className="h-4 w-4" />} label="Donatur" value={donation.donor?.name ?? "—"} />
           {donation.donor?.phone && (
             <InfoRow icon={<Phone className="h-4 w-4" />} label="Kontak donatur" value={donation.donor.phone} />
           )}
         </div>
+        {donation.has_coordinates && (
+          <Link
+            href={`/receiver/map?q=${encodeURIComponent(donation.title)}`}
+            className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-[var(--brand-600)] hover:underline"
+          >
+            <MapPin className="h-4 w-4" />
+            Lihat di peta
+          </Link>
+        )}
 
         <details className="mb-5 rounded-2xl border border-[var(--brand-100)] bg-[var(--cream)] overflow-hidden">
           <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-semibold text-[var(--brand-950)] select-none">
@@ -325,12 +341,6 @@ export default function DonationDetailPage({ params }: Props) {
             </motion.div>
           )}
         </AnimatePresence>
-
-        {claimError && (
-          <div className="mb-4 p-3 rounded-2xl text-sm font-medium bg-red-50 text-red-700 border border-red-200">
-            {claimError}
-          </div>
-        )}
 
         {/* Desktop / non-sticky CTA */}
         <div className="hidden sm:block">

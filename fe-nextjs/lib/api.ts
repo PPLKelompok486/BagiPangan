@@ -62,9 +62,15 @@ export async function apiFetch<T = unknown>(
   }
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
-  const res = await fetch(`/api/proxy${path.startsWith("/") ? path : `/${path}`}`, {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const endpoint = normalizedPath.startsWith("/admin")
+    ? `/api${normalizedPath}`
+    : `/api/proxy${normalizedPath}`;
+
+  const res = await fetch(endpoint, {
     ...opts,
     headers,
+    credentials: "same-origin",
   });
 
   const text = await res.text();
@@ -78,6 +84,11 @@ export async function apiFetch<T = unknown>(
   }
 
   if (!res.ok) {
+    if (res.status === 401) {
+      if (typeof window !== "undefined") {
+        clearAuth();
+      }
+    }
     const message =
       (data && typeof data === "object" && "message" in data
         ? String((data as { message: unknown }).message)

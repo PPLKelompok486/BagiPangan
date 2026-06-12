@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, CalendarClock, Filter, MapPin, Package, Plus, Search, X } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
+import { ExportCsvButton } from "@/components/ui/ExportCsvButton";
 import {
   mapApiDonationToDonor,
   STATUS_LABEL,
   STATUS_TONE,
+  donorStatusSummary,
   type ApiDonation,
   type DonorDonation,
   type DonorDonationStatus,
@@ -27,10 +30,27 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 ];
 
 export default function DonorDonationsListPage() {
+  return (
+    <Suspense fallback={<DonationListSkeleton />}>
+      <DonorDonationsListContent />
+    </Suspense>
+  );
+}
+
+function DonorDonationsListContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const [donations, setDonations] = useState<DonorDonation[] | null>(null);
   const [error, setError] = useState("");
-  const [query, setQuery] = useState("");
-  const [filterKey, setFilterKey] = useState<FilterKey>("all");
+  const initialQuery = searchParams.get("q") ?? "";
+  const initialFilter = searchParams.get("status");
+  const parsedFilterKey: FilterKey =
+    initialFilter && FILTERS.some((filter) => filter.key === initialFilter)
+      ? (initialFilter as FilterKey)
+      : "all";
+  const [query, setQuery] = useState(initialQuery);
+  const [filterKey, setFilterKey] = useState<FilterKey>(parsedFilterKey);
 
   useEffect(() => {
     let active = true;
@@ -52,6 +72,14 @@ export default function DonorDonationsListPage() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (query) params.set("q", query);
+    if (filterKey !== "all") params.set("status", filterKey);
+    const queryString = params.toString();
+    router.replace(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
+  }, [query, filterKey, pathname, router]);
 
   const filtered = useMemo(() => {
     if (!donations) return null;
@@ -84,13 +112,19 @@ export default function DonorDonationsListPage() {
             Semua donasi yang pernah Anda posting.
           </p>
         </div>
-        <Link
-          href="/donatur/donations/new"
-          className="inline-flex items-center gap-2 rounded-xl bg-[var(--brand-600)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--brand-700)]"
-        >
-          <Plus className="h-4 w-4" />
-          Buat donasi baru
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <ExportCsvButton
+            endpoint="/api/donations/mine/export"
+            filename={`donasi-saya-${new Date().toISOString().slice(0, 10)}.csv`}
+          />
+          <Link
+            href="/donatur/donations/new"
+            className="inline-flex items-center gap-2 rounded-xl bg-[var(--brand-600)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--brand-700)]"
+          >
+            <Plus className="h-4 w-4" />
+            Buat donasi baru
+          </Link>
+        </div>
       </div>
 
       <div className="mb-4 rounded-2xl border border-[var(--brand-100)] bg-white p-3">
@@ -226,6 +260,9 @@ function DonationCard({ donation, index }: { donation: DonorDonation; index: num
         </span>
       </div>
       <p className="mt-2 text-sm text-[var(--text-mid)] line-clamp-2">{donation.description}</p>
+      <p className="mt-2 text-xs font-medium leading-5 text-[var(--text-mid)]">
+        {donorStatusSummary(donation.status, donation.active_claims_count)}
+      </p>
 
       <div className="mt-4 space-y-1.5 text-sm text-[var(--brand-950)]">
         <div className="flex items-start gap-2">
@@ -245,6 +282,12 @@ function DonationCard({ donation, index }: { donation: DonorDonation; index: num
       <div className="mt-4 text-[10px] uppercase tracking-[0.18em] text-[var(--text-mid)]/70">
         {timeAgo(donation.created_at)}
       </div>
+      <Link
+        href={`/donatur/donations/${donation.id}`}
+        className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-[var(--brand-700)] hover:text-[var(--brand-800)]"
+      >
+        Lihat detail
+      </Link>
     </motion.article>
   );
 }
