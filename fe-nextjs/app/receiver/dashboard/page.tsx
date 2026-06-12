@@ -453,8 +453,10 @@ export default function ReceiverDashboard() {
 /* ============================================================ */
 
 function DonationCard({ donation, index }: { donation: Donation; index: number }) {
-  const urg = urgencyLabel(donation.pickup_time);
-  const image = imageForDonation(donation);
+  const image = donation.image
+    ? `${process.env.NEXT_PUBLIC_LARAVEL_API_BASE ?? "http://localhost:8000"}${donation.image}`
+    : imageForDonation(donation);
+  const urg = urgencyLabel(donation.available_until ?? "");
 
   return (
     <motion.article

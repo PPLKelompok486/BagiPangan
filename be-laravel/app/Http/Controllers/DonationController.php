@@ -100,6 +100,7 @@ class DonationController extends Controller
             'available_until' => 'required|date|after:available_from',
             'portion_count' => 'required|integer|min:1',
             'category_id' => 'nullable|integer|exists:donation_categories,id',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:4096',
         ]);
 
         if ($validator->fails()) {
@@ -112,6 +113,19 @@ class DonationController extends Controller
         $categoryId = $request->category_id;
         if ($categoryId && !\App\Models\DonationCategory::where('id', $categoryId)->exists()) {
             $categoryId = null;
+        }
+
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $imageFile = $request->file('image');
+            $dir = public_path('uploads/donations');
+            if (!is_dir($dir)) {
+                mkdir($dir, 0755, true);
+            }
+            $extension = $imageFile->extension() ?: 'bin';
+            $imageName = 'donation_' . time() . '_' . uniqid() . '.' . $extension;
+            $imageFile->move($dir, $imageName);
+            $imagePath = '/uploads/donations/' . $imageName;
         }
 
         $donation = Donation::create([
@@ -127,6 +141,7 @@ class DonationController extends Controller
             'available_until' => $request->available_until,
             'portion_count' => $request->portion_count,
             'category_id' => $categoryId,
+            'image' => $imagePath,
             'status' => 'pending', // Needs admin approval
         ]);
 
@@ -196,11 +211,65 @@ class DonationController extends Controller
             return response()->json(['message' => 'Donasi yang sudah diklaim tidak dapat diubah'], 422);
         }
 
-        $donation->update($request->only([
+        $validator = Validator::make($request->all(), [
+            'title' => 'sometimes|required|string|max:255',
+            'description' => 'sometimes|required|string',
+            'location_city' => 'sometimes|required|string',
+            'location_address' => 'sometimes|required|string',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'address_detail' => 'nullable|string',
+            'available_from' => 'sometimes|required|date',
+            'available_until' => 'sometimes|required|date|after:available_from',
+            'portion_count' => 'sometimes|required|integer|min:1',
+            'category_id' => 'nullable|integer|exists:donation_categories,id',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:4096',
+            'delete_image' => 'nullable|string|in:true,false,1,0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Data tidak valid: ' . implode(', ', $validator->errors()->all()),
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $updateData = $request->only([
             'title', 'description', 'location_city', 'location_address',
             'latitude', 'longitude', 'address_detail',
             'available_from', 'available_until', 'portion_count', 'category_id'
-        ]));
+        ]);
+
+        if ($request->hasFile('image')) {
+            // Delete old image if exists
+            if ($donation->image) {
+                $oldPath = public_path($donation->image);
+                if (file_exists($oldPath)) {
+                    unlink($oldPath);
+                }
+            }
+
+            $imageFile = $request->file('image');
+            $dir = public_path('uploads/donations');
+            if (!is_dir($dir)) {
+                mkdir($dir, 0755, true);
+            }
+            $extension = $imageFile->extension() ?: 'bin';
+            $imageName = 'donation_' . time() . '_' . uniqid() . '.' . $extension;
+            $imageFile->move($dir, $imageName);
+            $updateData['image'] = '/uploads/donations/' . $imageName;
+        } elseif ($request->input('delete_image') === 'true' || $request->input('delete_image') == 1) {
+            // Delete old image if exists
+            if ($donation->image) {
+                $oldPath = public_path($donation->image);
+                if (file_exists($oldPath)) {
+                    unlink($oldPath);
+                }
+            }
+            $updateData['image'] = null;
+        }
+
+        $donation->update($updateData);
 
         return response()->json([
             'message' => 'Donasi berhasil diperbarui',
