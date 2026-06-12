@@ -16,6 +16,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
+import { apiFetch } from "@/lib/api";
 
 export type DonationFormData = {
   title: string;
@@ -131,15 +132,9 @@ export default function DonationForm({
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await fetch("/api/categories", { cache: "no-store" });
-        const payload = await res.json();
-        if (!res.ok) {
-          throw new Error(
-            payload && typeof payload === "object" && "message" in payload
-              ? String((payload as { message: unknown }).message)
-              : "Gagal memuat kategori.",
-          );
-        }
+        const payload = await apiFetch<CategoryOption[] | { data?: CategoryOption[] }>(
+          "/donations/categories",
+        );
         const nextCategories = normalizeCategories(payload);
         setCategories(nextCategories);
         setCategoriesError(
