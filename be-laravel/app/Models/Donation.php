@@ -22,6 +22,7 @@ class Donation extends Model
     protected $fillable = [
         'user_id',
         'category_id',
+        'image',
         'title',
         'description',
         'location_city',
@@ -37,6 +38,19 @@ class Donation extends Model
         'approved_at',
         'rejected_reason',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+        static::deleting(function ($donation) {
+            if ($donation->image) {
+                $path = public_path($donation->image);
+                if (file_exists($path)) {
+                    unlink($path);
+                }
+            }
+        });
+    }
 
     protected $casts = [
         'available_from' => 'datetime',

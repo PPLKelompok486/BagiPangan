@@ -8,7 +8,8 @@ APP_NAME="${APP_NAME:-bagipangan}"
 DEPLOY_USER="${DEPLOY_USER:-deploy}"
 DEPLOY_PATH="${DEPLOY_PATH:-/var/www/bagipangan}"
 NODE_MAJOR="${NODE_MAJOR:-22}"
-PHP_VERSION="${PHP_VERSION:-8.3}"
+PHP_VERSION="${PHP_VERSION:-8.4}"
+SWAP_SIZE="${SWAP_SIZE:-2G}"
 
 if [[ "$(id -u)" -ne 0 ]]; then
   SUDO="sudo"
@@ -46,7 +47,9 @@ install_base_packages() {
     nginx \
     unzip \
     ufw \
-    software-properties-common
+    software-properties-common \
+    certbot \
+    python3-certbot-nginx
 }
 
 install_php() {
@@ -69,6 +72,7 @@ install_php() {
     "php${PHP_VERSION}-redis"
 
   $SUDO systemctl enable --now "php${PHP_VERSION}-fpm"
+  $SUDO update-alternatives --set php "/usr/bin/php${PHP_VERSION}" || true
 }
 
 install_redis() {
@@ -100,6 +104,22 @@ install_node() {
   $SUDO apt-get install -y nodejs
 }
 
+configure_swap() {
+  if swapon --show | grep -q '/swapfile'; then
+    log "Swapfile already configured"
+    return
+  fi
+
+  log "Creating ${SWAP_SIZE} swapfile for small VMs"
+  $SUDO fallocate -l "$SWAP_SIZE" /swapfile || $SUDO dd if=/dev/zero of=/swapfile bs=1M count=2048
+  $SUDO chmod 600 /swapfile
+  $SUDO mkswap /swapfile
+  $SUDO swapon /swapfile
+  if ! grep -q '^/swapfile ' /etc/fstab; then
+    echo '/swapfile none swap sw 0 0' | $SUDO tee -a /etc/fstab >/dev/null
+  fi
+}
+
 create_deploy_user() {
   if id "$DEPLOY_USER" >/dev/null 2>&1; then
     log "User ${DEPLOY_USER} already exists"
@@ -121,11 +141,6 @@ configure_firewall() {
   $SUDO ufw --force enable
 }
 
-install_certbot() {
-  log "Installing Certbot"
-  $SUDO apt-get install -y certbot python3-certbot-nginx
-}
-
 main() {
   require_ubuntu
   install_base_packages
@@ -133,7 +148,7 @@ main() {
   install_redis
   install_composer
   install_node
-  install_certbot
+  configure_swap
   create_deploy_user
   configure_firewall
 

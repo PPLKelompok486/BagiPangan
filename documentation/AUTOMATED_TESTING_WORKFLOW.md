@@ -42,6 +42,33 @@ Run the full local CI-equivalent suite:
 npm run test:ci
 ```
 
+## Current Verification Notes
+
+The most recent local automated repository run used:
+
+```bash
+npm run test:tc
+```
+
+Result:
+
+```text
+80 passing subtests
+0 failing subtests
+```
+
+The latest public smoke checks after deployment verified:
+
+```text
+GET /bagipangan                 200
+GET /login                      200
+GET /profile                    200
+GET /api/categories             200
+GET /api/proxy/donations/mine   401 when unauthenticated
+```
+
+The unauthenticated `401` on `/api/proxy/donations/mine` is expected. It confirms the route exists and is protected, instead of returning a missing-route error.
+
 ## CI Trigger
 
 GitHub Actions workflow:

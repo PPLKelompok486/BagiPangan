@@ -3,7 +3,7 @@ const path = require('path');
 const pdf = require('pdf-parse');
 
 const input = path.resolve(__dirname, '../../documentation/Proposal_Tugas_Besar_PPL_486.pdf');
-const outTxt = path.resolve(__dirname, '../../documentation/PROPOSAL_TUGAS_BESAR.txt');
+const outTxt = path.resolve(__dirname, '../../documentation/PROPOSAL_TUGAS_BESAR.generated.txt');
 const outMd = path.resolve(__dirname, '../../documentation/PROPOSAL_TUGAS_BESAR.md');
 
 if (!fs.existsSync(input)) {

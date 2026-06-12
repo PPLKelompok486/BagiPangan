@@ -6,9 +6,17 @@ const API_BASE = BACKEND_BASE_URL.endsWith("/api")
   : `${BACKEND_BASE_URL}/api`;
 const BACKEND_URL = `${API_BASE}/profile`;
 
+function getBearerToken(req: NextRequest): string | null {
+  const header = req.headers.get("authorization");
+  if (header?.toLowerCase().startsWith("bearer ")) {
+    return header.slice("bearer ".length);
+  }
+  return req.cookies.get("bagi_token")?.value ?? null;
+}
+
 export async function GET(req: NextRequest) {
   try {
-    const token = req.cookies.get("bagi_token")?.value;
+    const token = getBearerToken(req);
     
     if (!token) {
       return NextResponse.json(
@@ -38,7 +46,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const token = req.cookies.get("bagi_token")?.value;
+    const token = getBearerToken(req);
     
     if (!token) {
       return NextResponse.json(
@@ -71,7 +79,7 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const token = req.cookies.get("bagi_token")?.value;
+    const token = getBearerToken(req);
     
     if (!token) {
       return NextResponse.json(
@@ -106,7 +114,7 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const token = req.cookies.get("bagi_token")?.value;
+    const token = getBearerToken(req);
     
     if (!token) {
       return NextResponse.json(

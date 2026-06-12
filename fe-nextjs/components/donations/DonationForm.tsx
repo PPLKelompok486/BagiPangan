@@ -14,6 +14,8 @@ import {
   LocateFixed,
   CheckCircle2,
   AlertCircle,
+  Camera,
+  Trash,
 } from "lucide-react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
@@ -30,6 +32,9 @@ export type DonationFormData = {
   available_until: string;
   portion_count: number | "";
   category_id: string;
+  imageFile?: File | null;
+  imageUrl?: string;
+  delete_image?: boolean;
 };
 
 export type DonationPayload = {
@@ -44,6 +49,8 @@ export type DonationPayload = {
   available_until: string;
   portion_count: number;
   category_id: number | null;
+  image?: File | null;
+  delete_image?: boolean;
 };
 
 type CategoryOption = { id: number; name: string };
@@ -74,6 +81,9 @@ const defaultFormData: DonationFormData = {
   available_until: "",
   portion_count: 1,
   category_id: "",
+  imageFile: null,
+  imageUrl: "",
+  delete_image: false,
 };
 
 function buildFormData(initialData?: Partial<DonationFormData>): DonationFormData {
@@ -193,6 +203,8 @@ export default function DonationForm({
         available_until: formData.available_until,
         portion_count: Number(formData.portion_count) || 1,
         category_id: formData.category_id ? Number(formData.category_id) : null,
+        image: formData.imageFile,
+        delete_image: formData.delete_image,
       };
 
       await onSubmit(payload);
@@ -244,6 +256,62 @@ export default function DonationForm({
             <h2 className="flex items-center gap-2 text-lg font-bold text-[var(--brand-950)]">
               <FileText className="h-5 w-5 text-[var(--brand-600)]" /> Informasi Dasar
             </h2>
+
+            {/* Foto Donasi (Image Upload) */}
+            <div className="space-y-2">
+              <label className="ml-1 text-sm font-bold text-[var(--brand-900)]">Foto Donasi</label>
+              <div className="flex flex-col items-center justify-center border-2 border-dashed border-[var(--brand-200)] rounded-3xl p-6 bg-[var(--brand-50)]/10 hover:bg-[var(--brand-50)]/20 transition-all">
+                {formData.imageUrl ? (
+                  <div className="relative w-full max-w-[320px] aspect-video rounded-2xl overflow-hidden border border-[var(--brand-100)] shadow-[var(--shadow-card)]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={formData.imageUrl.startsWith("blob:") ? formData.imageUrl : `${process.env.LARAVEL_API_BASE ?? "http://localhost:8000"}${formData.imageUrl}`}
+                      alt="Foto donasi"
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          imageFile: null,
+                          imageUrl: "",
+                          delete_image: true,
+                        }));
+                      }}
+                      className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-2 shadow-lg transition-colors"
+                      title="Hapus Foto"
+                    >
+                      <Trash className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center cursor-pointer py-4 w-full h-full">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand-50)] text-[var(--brand-600)] mb-3">
+                      <Camera className="h-6 w-6" />
+                    </div>
+                    <span className="text-sm font-bold text-[var(--brand-700)]">Unggah Foto Makanan</span>
+                    <span className="text-xs text-[var(--text-mid)] mt-1">JPEG, PNG, JPG atau WEBP (maks. 4MB)</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            imageFile: file,
+                            imageUrl: URL.createObjectURL(file),
+                            delete_image: false,
+                          }));
+                        }
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
 
             <div className="space-y-2">
               <label className="ml-1 text-sm font-bold text-[var(--brand-900)]">Judul Donasi</label>

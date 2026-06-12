@@ -69,9 +69,16 @@ export default function ProfilePage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const authHeaders = () => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("bagi_token") : null;
+    return token ? { Authorization: `Bearer ${token}` } : undefined;
+  };
+
   const fetchProfile = async () => {
     try {
-      const res = await fetch("/api/profile");
+      const res = await fetch("/api/profile", {
+        headers: authHeaders(),
+      });
       if (res.status === 401) {
         router.push("/login");
         return;
@@ -174,6 +181,7 @@ export default function ProfilePage() {
 
       const res = await fetch("/api/profile", {
         method: "PUT",
+        headers: authHeaders(),
         body: formData,
       });
       const data = await res.json();
@@ -211,7 +219,10 @@ export default function ProfilePage() {
     try {
       const res = await fetch("/api/profile", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders(),
+        },
       });
       const data = await res.json();
 

@@ -23,6 +23,7 @@ export type ApiDonation = {
   active_claims_count?: number;
   created_at: string;
   updated_at: string;
+  image?: string | null;
   user?: {
     id: number;
     name: string;
@@ -63,6 +64,7 @@ export type Donation = {
   active_claims_count: number;
   created_at: string;
   updated_at: string;
+  image?: string | null;
   user_id?: number;
   donor?: DonationDonor;
   category?: { id: number; name: string } | null;
@@ -159,6 +161,7 @@ export function mapApiDonation(donation: ApiDonation): Donation {
     active_claims_count: donation.active_claims_count ?? 0,
     created_at: donation.created_at,
     updated_at: donation.updated_at,
+    image: donation.image ?? null,
     user_id: donation.user_id,
     donor: donation.user
       ? {

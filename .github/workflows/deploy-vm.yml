@@ -14,13 +14,15 @@ jobs:
   deploy:
     name: Deploy main to VM
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     env:
       DEPLOY_PATH: ${{ secrets.DEPLOY_PATH || '/var/www/bagipangan' }}
+      DOMAIN: ${{ secrets.DEPLOY_DOMAIN || 'bagipangan.eastasia.cloudapp.azure.com' }}
       VM_PORT: ${{ secrets.VM_PORT || '22' }}
       REPO_URL: ${{ secrets.DEPLOY_REPO_URL || format('https://github.com/{0}.git', github.repository) }}
       RUN_MIGRATIONS: ${{ secrets.RUN_MIGRATIONS || 'true' }}
+      ENABLE_HTTPS: ${{ secrets.ENABLE_HTTPS || 'true' }}
 
     steps:
       - name: Prepare SSH key
@@ -37,7 +39,7 @@ jobs:
             -p "$VM_PORT" \
             -o IdentitiesOnly=yes \
             "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" \
-            "APP_NAME=bagipangan DEPLOY_PATH='$DEPLOY_PATH' REPO_URL='$REPO_URL' BRANCH='main' RUN_MIGRATIONS='$RUN_MIGRATIONS' bash -s" <<'REMOTE'
+            "APP_NAME=bagipangan DEPLOY_PATH='$DEPLOY_PATH' DOMAIN='$DOMAIN' REPO_URL='$REPO_URL' BRANCH='main' RUN_MIGRATIONS='$RUN_MIGRATIONS' ENABLE_HTTPS='$ENABLE_HTTPS' bash -s" <<'REMOTE'
           set -Eeuo pipefail
 
           APP_DIR="${DEPLOY_PATH}/current"
@@ -52,5 +54,5 @@ jobs:
           git fetch origin "$BRANCH"
           git reset --hard "origin/${BRANCH}"
           chmod +x scripts/deploy/vm/*.sh
-          bash scripts/deploy/vm/deploy.sh
+          bash scripts/deploy/vm/full-deploy-ubuntu.sh
           REMOTE

@@ -191,7 +191,7 @@ class MapController extends Controller
                 'status' => $donation->status === 'approved' ? 'available' : $donation->status,
                 'expired_at' => $donation->available_until?->toIso8601String(),
                 'available_from' => $donation->available_from?->toIso8601String(),
-                'thumbnail_url' => null,
+                'thumbnail_url' => $donation->image,
                 'donor_name' => $donation->user?->name ?? 'Donatur',
                 'donor_city' => $donation->user?->city,
                 'address' => $donation->address_detail ?: $donation->location_address,

@@ -8,6 +8,8 @@ APP_NAME="${APP_NAME:-bagipangan}"
 REPO_URL="${REPO_URL:-git@github.com:CHANGE_ME/BagiPangan.git}"
 BRANCH="${BRANCH:-main}"
 DEPLOY_PATH="${DEPLOY_PATH:-/var/www/bagipangan}"
+DOMAIN="${DOMAIN:-bagipangan.eastasia.cloudapp.azure.com}"
+PHP_VERSION="${PHP_VERSION:-8.4}"
 APP_DIR="${APP_DIR:-${DEPLOY_PATH}/current}"
 SHARED_DIR="${SHARED_DIR:-${DEPLOY_PATH}/shared}"
 BACKEND_DIR="${APP_DIR}/be-laravel"
@@ -89,8 +91,8 @@ deploy_backend() {
   "$PHP_BIN" artisan route:cache
   "$PHP_BIN" artisan view:cache
 
-  chgrp -R www-data storage bootstrap/cache || true
-  chmod -R ug+rwX storage bootstrap/cache || true
+  sudo chown -R "$(id -un):www-data" storage bootstrap/cache || true
+  sudo chmod -R ug+rwX storage bootstrap/cache || true
 }
 
 deploy_frontend() {
@@ -107,6 +109,8 @@ deploy_frontend() {
 restart_services() {
   log "Restarting services"
   if command -v systemctl >/dev/null 2>&1; then
+    sudo systemctl daemon-reload
+    sudo systemctl restart "${APP_NAME}-backend.service"
     sudo systemctl restart "${APP_NAME}-frontend.service"
     sudo systemctl restart "${APP_NAME}-queue.service" || true
     sudo systemctl reload nginx
@@ -117,6 +121,8 @@ restart_services() {
 
 health_check() {
   log "Running local health checks"
+  curl -fsS --max-time 10 "http://127.0.0.1:8000/api/donations/categories" >/dev/null
+
   for attempt in {1..12}; do
     if curl -fsS --max-time 10 "http://127.0.0.1:3000" >/dev/null; then
       break
@@ -129,7 +135,8 @@ health_check() {
     sleep 5
   done
 
-  curl -fsS --max-time 10 "http://127.0.0.1/api/health" >/dev/null || true
+  curl -fsS --max-time 10 "http://127.0.0.1/api/categories" >/dev/null
+  curl -fsSI --max-time 10 "http://127.0.0.1/api/proxy/donations/mine" >/dev/null || true
 }
 
 main() {

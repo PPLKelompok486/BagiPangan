@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CalendarClock, Clock, MapPin, Package, Tag } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
-import { formatPickupTime, type ApiDonation, type Donation, mapApiDonation } from "@/lib/donations";
+import { formatPickupTime, type ApiDonation, type Donation, mapApiDonation, imageForDonation } from "@/lib/donations";
 import {
   donorStatusSummary,
   STATUS_LABEL,
@@ -110,6 +110,16 @@ export default function DonorDonationDetailPage({ params }: Props) {
       </Link>
 
       <article className="rounded-3xl border border-[var(--brand-100)] bg-white p-6 sm:p-8 shadow-[var(--shadow-soft)]">
+        {/* Donation Image */}
+        <div className="relative h-56 sm:h-72 overflow-hidden bg-[var(--brand-50)] rounded-2xl mb-6 border border-[var(--brand-100)]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={donation.image ? `${process.env.LARAVEL_API_BASE ?? "http://localhost:8000"}${donation.image}` : imageForDonation(donation)}
+            alt={donation.title}
+            className="h-full w-full object-cover"
+          />
+        </div>
+
         <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.24em] font-semibold text-[var(--brand-600)]">Donasi</p>

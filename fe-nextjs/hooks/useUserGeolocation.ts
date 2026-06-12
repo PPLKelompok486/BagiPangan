@@ -15,7 +15,7 @@ type UserGeolocationState = {
 };
 
 /**
- * Requests browser geolocation once and returns a normalized location object.
+ * Requests browser geolocation on every map page mount and returns a normalized location object.
  * The map can continue with the Indonesia default center when permission fails.
  */
 export function useUserGeolocation(): UserGeolocationState {
@@ -47,8 +47,8 @@ export function useUserGeolocation(): UserGeolocationState {
         setIsLocating(false);
       },
       {
-        enableHighAccuracy: false,
-        maximumAge: 300_000,
+        enableHighAccuracy: true,
+        maximumAge: 0,
         timeout: 8_000,
       },
     );
