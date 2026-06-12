@@ -201,6 +201,21 @@ const checks = {
       "Route::patch('/users/{user}/deactivate'",
       "Route::delete('/users/{user}'",
     ]);
+    await contains("fe-nextjs/app/admin/donations/page.tsx", [
+      "handleApprove",
+      "handleReject",
+      "Setujui",
+      "Tolak",
+    ]);
+    await contains("fe-nextjs/app/api/admin/donations/[donationId]/approve/route.ts", [
+      "/admin/moderation/${donationId}/approve",
+      "PATCH",
+    ]);
+    await contains("fe-nextjs/app/api/admin/donations/[donationId]/reject/route.ts", [
+      "/admin/moderation/${donationId}/reject",
+      "PATCH",
+      "reason",
+    ]);
   },
 
   async "FR-17"() {

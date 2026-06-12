@@ -136,4 +136,27 @@ class ModerationControllerTest extends TestCase
                 ->first()
         );
     }
+
+    public function test_queue_can_return_all_statuses_with_configurable_page_size(): void
+    {
+        $admin = User::factory()->create([
+            'is_admin' => true,
+            'is_active' => true,
+        ]);
+
+        Donation::factory()->count(6)->create(['status' => Donation::STATUS_PENDING]);
+        Donation::factory()->count(6)->create(['status' => Donation::STATUS_APPROVED]);
+
+        $response = $this
+            ->actingAs($admin)
+            ->getJson('/api/admin/moderation/queue?status=all&per_page=100');
+
+        $response->assertOk()
+            ->assertJsonPath('data.per_page', 100)
+            ->assertJsonCount(12, 'data.data');
+
+        $statuses = collect($response->json('data.data'))->pluck('status')->all();
+        $this->assertContains(Donation::STATUS_PENDING, $statuses);
+        $this->assertContains(Donation::STATUS_APPROVED, $statuses);
+    }
 }

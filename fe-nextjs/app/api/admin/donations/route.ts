@@ -8,12 +8,6 @@ const API_BASE = BACKEND_BASE_URL.endsWith("/api")
 export async function GET(request: NextRequest) {
   try {
     const params = new URLSearchParams(request.nextUrl.searchParams);
-    const status = params.get("status");
-
-    if (status === "all") {
-      params.set("status", "");
-    }
-
     const query = params.toString();
     const targetUrl = query
       ? `${API_BASE}/admin/moderation/queue?${query}`

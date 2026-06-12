@@ -18,12 +18,13 @@ class ModerationController extends Controller
         if ($status === 'all') {
             $status = null;
         }
+        $perPage = min(max((int) $request->query('per_page', 10), 1), 100);
 
         $donations = Donation::query()
             ->with(['user:id,name,email', 'category:id,name'])
             ->when($status, fn ($query) => $query->where('status', $status))
             ->latest()
-            ->paginate(10);
+            ->paginate($perPage);
 
         return response()->json([
             'message' => 'Antrian moderasi berhasil diambil',
