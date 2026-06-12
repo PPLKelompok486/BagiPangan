@@ -8,6 +8,9 @@ on:
       - "codex/**"
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   test:
     name: TC Traceability, Backend, and Frontend
