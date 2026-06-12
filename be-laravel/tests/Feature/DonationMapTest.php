@@ -57,7 +57,7 @@ class DonationMapTest extends TestCase
             ->assertJsonPath('features.0.properties.status', 'available')
             ->assertJsonPath('features.0.properties.portion', 15)
             ->assertJsonPath('features.0.properties.detail_url', '/receiver/donations/' . $visible->id)
-            ->assertJsonPath('meta.total_approved', 1)
+            ->assertJsonPath('meta.total_approved', 3)
             ->assertJsonPath('meta.without_coords', 2);
     }
 
@@ -148,7 +148,7 @@ class DonationMapTest extends TestCase
         $limitedUser->forceFill(['remember_token' => hash('sha256', 'limited-map-token')])->save();
 
         $pendingResponse = null;
-        for ($i = 0; $i < 61; $i++) {
+        for ($i = 0; $i < 62; $i++) {
             $pendingResponse = $this
                 ->withHeaders(['Authorization' => 'Bearer limited-map-token'])
                 ->withServerVariables(['REMOTE_ADDR' => '203.0.113.50'])

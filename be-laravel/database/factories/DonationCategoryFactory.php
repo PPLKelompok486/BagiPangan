@@ -15,7 +15,7 @@ class DonationCategoryFactory extends Factory
 
     public function definition(): array
     {
-        $name = fake()->unique()->randomElement([
+        $name = fake()->randomElement([
             'Makanan Siap Saji',
             'Bahan Pokok',
             'Sayur & Buah',

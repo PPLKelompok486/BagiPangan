@@ -36,7 +36,7 @@ class UserManagementActionTest extends TestCase
             'role' => 'donatur',
             'email' => 'user@example.com',
             'password' => Hash::make('password123'),
-            'remember_token' => 'active_session_token_123',
+            'remember_token' => hash('sha256', 'active_session_token_123'),
         ]);
     }
 
