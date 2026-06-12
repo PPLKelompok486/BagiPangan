@@ -1,26 +1,34 @@
-# Ubuntu Server 24.04 VM Deployment Guide
+# BagiPangan Deployment
 
-This is the canonical deployment flow for BagiPangan on the Azure Ubuntu VM.
+**Updated:** 2026-06-12
+**Target:** Azure Ubuntu Server 24.04 VM
+**Branch:** GitHub `main`
 
-## Current Production Shape
+This document describes the current production deployment shape. It intentionally uses placeholders for secrets.
 
-- Public domain: `bagipangan.eastasia.cloudapp.azure.com`.
-- Public app URL: `https://bagipangan.eastasia.cloudapp.azure.com/bagipangan`.
-- VM IP: `20.2.66.205`.
-- App path: `/var/www/bagipangan/current`.
-- Shared production env path: `/var/www/bagipangan/shared`.
-- Frontend: Next.js on `127.0.0.1:3000`, service `bagipangan-frontend`.
-- Backend: Laravel on `127.0.0.1:8000`, service `bagipangan-backend`.
-- Queue: Laravel queue worker, service `bagipangan-queue`.
-- Scheduler: Laravel scheduler timer, `bagipangan-scheduler.timer`.
-- Public Nginx routes:
-  - `/` and `/api/*` proxy to Next.js.
-  - Next.js API routes call Laravel through `BAGIPANGAN_BACKEND_URL=http://127.0.0.1:8000`.
-  - `/storage/*` serves Laravel public storage.
-- Database: Supabase PostgreSQL.
-- HTTPS: Certbot / Let's Encrypt on Nginx.
+## Current Production Target
 
-## Azure Networking
+```text
+Domain: https://bagipangan.eastasia.cloudapp.azure.com
+App URL: https://bagipangan.eastasia.cloudapp.azure.com/bagipangan
+VM OS: Ubuntu Server 24.04
+App path: /var/www/bagipangan/current
+Shared env path: /var/www/bagipangan/shared
+Database: Supabase PostgreSQL
+```
+
+Runtime services:
+
+```text
+bagipangan-backend
+bagipangan-frontend
+bagipangan-queue
+bagipangan-scheduler.timer
+nginx
+php8.4-fpm
+```
+
+## Azure Network Rules
 
 The VM network security group must allow:
 
@@ -30,7 +38,7 @@ HTTP   TCP 80   Allow
 HTTPS  TCP 443  Allow
 ```
 
-For HTTPS, add an inbound rule:
+For the HTTPS inbound rule in Azure Portal:
 
 ```text
 Source: Any
@@ -44,20 +52,20 @@ Priority: 330
 Name: Allow-HTTPS
 ```
 
-## One-Time VM Preparation
+## One-Time Setup
 
 SSH into the VM:
 
 ```bash
-ssh kelompokb@20.2.66.205
+ssh <vm-user>@<vm-ip>
 ```
 
-Clone the repo once if it is not already present:
+Create the app directory and clone `main`:
 
 ```bash
 sudo mkdir -p /var/www/bagipangan/current
 sudo chown -R "$USER:$USER" /var/www/bagipangan
-git clone --branch main https://github.com/PPLKelompok486/BagiPangan.git /var/www/bagipangan/current
+git clone --branch main <repo-url> /var/www/bagipangan/current
 cd /var/www/bagipangan/current
 ```
 
@@ -71,12 +79,12 @@ sudo nano /var/www/bagipangan/shared/backend.env
 sudo nano /var/www/bagipangan/shared/frontend.env
 ```
 
-Set real Supabase values in `backend.env`:
+Set real Supabase and app values in `backend.env`:
 
 ```env
 APP_NAME=BagiPangan
 APP_ENV=production
-APP_KEY=base64:your-app-key
+APP_KEY=base64:your-generated-app-key
 APP_DEBUG=false
 APP_URL=https://bagipangan.eastasia.cloudapp.azure.com
 
@@ -90,7 +98,7 @@ DB_PASSWORD=your-supabase-db-password
 SESSION_DOMAIN=bagipangan.eastasia.cloudapp.azure.com
 ```
 
-Set real Supabase values in `frontend.env`:
+Set frontend values in `frontend.env`:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
@@ -109,16 +117,16 @@ sudo chown deploy:www-data /var/www/bagipangan/shared/backend.env /var/www/bagip
 sudo chmod 640 /var/www/bagipangan/shared/backend.env /var/www/bagipangan/shared/frontend.env
 ```
 
-## Main Deployment Script
+## Main Deployment Command
 
-Use this as the main deployment command:
+Run this from the VM:
 
 ```bash
 cd /var/www/bagipangan/current
 chmod +x scripts/deploy/vm/full-deploy-ubuntu.sh
 
 DOMAIN=bagipangan.eastasia.cloudapp.azure.com \
-REPO_URL=https://github.com/PPLKelompok486/BagiPangan.git \
+REPO_URL=<repo-url> \
 BRANCH=main \
 DEPLOY_PATH=/var/www/bagipangan \
 RUN_MIGRATIONS=true \
@@ -126,29 +134,17 @@ ENABLE_HTTPS=true \
 sudo -E bash scripts/deploy/vm/full-deploy-ubuntu.sh
 ```
 
-The script installs or updates:
+The script installs or updates server packages, pulls `main`, installs Laravel and Next.js dependencies, builds the frontend, runs migrations, installs systemd units, configures Nginx, restarts services, and requests or renews the HTTPS certificate.
 
-- PHP 8.4 and required Laravel extensions.
-- Composer.
-- Node.js 22.
-- Nginx.
-- Certbot.
-- 2GB swapfile for small VMs.
-- `deploy` user.
-- Laravel dependencies and migrations.
-- Next.js dependencies and production build.
-- systemd services.
-- Nginx reverse proxy.
-- Let's Encrypt HTTPS certificate.
+## Re-Deploy
 
-## Re-Deploy After Code Changes
-
-Run:
+After new commits are available on `main`, run the same command:
 
 ```bash
 cd /var/www/bagipangan/current
+
 DOMAIN=bagipangan.eastasia.cloudapp.azure.com \
-REPO_URL=https://github.com/PPLKelompok486/BagiPangan.git \
+REPO_URL=<repo-url> \
 BRANCH=main \
 DEPLOY_PATH=/var/www/bagipangan \
 RUN_MIGRATIONS=true \
@@ -156,29 +152,31 @@ ENABLE_HTTPS=true \
 sudo -E bash scripts/deploy/vm/full-deploy-ubuntu.sh
 ```
 
-## GitHub Actions Deploy
+Set `RUN_MIGRATIONS=false` only when you intentionally want to skip migrations.
 
-The workflow `.github/workflows/deploy-vm.yml` can SSH into the VM and call `scripts/deploy/vm/full-deploy-ubuntu.sh`.
+## GitHub Actions Deployment
+
+Workflow:
+
+```text
+.github/workflows/deploy-vm.yml
+```
 
 Required GitHub secrets:
 
 ```text
-VM_HOST=20.2.66.205
+VM_HOST=<vm-ip-or-domain>
 VM_USER=deploy
 VM_PORT=22
-VM_SSH_KEY=<private deploy key>
+VM_SSH_KEY=<private-deploy-key>
 DEPLOY_PATH=/var/www/bagipangan
-DEPLOY_REPO_URL=https://github.com/PPLKelompok486/BagiPangan.git
+DEPLOY_REPO_URL=<repo-url>
+DEPLOY_DOMAIN=bagipangan.eastasia.cloudapp.azure.com
 RUN_MIGRATIONS=true
+ENABLE_HTTPS=true
 ```
 
-If you use GitHub Actions, add the deploy public key to:
-
-```text
-/home/deploy/.ssh/authorized_keys
-```
-
-Allow deploy user to restart app services:
+The deploy user must be allowed to restart app services:
 
 ```bash
 sudo tee /etc/sudoers.d/bagipangan-deploy >/dev/null <<'EOF'
@@ -189,7 +187,7 @@ sudo chmod 440 /etc/sudoers.d/bagipangan-deploy
 sudo visudo -cf /etc/sudoers.d/bagipangan-deploy
 ```
 
-## Verify
+## Verification
 
 From any machine:
 
@@ -218,11 +216,10 @@ sudo tail -n 100 /var/log/nginx/error.log
 tail -n 100 /var/www/bagipangan/current/be-laravel/storage/logs/laravel.log
 ```
 
-## JIRA Branch And Commit Convention
+## Notes
 
-If a JIRA ticket is involved, include the ticket ID in branch and commit names:
-
-```bash
-git switch -c codex/SCRUM-123-vm-deploy
-git commit -m "SCRUM-123 chore: update VM deployment automation"
-```
+- Keep Laravel private on `127.0.0.1:8000`.
+- Keep browser-facing API traffic on the same domain through Next.js `/api/*`.
+- HTTPS is required for browser location prompts.
+- Do not commit real `.env` files or secrets.
+- When a JIRA ticket is involved, include the ticket ID in branch and commit names.
