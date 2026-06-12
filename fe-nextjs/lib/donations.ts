@@ -9,6 +9,7 @@ export type DonationStatus =
 export type ApiDonation = {
   id: number;
   user_id?: number;
+  category_id?: number | null;
   title: string;
   description: string;
   location_city: string;
@@ -24,7 +25,6 @@ export type ApiDonation = {
   created_at: string;
   updated_at: string;
   image?: string | null;
-  category_id?: number | null;
   user?: {
     id: number;
     name: string;
