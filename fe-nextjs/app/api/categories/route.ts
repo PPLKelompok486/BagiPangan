@@ -1,34 +1,22 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const PUBLIC_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY;
+const BACKEND_BASE_URL = process.env.BAGIPANGAN_BACKEND_URL ?? "http://localhost:8000";
+const API_BASE = BACKEND_BASE_URL.endsWith("/api")
+  ? BACKEND_BASE_URL
+  : `${BACKEND_BASE_URL}/api`;
 
 export async function GET() {
-  if (!SUPABASE_URL || !(SERVICE_ROLE_KEY || PUBLIC_KEY)) {
+  try {
+    const upstream = await fetch(`${API_BASE}/donations/categories`, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    const data = await upstream.json();
+    return NextResponse.json(data, { status: upstream.status });
+  } catch (error) {
     return NextResponse.json(
-      { message: "Supabase belum terkonfigurasi" },
+      { message: "Gagal memuat kategori", error: String(error) },
       { status: 500 },
     );
   }
-
-  const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY ?? PUBLIC_KEY!, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-
-  const { data, error } = await supabase
-    .from("donation_categories")
-    .select("id, name")
-    .eq("is_active", true)
-    .order("name", { ascending: true });
-
-  if (error) {
-    return NextResponse.json(
-      { message: "Gagal memuat kategori", error: error.message },
-      { status: 500 },
-    );
-  }
-
-  return NextResponse.json({ data: data ?? [] });
 }

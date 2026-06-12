@@ -21,7 +21,13 @@ class DonationController extends Controller
         $categories = Cache::remember('donation_categories', 300, function () {
             return \App\Models\DonationCategory::where('is_active', true)
                 ->orderBy('name')
-                ->get(['id', 'name']);
+                ->get(['id', 'name'])
+                ->map(fn ($category) => [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                ])
+                ->values()
+                ->all();
         });
 
         return response()->json(['data' => $categories]);
