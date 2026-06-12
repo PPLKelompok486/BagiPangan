@@ -19,6 +19,9 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <!-- Static key for tests only: CI has no .env, and the admin routes'
+             web middleware needs an encryption key for session cookies. -->
+        <env name="APP_KEY" value="base64:u3j+19zH7V8fdGBzLutNJ4l27f3NLjzqlfgDsH9j+5M="/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>

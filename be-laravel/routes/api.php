@@ -19,14 +19,20 @@ use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/register', [RegisterController::class, 'register']);
-Route::post('/login', [LoginController::class, 'login']);
-Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
-Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+// Public auth endpoints: throttled per IP — they are unauthenticated and
+// expensive (bcrypt), so they are the primary brute-force/DoS surface.
+Route::middleware('throttle:10,1')->group(function () {
+    Route::post('/register', [RegisterController::class, 'register']);
+    Route::post('/login', [LoginController::class, 'login']);
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+});
 
+Route::middleware('throttle:120,1')->group(function () {
     Route::get('/donations', [DonationController::class, 'index']);
     Route::get('/donations/categories', [DonationController::class, 'categories']);
     Route::get('/donations/{id}', [DonationController::class, 'show'])->whereNumber('id');
+});
 
 Route::middleware('token.auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'index']);

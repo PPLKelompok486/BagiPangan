@@ -25,11 +25,10 @@ class RegisterController extends Controller
         } catch (\Exception $e) {
             \Log::error('Register Error: ' . $e->getMessage(), [
                 'exception' => $e,
-                'request' => $request->all(),
+                'request' => $request->except(['password', 'password_confirmation']),
             ]);
             return response()->json([
-                'message' => 'Registrasi Gagal: ' . $e->getMessage(),
-                'error' => $e->getMessage(),
+                'message' => 'Registrasi gagal. Silakan coba lagi.',
             ], 500);
         }
     }

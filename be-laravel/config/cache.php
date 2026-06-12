@@ -19,6 +19,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Rate Limiter Store
+    |--------------------------------------------------------------------------
+    |
+    | The cache store used by the rate limiter (route throttling and login
+    | attempt tracking). Defaults to the default store above when unset.
+    | In production this should be "redis" so every throttled request does
+    | not cost a round trip to the remote database.
+    |
+    */
+
+    'limiter' => env('CACHE_LIMITER_STORE'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Cache Stores
     |--------------------------------------------------------------------------
     |
