@@ -4,7 +4,8 @@ import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 import "../bagipangan/landing.css";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, Home } from "lucide-react";
+import { LogOut, Home, LayoutDashboard, Package, Map as MapIcon, Users, ScrollText, Tags, FileBarChart } from "lucide-react";
+import { usePathname } from "next/navigation";
 import NotificationBell from "@/components/NotificationBell";
 import { clearAuth } from "@/lib/api";
 import AdminAuthGate from "./components/admin-auth-gate";
@@ -24,6 +25,18 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 
 export default function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const router = useRouter();
+  const pathname = usePathname();
+  const navItems = [
+    { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
+    { href: "/admin/donations", label: "Manajemen Donasi", icon: Package },
+    { href: "/admin/map", label: "Peta Donasi", icon: MapIcon },
+    { href: "/admin/users", label: "Manajemen User", icon: Users },
+    { href: "/admin/activity", label: "Log Aktivitas", icon: ScrollText },
+    { href: "/admin/categories", label: "Manajemen Kategori", icon: Tags },
+    { href: "/admin/reports", label: "Ekspor Laporan", icon: FileBarChart },
+  ];
+  const isActive = (href: string, exact?: boolean) =>
+    exact ? pathname === href : pathname.startsWith(href);
 
   const handleLogout = () => {
     clearAuth();
@@ -41,28 +54,21 @@ export default function AdminLayout({ children }: Readonly<{ children: React.Rea
             Moderasi donasi, pantau performa, dan kelola pengguna dalam satu ruang kerja operasional.
           </p>
 
-          <nav className="mt-8 space-y-2 text-sm">
-            <Link className="block rounded-xl bg-white/14 px-3 py-2 font-medium" href="/admin">
-              Dashboard
-            </Link>
-            <Link className="block rounded-xl border border-white/20 px-3 py-2 text-white/80 hover:bg-white/10" href="/admin/donations">
-              Manajemen Donasi
-            </Link>
-            <Link className="block rounded-xl border border-white/20 px-3 py-2 text-white/80 hover:bg-white/10" href="/admin/map">
-              Peta Donasi
-            </Link>
-            <Link className="block rounded-xl border border-white/20 px-3 py-2 text-white/80 hover:bg-white/10" href="/admin/users">
-              Manajemen User
-            </Link>
-            <Link className="block rounded-xl border border-white/20 px-3 py-2 text-white/80 hover:bg-white/10" href="/admin/activity">
-              Log Aktivitas
-            </Link>
-            <Link className="block rounded-xl border border-white/20 px-3 py-2 text-white/80 hover:bg-white/10" href="/admin/categories">
-              Manajemen Kategori
-            </Link>
-            <Link className="block rounded-xl border border-white/20 px-3 py-2 text-white/80 hover:bg-white/10" href="/admin/reports">
-              Ekspor Laporan
-            </Link>
+          <nav className="mt-8 space-y-1.5 text-sm">
+            {navItems.map(({ href, label, icon: Icon, exact }) => (
+              <Link
+                key={href}
+                href={href}
+                className={
+                  isActive(href, exact)
+                    ? "flex items-center gap-2.5 rounded-xl bg-white/15 px-3 py-2 font-semibold text-white"
+                    : "flex items-center gap-2.5 rounded-xl border border-white/15 px-3 py-2 text-white/80 transition-colors hover:bg-white/10"
+                }
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                {label}
+              </Link>
+            ))}
           </nav>
 
           <div className="mt-5 flex items-center justify-between rounded-xl border border-white/20 px-3 py-2 text-white/80">
