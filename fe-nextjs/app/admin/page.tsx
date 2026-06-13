@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { AlertCircle, Sparkles, ArrowRight } from "lucide-react";
+import { AlertCircle, Sparkles, ArrowRight, Leaf, Users, Timer, ListChecks } from "lucide-react";
 import { ActivityFeed } from "./components/activity-feed";
-import { KpiCard } from "./components/kpi-card";
+import { StatCard } from "@/components/admin/stat-card";
+import { SectionCard } from "@/components/admin/section-card";
 import DonationMapPageContent from "@/components/map/DonationMapPageContent";
 import { apiFetch } from "@/lib/api";
 import type { DashboardSummaryResponse } from "./types";
@@ -81,11 +82,11 @@ export default function AdminPage() {
         <div className="max-w-2xl relative z-10">
           <p className="text-xs font-semibold tracking-[0.2em] text-(--brand-200) uppercase mb-3 drop-shadow-sm">Live Impact Center</p>
           <h1 className="text-4xl md:text-5xl font-bold bagi-display leading-tight">
-            Hari ini, kita telah menyelamatkan <span className="text-yellow-400">{kpis.total_portions.toLocaleString("id-ID")} porsi</span> makanan.
+            Hari ini, kita telah menyelamatkan <span className="text-(--brand-300)">{kpis.total_portions.toLocaleString("id-ID")} porsi</span> makanan.
           </h1>
         </div>
         <div className="shrink-0 relative z-10 w-full lg:w-auto">
-          <button className="group flex w-full items-center justify-between gap-4 rounded-full bg-yellow-400 hover:bg-yellow-300 text-yellow-950 px-7 py-4 font-semibold transition-all hover:scale-105 hover:shadow-lg focus:ring-4 focus:ring-yellow-400/30 active:scale-95">
+          <button className="group flex w-full items-center justify-between gap-4 rounded-full bg-(--accent-ochre) px-7 py-4 font-semibold text-white transition-all hover:scale-105 hover:shadow-lg focus:ring-4 focus:ring-(--accent-ochre-soft) active:scale-95">
             <span className="flex items-center gap-3">
               {moderationPending > 0 ? (
                 <AlertCircle size={22} className="animate-pulse" />
@@ -101,10 +102,10 @@ export default function AdminPage() {
 
       {/* KPI Cards (Unique Metrics) */}
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard hint={`~${co2SavedKg} kg jejak karbon dikurangkan`} label="Impact Index" value={`${foodSavedKg} kg`} />
-        <KpiCard hint="Penerima aktif & donatur hari ini" label="Community Health" value={activeCommunity.toLocaleString("id-ID")} />
-        <KpiCard hint="Rata-rata waktu makanan diambil" label="Claim Speed" value={`${kpis.avg_claim_minutes} min`} />
-        <KpiCard hint="Menunggu kelulusan segera" label="Moderation Queue" value={moderationPending.toString()} />
+        <StatCard icon={Leaf} label="Impact Index" value={`${foodSavedKg} kg`} hint={`~${co2SavedKg} kg jejak karbon dikurangkan`} />
+        <StatCard icon={Users} label="Community Health" countUpTo={activeCommunity} value={activeCommunity.toLocaleString("id-ID")} hint="Penerima aktif & donatur hari ini" />
+        <StatCard icon={Timer} label="Claim Speed" value={`${kpis.avg_claim_minutes} min`} hint="Rata-rata waktu makanan diambil" />
+        <StatCard icon={ListChecks} label="Moderation Queue" value={moderationPending.toString()} hint="Menunggu kelulusan segera" deltaTone={moderationPending > 0 ? "down" : "neutral"} />
       </section>
 
       {/* AI Insight Component */}
@@ -112,17 +113,17 @@ export default function AdminPage() {
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.2 }}
-        className="flex items-start gap-4 rounded-[1.4rem] bg-indigo-50/80 border border-indigo-100 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden"
+        className="flex items-start gap-4 rounded-[1.4rem] bg-(--brand-50) border border-(--brand-100) p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden"
       >
         <div className="absolute -right-4 -bottom-4 opacity-5">
           <Sparkles size={120} />
         </div>
-        <div className="mt-1 shrink-0 rounded-full bg-indigo-100 p-2.5 text-indigo-600 shadow-inner">
+        <div className="mt-1 shrink-0 rounded-full bg-(--brand-100) p-2.5 text-(--brand-700) shadow-inner">
           <Sparkles size={20} />
         </div>
         <div className="relative z-10">
-          <h3 className="font-bold text-indigo-900">Platform Insights</h3>
-          <p className="mt-1 text-sm text-indigo-800/90 leading-relaxed max-w-4xl">
+          <h3 className="font-bold text-(--brand-900)">Platform Insights</h3>
+          <p className="mt-1 text-sm text-(--text-mid) leading-relaxed max-w-4xl">
             {dynamicInsight}
           </p>
         </div>
@@ -130,9 +131,9 @@ export default function AdminPage() {
 
       {/* Main Operation Area */}
       <section className="grid gap-6 xl:grid-cols-[5fr_2fr]">
-        <div className="flex flex-col gap-4 rounded-[1.6rem] border border-(--brand-100) bg-white p-5 shadow-(--shadow-card) min-h-[600px] h-full">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-(--brand-900) tracking-tight">Live Operation Map</h2>
+        <SectionCard
+          title="Live Operation Map"
+          actions={
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-50 text-red-600 text-[10px] font-bold uppercase tracking-widest border border-red-100 shadow-inner">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -140,12 +141,14 @@ export default function AdminPage() {
               </span>
               Peta Langsung
             </div>
-          </div>
+          }
+          className="min-h-[600px] flex flex-col"
+        >
           <div className="flex-1 rounded-2xl overflow-hidden border border-gray-100 relative bg-(--brand-50)/30">
             {/* Embedded Live Map from existing map component */}
             <DonationMapPageContent context="admin" />
           </div>
-        </div>
+        </SectionCard>
 
         <div className="flex flex-col h-full gap-4">
           <ActivityFeed items={dashboard.data.activity_feed} />
