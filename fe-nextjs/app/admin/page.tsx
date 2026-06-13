@@ -144,9 +144,9 @@ export default function AdminPage() {
           }
           className="min-h-[600px] flex flex-col"
         >
-          <div className="flex-1 rounded-2xl overflow-hidden border border-gray-100 relative bg-(--brand-50)/30">
+          <div className="flex-1 rounded-2xl overflow-hidden border border-(--brand-100) relative bg-(--brand-50)/30">
             {/* Embedded Live Map from existing map component */}
-            <DonationMapPageContent context="admin" />
+            <DonationMapPageContent context="admin" embedded />
           </div>
         </SectionCard>
 

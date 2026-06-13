@@ -36,17 +36,19 @@ function filtersFromParams(params: URLSearchParams): DonationMapFilters {
 
 type DonationMapPageContentProps = {
   context?: DonationMapFilters["context"];
+  /** When embedded (e.g. inside the dashboard's own card), skip the page header and outer card chrome. */
+  embedded?: boolean;
 };
 
-export default function DonationMapPageContent({ context = "receiver" }: DonationMapPageContentProps) {
+export default function DonationMapPageContent({ context = "receiver", embedded = false }: DonationMapPageContentProps) {
   return (
     <Suspense fallback={<MapSkeleton />}>
-      <DonationMapScreen context={context} />
+      <DonationMapScreen context={context} embedded={embedded} />
     </Suspense>
   );
 }
 
-function DonationMapScreen({ context }: { context: DonationMapFilters["context"] }) {
+function DonationMapScreen({ context, embedded }: { context: DonationMapFilters["context"]; embedded: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -105,24 +107,15 @@ function DonationMapScreen({ context }: { context: DonationMapFilters["context"]
     </div>
   );
 
-  return (
-    <div className="space-y-5">
-      <PageHeader
-        breadcrumb="Visualisasi lokasi"
-        title="Peta Donasi"
-        description="Lihat sebaran donasi pangan aktif, gunakan filter untuk mempersempit area, lalu buka detail dari penanda peta."
-        actions={locationBadge}
-      />
+  const errorBanner = locationError ? (
+    <div role="status" className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">
+      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+      {locationError}
+    </div>
+  ) : null;
 
-      {locationError && (
-        <div role="status" className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-          {locationError}
-        </div>
-      )}
-
-      <SectionCard className="p-0 overflow-hidden">
-        <div className="grid gap-0 lg:grid-cols-[300px_minmax(0,1fr)]">
+  const mapGrid = (
+    <div className="grid h-full gap-0 lg:grid-cols-[300px_minmax(0,1fr)]">
           <div className="p-4 border-b border-(--brand-100) lg:border-b-0 lg:border-r lg:border-(--brand-100)">
             <MapFilterPanel
               filters={filters}
@@ -173,7 +166,27 @@ function DonationMapScreen({ context }: { context: DonationMapFilters["context"]
             )}
           </section>
         </div>
-      </SectionCard>
+  );
+
+  if (embedded) {
+    return (
+      <div className="flex h-full flex-col gap-3">
+        {errorBanner}
+        <div className="flex-1 overflow-hidden">{mapGrid}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <PageHeader
+        breadcrumb="Visualisasi lokasi"
+        title="Peta Donasi"
+        description="Lihat sebaran donasi pangan aktif, gunakan filter untuk mempersempit area, lalu buka detail dari penanda peta."
+        actions={locationBadge}
+      />
+      {errorBanner}
+      <SectionCard className="p-0 overflow-hidden">{mapGrid}</SectionCard>
     </div>
   );
 }
