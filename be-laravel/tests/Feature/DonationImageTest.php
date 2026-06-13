@@ -13,34 +13,37 @@ class DonationImageTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function setUp(): void
+    private array $uploadedPaths = [];
+
+    private function fakePng(string $name): UploadedFile
     {
-        parent::setUp();
-        // Clear public upload folder if any test files exist
-        $dir = public_path('uploads/donations');
-        if (is_dir($dir)) {
-            $files = glob($dir . '/*');
-            foreach ($files as $file) {
-                if (is_file($file)) {
-                    unlink($file);
-                }
-            }
+        $pngBytes = base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII='
+        );
+
+        return UploadedFile::fake()->createWithContent($name, $pngBytes);
+    }
+
+    private function rememberUpload(?string $path): void
+    {
+        if ($path) {
+            $this->uploadedPaths[] = public_path($path);
         }
     }
 
     protected function tearDown(): void
     {
-        // Cleanup test uploads
-        $dir = public_path('uploads/donations');
-        if (is_dir($dir)) {
-            $files = glob($dir . '/*');
-            foreach ($files as $file) {
-                if (is_file($file)) {
-                    unlink($file);
-                }
+        foreach (array_unique($this->uploadedPaths) as $path) {
+            if (is_file($path)) {
+                unlink($path);
             }
+        }
+
+        $dir = public_path('uploads/donations');
+        if (is_dir($dir) && count(array_diff(scandir($dir) ?: [], ['.', '..', '.gitignore'])) === 0) {
             rmdir($dir);
         }
+
         parent::tearDown();
     }
 
@@ -49,7 +52,7 @@ class DonationImageTest extends TestCase
         $donor = User::factory()->create(['role' => 'donatur']);
         $donor->forceFill(['remember_token' => hash('sha256', 'test-token')])->save();
 
-        $imageFile = UploadedFile::fake()->image('rice_box.jpg', 600, 600);
+        $imageFile = $this->fakePng('rice_box.png');
 
         $response = $this
             ->withHeaders(['Authorization' => 'Bearer test-token'])
@@ -69,6 +72,7 @@ class DonationImageTest extends TestCase
 
         $this->assertNotNull($data['image']);
         $this->assertStringStartsWith('/uploads/donations/donation_', $data['image']);
+        $this->rememberUpload($data['image']);
         $this->assertFileExists(public_path($data['image']));
     }
 
@@ -78,14 +82,15 @@ class DonationImageTest extends TestCase
         $donor->forceFill(['remember_token' => hash('sha256', 'test-token')])->save();
 
         // Create initial donation with image
-        $initialImage = UploadedFile::fake()->image('old_food.jpg');
+        $initialImage = $this->fakePng('old_food.png');
         $dir = public_path('uploads/donations');
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
-        $oldName = 'donation_old_' . time() . '.jpg';
+        $oldName = 'donation_test_old_' . uniqid() . '.png';
         $initialImage->move($dir, $oldName);
         $oldImagePath = '/uploads/donations/' . $oldName;
+        $this->rememberUpload($oldImagePath);
 
         $donation = Donation::create([
             'user_id' => $donor->id,
@@ -103,7 +108,7 @@ class DonationImageTest extends TestCase
         $this->assertFileExists(public_path($oldImagePath));
 
         // Update with new image
-        $newImage = UploadedFile::fake()->image('new_food.jpg');
+        $newImage = $this->fakePng('new_food.png');
 
         // We use POST with _method = PUT to simulate multipart PUT request spoofing
         $response = $this
@@ -116,6 +121,7 @@ class DonationImageTest extends TestCase
 
         $response->assertStatus(200);
         $updatedData = $response->json('data');
+        $this->rememberUpload($updatedData['image']);
 
         $this->assertNotEquals($oldImagePath, $updatedData['image']);
         $this->assertFileDoesNotExist(public_path($oldImagePath)); // Old file deleted
@@ -127,14 +133,15 @@ class DonationImageTest extends TestCase
         $donor = User::factory()->create(['role' => 'donatur']);
         $donor->forceFill(['remember_token' => hash('sha256', 'test-token')])->save();
 
-        $initialImage = UploadedFile::fake()->image('food.jpg');
+        $initialImage = $this->fakePng('food.png');
         $dir = public_path('uploads/donations');
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
-        $name = 'donation_to_delete_' . time() . '.jpg';
+        $name = 'donation_test_to_delete_' . uniqid() . '.png';
         $initialImage->move($dir, $name);
         $imagePath = '/uploads/donations/' . $name;
+        $this->rememberUpload($imagePath);
 
         $donation = Donation::create([
             'user_id' => $donor->id,
@@ -170,14 +177,15 @@ class DonationImageTest extends TestCase
     {
         $donor = User::factory()->create(['role' => 'donatur']);
         
-        $initialImage = UploadedFile::fake()->image('food.jpg');
+        $initialImage = $this->fakePng('food.png');
         $dir = public_path('uploads/donations');
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
-        $name = 'donation_orphan_' . time() . '.jpg';
+        $name = 'donation_test_orphan_' . uniqid() . '.png';
         $initialImage->move($dir, $name);
         $imagePath = '/uploads/donations/' . $name;
+        $this->rememberUpload($imagePath);
 
         $donation = Donation::create([
             'user_id' => $donor->id,
