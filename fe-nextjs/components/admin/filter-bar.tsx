@@ -2,6 +2,7 @@
 
 import { Search } from "lucide-react";
 import { cn } from "./cn";
+import { Select } from "./select";
 
 export type SelectFilter = {
   label: string;
@@ -38,19 +39,15 @@ export function FilterBar({
           />
         </div>
         {filters.map((f) => (
-          <select
+          <Select
             key={f.label}
             value={f.value}
-            onChange={(e) => f.onChange(e.target.value)}
-            aria-label={f.label}
-            className="rounded-(--radius-pill) border border-(--brand-100) bg-white px-3 py-2 text-sm text-(--text-dark) outline-none focus:border-(--brand-400) focus:ring-2 focus:ring-(--brand-100)"
-          >
-            {f.options.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+            onChange={f.onChange}
+            options={f.options}
+            ariaLabel={f.label}
+            placeholder={f.label}
+            className="w-full sm:w-auto"
+          />
         ))}
       </div>
       {actions && <div className="flex items-center gap-2">{actions}</div>}

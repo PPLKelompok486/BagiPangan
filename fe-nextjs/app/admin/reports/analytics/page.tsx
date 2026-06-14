@@ -19,6 +19,7 @@ import {
 import { BarChart2, CheckCircle2, Clock, Leaf } from "lucide-react";
 import { PageHeader } from "@/components/admin/page-header";
 import { SectionCard } from "@/components/admin/section-card";
+import { DatePicker } from "@/components/admin/date-picker";
 
 // Brand palette literal hex values (recharts props don't read CSS variables)
 const BRAND_600 = "#2d7a4f";
@@ -167,24 +168,29 @@ export default function ReportsAnalyticsPage() {
 
       <SectionCard title="Rentang Waktu">
         <div className="flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-1 text-sm">
+          <div className="flex flex-col gap-1 text-sm">
             <span className="font-semibold text-(--text-mid)">Dari tanggal</span>
-            <input
-              type="date"
+            <DatePicker
               value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="rounded-xl border border-(--brand-100) px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-(--brand-400)"
+              onChange={setDateFrom}
+              max={dateTo}
+              clearable={false}
+              ariaLabel="Dari tanggal"
+              className="w-44"
             />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
+          </div>
+          <div className="flex flex-col gap-1 text-sm">
             <span className="font-semibold text-(--text-mid)">Sampai tanggal</span>
-            <input
-              type="date"
+            <DatePicker
               value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="rounded-xl border border-(--brand-100) px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-(--brand-400)"
+              onChange={setDateTo}
+              min={dateFrom}
+              max={todayYmd()}
+              clearable={false}
+              ariaLabel="Sampai tanggal"
+              className="w-44"
             />
-          </label>
+          </div>
         </div>
       </SectionCard>
 

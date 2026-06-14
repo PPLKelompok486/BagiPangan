@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Download, Loader2, AlertCircle, CheckCircle2, X } from "lucide-react";
 import { PageHeader } from "@/components/admin/page-header";
 import { SectionCard } from "@/components/admin/section-card";
+import { DatePicker } from "@/components/admin/date-picker";
+import { Select } from "@/components/admin/select";
 
 type Donor = {
   id: number;
@@ -224,42 +226,38 @@ export default function ReportsPage() {
         }
       >
         <div className="grid gap-4 md:grid-cols-2">
-          <label className="block">
+          <div className="block">
             <span className="block text-sm font-medium text-(--text-dark) mb-1">Dari Tanggal</span>
-            <input
-              type="date"
+            <DatePicker
               value={dateFrom}
+              onChange={setDateFrom}
               max={dateTo || undefined}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="w-full rounded-xl border border-(--brand-100) px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--brand-500)"
+              clearable={false}
+              ariaLabel="Dari tanggal"
             />
-          </label>
+          </div>
 
-          <label className="block">
+          <div className="block">
             <span className="block text-sm font-medium text-(--text-dark) mb-1">Sampai Tanggal</span>
-            <input
-              type="date"
+            <DatePicker
               value={dateTo}
+              onChange={setDateTo}
               min={dateFrom || undefined}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="w-full rounded-xl border border-(--brand-100) px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--brand-500)"
+              clearable={false}
+              ariaLabel="Sampai tanggal"
             />
-          </label>
+          </div>
 
-          <label className="block">
+          <div className="block">
             <span className="block text-sm font-medium text-(--text-dark) mb-1">Status</span>
-            <select
+            <Select
               value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="w-full rounded-xl border border-(--brand-100) px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--brand-500)"
-            >
-              {STATUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </label>
+              onChange={setStatus}
+              options={STATUS_OPTIONS}
+              ariaLabel="Status"
+              placeholder="Semua status"
+            />
+          </div>
 
           <div className="block relative">
             <span className="block text-sm font-medium text-(--text-dark) mb-1">Donatur</span>

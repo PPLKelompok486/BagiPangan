@@ -8,6 +8,7 @@ import { FilterBar } from "@/components/admin/filter-bar";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
+import { DatePicker } from "@/components/admin/date-picker";
 
 type ActivityLog = ActivityLogsResponse["data"]["data"][number];
 
@@ -230,17 +231,19 @@ export default function ActivityLogPage() {
               className="rounded-(--radius-pill) border border-(--brand-100) bg-white px-3 py-2 text-sm text-(--text-dark) outline-none focus:border-(--brand-400) focus:ring-2 focus:ring-(--brand-100)"
               placeholder="Entity (donation)"
             />
-            <input
-              type="date"
+            <DatePicker
               value={filters.dateFrom}
-              onChange={(e) => setFilters((prev) => ({ ...prev, dateFrom: e.target.value }))}
-              className="rounded-(--radius-pill) border border-(--brand-100) bg-white px-3 py-2 text-sm text-(--text-dark) outline-none focus:border-(--brand-400) focus:ring-2 focus:ring-(--brand-100)"
+              onChange={(iso) => setFilters((prev) => ({ ...prev, dateFrom: iso }))}
+              max={filters.dateTo || undefined}
+              ariaLabel="Dari tanggal"
+              placeholder="Tanggal awal"
             />
-            <input
-              type="date"
+            <DatePicker
               value={filters.dateTo}
-              onChange={(e) => setFilters((prev) => ({ ...prev, dateTo: e.target.value }))}
-              className="rounded-(--radius-pill) border border-(--brand-100) bg-white px-3 py-2 text-sm text-(--text-dark) outline-none focus:border-(--brand-400) focus:ring-2 focus:ring-(--brand-100)"
+              onChange={(iso) => setFilters((prev) => ({ ...prev, dateTo: iso }))}
+              min={filters.dateFrom || undefined}
+              ariaLabel="Sampai tanggal"
+              placeholder="Tanggal akhir"
             />
           </div>
         }

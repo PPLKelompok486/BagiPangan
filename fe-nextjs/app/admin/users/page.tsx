@@ -19,6 +19,7 @@ import { FilterBar } from "@/components/admin/filter-bar";
 import { StatusBadge, type BadgeTone } from "@/components/admin/status-badge";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
+import { DatePicker } from "@/components/admin/date-picker";
 
 type User = UsersResponse["data"]["data"][number];
 
@@ -377,20 +378,22 @@ export default function ManajemenUser() {
           },
         ]}
         actions={
-          <div className="flex items-center gap-2 text-xs text-(--text-mid)">
-            <label>Dari</label>
-            <input
-              type="date"
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-(--text-mid)">Dari</span>
+            <DatePicker
               value={registeredFrom ?? ""}
-              onChange={(e) => setRegisteredFrom(e.target.value || undefined)}
-              className="rounded-(--radius-pill) border border-(--brand-100) bg-white px-3 py-2 text-sm text-(--text-dark) outline-none focus:border-(--brand-400) focus:ring-2 focus:ring-(--brand-100)"
+              onChange={(iso) => setRegisteredFrom(iso || undefined)}
+              max={registeredTo}
+              ariaLabel="Terdaftar dari tanggal"
+              placeholder="Tanggal awal"
             />
-            <label>Sampai</label>
-            <input
-              type="date"
+            <span className="text-xs font-medium text-(--text-mid)">Sampai</span>
+            <DatePicker
               value={registeredTo ?? ""}
-              onChange={(e) => setRegisteredTo(e.target.value || undefined)}
-              className="rounded-(--radius-pill) border border-(--brand-100) bg-white px-3 py-2 text-sm text-(--text-dark) outline-none focus:border-(--brand-400) focus:ring-2 focus:ring-(--brand-100)"
+              onChange={(iso) => setRegisteredTo(iso || undefined)}
+              min={registeredFrom}
+              ariaLabel="Terdaftar sampai tanggal"
+              placeholder="Tanggal akhir"
             />
           </div>
         }
