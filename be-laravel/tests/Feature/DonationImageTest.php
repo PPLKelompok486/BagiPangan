@@ -39,8 +39,13 @@ class DonationImageTest extends TestCase
             }
         }
 
+        // Only remove the directory if it is genuinely empty. The committed
+        // `.gitignore` keeps this folder in the repo, so excluding it from the
+        // emptiness check (as before) made rmdir() throw "Directory not empty",
+        // which aborted teardown and left the test transaction open — cascading
+        // into "cannot start a transaction within a transaction" for later tests.
         $dir = public_path('uploads/donations');
-        if (is_dir($dir) && count(array_diff(scandir($dir) ?: [], ['.', '..', '.gitignore'])) === 0) {
+        if (is_dir($dir) && count(array_diff(scandir($dir) ?: [], ['.', '..'])) === 0) {
             rmdir($dir);
         }
 
