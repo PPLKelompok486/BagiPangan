@@ -17,6 +17,19 @@
   --text-mid: #3d5c4a;
   --shadow-soft: 0 24px 80px rgba(13, 43, 26, 0.2);
   --shadow-card: 0 18px 40px rgba(13, 43, 26, 0.08);
+  /* Admin: status + warm accent tokens (derived from brand palette) */
+  --accent-ochre: #c98a2b;
+  --accent-ochre-soft: #f6ecd9;
+  --status-success: var(--brand-600);
+  --status-success-soft: var(--brand-100);
+  --status-warning: #c98a2b;
+  --status-warning-soft: #f6ecd9;
+  --status-danger: #b3261e;
+  --status-danger-soft: #fbe9e7;
+  --status-info: var(--brand-700);
+  --status-info-soft: var(--brand-50);
+  --radius-card: 1.25rem;
+  --radius-pill: 9999px;
 }
 
 .bagi-theme,

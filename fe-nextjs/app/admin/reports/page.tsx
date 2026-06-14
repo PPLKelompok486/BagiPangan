@@ -2,6 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Download, Loader2, AlertCircle, CheckCircle2, X } from "lucide-react";
+import { PageHeader } from "@/components/admin/page-header";
+import { SectionCard } from "@/components/admin/section-card";
+import { DatePicker } from "@/components/admin/date-picker";
+import { Select } from "@/components/admin/select";
 
 type Donor = {
   id: number;
@@ -192,55 +196,68 @@ export default function ReportsPage() {
 
   return (
     <>
-      <section className="rounded-[1.6rem] border border-(--brand-100) bg-white p-6 shadow-(--shadow-card)">
-        <p className="text-xs uppercase tracking-[0.15em] text-(--brand-600)">Manajemen</p>
-        <h2 className="bagi-display mt-2 text-4xl text-(--brand-900)">Laporan</h2>
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-(--text-mid)">
-          Unduh laporan donasi dalam format CSV. Pilih rentang tanggal dan filter opsional untuk
-          menyesuaikan ekspor.
-        </p>
-      </section>
+      <PageHeader
+        breadcrumb="Manajemen"
+        title="Laporan"
+        description="Unduh laporan donasi dalam format CSV. Pilih rentang tanggal dan filter opsional untuk menyesuaikan ekspor."
+      />
 
-      <section className="rounded-[1.6rem] border border-(--brand-100) bg-white p-6 shadow-(--shadow-card) space-y-5">
-        <h3 className="text-lg font-semibold text-(--brand-900)">Filter Ekspor</h3>
-
+      <SectionCard
+        title="Filter Ekspor"
+        actions={
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={exporting || !datesValid}
+            className="inline-flex items-center gap-2 rounded-full bg-(--brand-700) hover:bg-(--brand-800) text-white px-6 py-2.5 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {exporting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Mengunduh...
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4" />
+                Export CSV
+              </>
+            )}
+          </button>
+        }
+      >
         <div className="grid gap-4 md:grid-cols-2">
-          <label className="block">
+          <div className="block">
             <span className="block text-sm font-medium text-(--text-dark) mb-1">Dari Tanggal</span>
-            <input
-              type="date"
+            <DatePicker
               value={dateFrom}
+              onChange={setDateFrom}
               max={dateTo || undefined}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="w-full rounded-xl border border-(--brand-100) px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--brand-500)"
+              clearable={false}
+              ariaLabel="Dari tanggal"
             />
-          </label>
+          </div>
 
-          <label className="block">
+          <div className="block">
             <span className="block text-sm font-medium text-(--text-dark) mb-1">Sampai Tanggal</span>
-            <input
-              type="date"
+            <DatePicker
               value={dateTo}
+              onChange={setDateTo}
               min={dateFrom || undefined}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="w-full rounded-xl border border-(--brand-100) px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--brand-500)"
+              clearable={false}
+              ariaLabel="Sampai tanggal"
             />
-          </label>
+          </div>
 
-          <label className="block">
+          <div className="block">
             <span className="block text-sm font-medium text-(--text-dark) mb-1">Status</span>
-            <select
+            <Select
               value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="w-full rounded-xl border border-(--brand-100) px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--brand-500)"
-            >
-              {STATUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </label>
+              onChange={setStatus}
+              options={STATUS_OPTIONS}
+              ariaLabel="Status"
+              placeholder="Semua status"
+            />
+          </div>
 
           <div className="block relative">
             <span className="block text-sm font-medium text-(--text-dark) mb-1">Donatur</span>
@@ -305,41 +322,20 @@ export default function ReportsPage() {
         </div>
 
         {!datesValid && dateFrom && dateTo && (
-          <div className="flex items-center gap-2 text-sm text-red-600">
+          <div className="flex items-center gap-2 text-sm text-red-600 mt-4">
             <AlertCircle className="h-4 w-4" />
             Tanggal mulai harus lebih kecil atau sama dengan tanggal akhir.
           </div>
         )}
-
-        <div className="flex justify-end pt-2">
-          <button
-            type="button"
-            onClick={handleExport}
-            disabled={exporting || !datesValid}
-            className="inline-flex items-center gap-2 rounded-full bg-(--brand-700) hover:bg-(--brand-800) text-white px-6 py-2.5 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {exporting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Mengunduh...
-              </>
-            ) : (
-              <>
-                <Download className="h-4 w-4" />
-                Export CSV
-              </>
-            )}
-          </button>
-        </div>
-      </section>
+      </SectionCard>
 
       {toast && (
         <div
           role="status"
           className={`fixed bottom-6 right-6 z-50 flex items-start gap-3 rounded-xl px-4 py-3 shadow-lg max-w-sm ${
             toast.kind === "success"
-              ? "bg-emerald-600 text-white"
-              : "bg-red-600 text-white"
+              ? "bg-(--brand-700) text-white"
+              : "bg-(--status-danger) text-white"
           }`}
         >
           {toast.kind === "success" ? (

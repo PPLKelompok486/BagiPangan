@@ -16,6 +16,17 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { BarChart2, CheckCircle2, Clock, Leaf } from "lucide-react";
+import { PageHeader } from "@/components/admin/page-header";
+import { SectionCard } from "@/components/admin/section-card";
+import { DatePicker } from "@/components/admin/date-picker";
+
+// Brand palette literal hex values (recharts props don't read CSS variables)
+const BRAND_600 = "#2d7a4f";
+const BRAND_400 = "#5ec989";
+const OCHRE   = "#c98a2b";
+const BRAND_100 = "#d6f5e3";
+const MUTED   = "#94a3b8";
 
 type AnalyticsData = {
   per_day: { date: string; count: number }[];
@@ -33,13 +44,14 @@ const STATUS_LABEL: Record<string, string> = {
   cancelled: "Dibatalkan",
 };
 
+// Brand-palette chart colors for pie slices (all on-brand)
 const STATUS_COLOR: Record<string, string> = {
-  pending: "#f59e0b",
-  approved: "#16a34a",
-  rejected: "#ef4444",
-  claimed: "#d97706",
-  completed: "#6366f1",
-  cancelled: "#94a3b8",
+  pending:   OCHRE,
+  approved:  BRAND_600,
+  rejected:  "#b3261e",
+  claimed:   BRAND_400,
+  completed: "#1a5c3a",
+  cancelled: MUTED,
 };
 
 function todayYmd(): string {
@@ -60,8 +72,6 @@ function formatDateLabel(d: string): string {
 
 /**
  * Animates an integer value from 0 -> target over `duration` ms.
- * Used so KPI numbers count up when the date range changes
- * instead of snapping, giving the dashboard a livelier feel.
  */
 function useCountUp(target: number, duration = 600): number {
   const [value, setValue] = useState(0);
@@ -149,48 +159,69 @@ export default function ReportsAnalyticsPage() {
   );
 
   return (
-    <div className="space-y-6 p-6">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold text-[var(--brand-900,#0f172a)]">Analitik Donasi</h1>
-        <p className="text-sm text-slate-500">
-          Pantau tren donasi, distribusi status, kategori, dan donatur teratas dalam rentang waktu.
-        </p>
-      </header>
+    <div className="space-y-6">
+      <PageHeader
+        breadcrumb="Laporan"
+        title="Analitik Donasi"
+        description="Pantau tren donasi, distribusi status, kategori, dan donatur teratas dalam rentang waktu."
+      />
 
-      <section className="flex flex-wrap items-end gap-3 rounded-[1.6rem] border border-[var(--brand-100,#e2e8f0)] bg-white p-4 shadow-sm">
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-semibold text-slate-600">Dari tanggal</span>
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className="rounded-xl border border-slate-200 px-3 py-2 outline-none focus:ring-2 focus:ring-[var(--brand-300,#a7f3d0)]"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-semibold text-slate-600">Sampai tanggal</span>
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className="rounded-xl border border-slate-200 px-3 py-2 outline-none focus:ring-2 focus:ring-[var(--brand-300,#a7f3d0)]"
-          />
-        </label>
-      </section>
+      <SectionCard title="Rentang Waktu">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1 text-sm">
+            <span className="font-semibold text-(--text-mid)">Dari tanggal</span>
+            <DatePicker
+              value={dateFrom}
+              onChange={setDateFrom}
+              max={dateTo}
+              clearable={false}
+              ariaLabel="Dari tanggal"
+              className="w-44"
+            />
+          </div>
+          <div className="flex flex-col gap-1 text-sm">
+            <span className="font-semibold text-(--text-mid)">Sampai tanggal</span>
+            <DatePicker
+              value={dateTo}
+              onChange={setDateTo}
+              min={dateFrom}
+              max={todayYmd()}
+              clearable={false}
+              ariaLabel="Sampai tanggal"
+              className="w-44"
+            />
+          </div>
+        </div>
+      </SectionCard>
 
-      <section className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        {[
-          { label: "Total Donasi", value: totalFromPerDay, color: "var(--brand-600,#16a34a)" },
-          { label: "Disetujui", value: analytics?.by_status?.approved ?? 0, color: "#16a34a" },
-          { label: "Diklaim", value: analytics?.by_status?.claimed ?? 0, color: "#d97706" },
-          { label: "Selesai", value: analytics?.by_status?.completed ?? 0, color: "#6366f1" },
-        ].map((kpi) => (
-          <KpiCard key={kpi.label} label={kpi.label} value={kpi.value} color={kpi.color} loading={loading} />
-        ))}
-      </section>
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <AnimatedStatCard
+          label="Total Donasi"
+          value={totalFromPerDay}
+          icon={BarChart2}
+          loading={loading}
+        />
+        <AnimatedStatCard
+          label="Disetujui"
+          value={analytics?.by_status?.approved ?? 0}
+          icon={CheckCircle2}
+          loading={loading}
+        />
+        <AnimatedStatCard
+          label="Diklaim"
+          value={analytics?.by_status?.claimed ?? 0}
+          icon={Leaf}
+          loading={loading}
+        />
+        <AnimatedStatCard
+          label="Selesai"
+          value={analytics?.by_status?.completed ?? 0}
+          icon={Clock}
+          loading={loading}
+        />
+      </div>
 
-      <section className="rounded-[1.6rem] border border-[var(--brand-100,#e2e8f0)] bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-lg font-semibold text-[var(--brand-900,#0f172a)]">Donasi per Hari</h3>
+      <SectionCard title="Donasi per Hari">
         {loading ? (
           <ChartSkeleton height={280} />
         ) : lineData.length === 0 ? (
@@ -198,19 +229,18 @@ export default function ReportsAnalyticsPage() {
         ) : (
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={lineData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <CartesianGrid strokeDasharray="3 3" stroke={BRAND_100} />
               <XAxis dataKey="label" tick={{ fontSize: 12 }} />
               <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
               <Tooltip />
-              <Line type="monotone" dataKey="count" stroke="#16a34a" strokeWidth={2} dot={{ r: 3 }} name="Donasi" />
+              <Line type="monotone" dataKey="count" stroke={BRAND_600} strokeWidth={2} dot={{ r: 3 }} name="Donasi" />
             </LineChart>
           </ResponsiveContainer>
         )}
-      </section>
+      </SectionCard>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <section className="rounded-[1.6rem] border border-[var(--brand-100,#e2e8f0)] bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-semibold text-[var(--brand-900,#0f172a)]">Distribusi Kategori</h3>
+        <SectionCard title="Distribusi Kategori">
           {loading ? (
             <ChartSkeleton height={280} />
           ) : (analytics?.by_category ?? []).length === 0 ? (
@@ -218,18 +248,17 @@ export default function ReportsAnalyticsPage() {
           ) : (
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={analytics?.by_category ?? []} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <CartesianGrid strokeDasharray="3 3" stroke={BRAND_100} />
                 <XAxis dataKey="category" tick={{ fontSize: 11 }} interval={0} angle={-15} textAnchor="end" height={60} />
                 <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
                 <Tooltip />
-                <Bar dataKey="count" fill="#16a34a" radius={[6, 6, 0, 0]} name="Donasi" />
+                <Bar dataKey="count" fill={BRAND_600} radius={[6, 6, 0, 0]} name="Donasi" />
               </BarChart>
             </ResponsiveContainer>
           )}
-        </section>
+        </SectionCard>
 
-        <section className="rounded-[1.6rem] border border-[var(--brand-100,#e2e8f0)] bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-semibold text-[var(--brand-900,#0f172a)]">Status Donasi</h3>
+        <SectionCard title="Status Donasi">
           {loading ? (
             <ChartSkeleton height={280} />
           ) : statusPieData.length === 0 ? (
@@ -248,7 +277,7 @@ export default function ReportsAnalyticsPage() {
                   }
                 >
                   {statusPieData.map((entry) => (
-                    <Cell key={entry.key} fill={STATUS_COLOR[entry.key] ?? "#94a3b8"} />
+                    <Cell key={entry.key} fill={STATUS_COLOR[entry.key] ?? MUTED} />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -256,18 +285,17 @@ export default function ReportsAnalyticsPage() {
               </PieChart>
             </ResponsiveContainer>
           )}
-        </section>
+        </SectionCard>
       </div>
 
-      <section className="rounded-[1.6rem] border border-[var(--brand-100,#e2e8f0)] bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-lg font-semibold text-[var(--brand-900,#0f172a)]">Top 5 Donatur</h3>
+      <SectionCard title="Top 5 Donatur">
         {loading ? (
           <ChartSkeleton height={128} />
         ) : !analytics?.top_donors?.length ? (
-          <p className="text-sm text-slate-500">Belum ada data donatur dalam rentang ini.</p>
+          <p className="text-sm text-(--text-mid)">Belum ada data donatur dalam rentang ini.</p>
         ) : (
           <table className="w-full text-sm">
-            <thead className="text-left text-slate-500">
+            <thead className="text-left text-(--text-mid)">
               <tr>
                 <th className="py-2 pr-4">#</th>
                 <th className="py-2 pr-4">Nama</th>
@@ -276,43 +304,49 @@ export default function ReportsAnalyticsPage() {
             </thead>
             <tbody>
               {analytics.top_donors.map((d, i) => (
-                <tr key={d.name + i} className="border-t border-slate-100">
-                  <td className="py-2 pr-4 text-slate-500">{i + 1}</td>
-                  <td className="py-2 pr-4 font-medium text-slate-700">{d.name}</td>
-                  <td className="py-2 text-right text-slate-700">{d.total}</td>
+                <tr key={d.name + i} className="border-t border-(--brand-100)">
+                  <td className="py-2 pr-4 text-(--text-mid)">{i + 1}</td>
+                  <td className="py-2 pr-4 font-medium text-(--text-dark)">{d.name}</td>
+                  <td className="py-2 text-right text-(--text-dark)">{d.total}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
-      </section>
+      </SectionCard>
     </div>
   );
 }
 
-function KpiCard({
+function AnimatedStatCard({
   label,
   value,
-  color,
+  icon,
   loading,
 }: {
   label: string;
   value: number;
-  color: string;
+  icon: React.ComponentType<{ className?: string }>;
   loading: boolean;
 }) {
   const animated = useCountUp(value);
+  const Icon = icon;
   return (
-    <div className="rounded-[1.6rem] border border-[var(--brand-100,#e2e8f0)] bg-white p-4 shadow-sm">
-      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</div>
+    <article className="rounded-(--radius-card) border border-(--brand-100) bg-white p-5 shadow-(--shadow-card) transition-shadow hover:shadow-(--shadow-soft)">
+      <div className="flex items-start justify-between">
+        <p className="text-xs uppercase tracking-[0.12em] text-(--text-mid)">{label}</p>
+        <span className="rounded-full bg-(--brand-50) p-2 text-(--brand-700)">
+          <Icon className="h-4 w-4" />
+        </span>
+      </div>
       {loading ? (
-        <div className="mt-3 h-8 w-20 animate-pulse rounded bg-slate-100" />
+        <div className="mt-3 h-8 w-20 animate-pulse rounded bg-(--brand-50)" />
       ) : (
-        <div className="mt-1 text-3xl font-bold" style={{ color }}>
+        <p className="bagi-display mt-3 text-4xl text-(--brand-900)">
           {animated.toLocaleString("id-ID")}
-        </div>
+        </p>
       )}
-    </div>
+    </article>
   );
 }
 
@@ -323,7 +357,7 @@ function KpiCard({
 function ChartSkeleton({ height = 240 }: { height?: number }) {
   return (
     <div
-      className="animate-pulse rounded-[1.6rem] bg-[var(--brand-50,#f1f5f9)]"
+      className="animate-pulse rounded-(--radius-card) bg-(--brand-50)"
       style={{ height }}
       aria-hidden
     />
@@ -332,7 +366,7 @@ function ChartSkeleton({ height = 240 }: { height?: number }) {
 
 function EmptyDataState() {
   return (
-    <p className="py-12 text-center text-sm text-[var(--text-mid,#64748b)]">
+    <p className="py-12 text-center text-sm text-(--text-mid)">
       Tidak ada data untuk rentang tanggal ini
     </p>
   );
