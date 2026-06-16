@@ -105,7 +105,7 @@ export default function AdminLayout({ children }: Readonly<{ children: React.Rea
     >
       <div className="flex min-h-screen w-full">
         {/* Desktop sidebar */}
-        <aside className="sticky top-0 hidden h-screen w-[260px] flex-col border-r border-(--brand-100) bg-[linear-gradient(160deg,var(--brand-900),var(--brand-700))] p-5 text-white shadow-(--shadow-soft) lg:flex">
+        <aside className="sticky top-0 hidden h-screen w-[260px] flex-col overflow-y-auto border-r border-(--brand-100) bg-[linear-gradient(160deg,var(--brand-900),var(--brand-700))] p-5 text-white shadow-(--shadow-soft) lg:flex">
           <p className="text-xs uppercase tracking-[0.15em] text-white/70">Admin Console</p>
           <h1 className="bagi-display mt-3 text-3xl">BagiPangan</h1>
           <p className="mt-3 text-sm leading-6 text-white/80">
@@ -126,7 +126,7 @@ export default function AdminLayout({ children }: Readonly<{ children: React.Rea
             >
               <div className="absolute inset-0 bg-black/40" onClick={() => setNavOpen(false)} />
               <motion.aside
-                className="absolute left-0 top-0 flex h-full w-[280px] flex-col bg-[linear-gradient(160deg,var(--brand-900),var(--brand-700))] p-5 text-white shadow-(--shadow-soft)"
+                className="absolute left-0 top-0 flex h-full w-[280px] flex-col overflow-y-auto bg-[linear-gradient(160deg,var(--brand-900),var(--brand-700))] p-5 text-white shadow-(--shadow-soft)"
                 initial={{ x: -300 }}
                 animate={{ x: 0 }}
                 exit={{ x: -300 }}

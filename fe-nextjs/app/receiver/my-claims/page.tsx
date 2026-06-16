@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { MapPin, Clock, ListChecks, ArrowRight, AlarmClock, CheckCircle2 } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
+import { resolveUploadUrl } from "@/lib/media";
 import { ExportCsvButton } from "@/components/ui/ExportCsvButton";
 import {
   type ApiClaim,
@@ -363,7 +364,7 @@ function ClaimCard({
         <div className="mt-3 text-xs text-[var(--text-mid)]">
           Bukti: {" "}
           <a
-            href={claim.proof_image_url}
+            href={resolveUploadUrl(claim.proof_image_url)}
             target="_blank"
             rel="noreferrer"
             className="font-semibold text-[var(--brand-700)] hover:text-[var(--brand-800)]"

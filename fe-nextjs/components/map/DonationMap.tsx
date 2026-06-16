@@ -17,6 +17,29 @@ import UserLocationMarker from "./UserLocationMarker";
 const INDONESIA_CENTER: [number, number] = [-2.5, 118];
 const INDONESIA_ZOOM = 5;
 
+// Leaflet renders a blank/grey tile area when its container had no measurable
+// size at init (e.g. inside a flex/grid card or a tab that lays out after mount).
+// Recomputing the size on mount — and once more after the first paint — fixes
+// the "map tidak ter-load" symptom without affecting an already-correct layout.
+function InvalidateSizeOnMount() {
+  const map = useMap();
+
+  useEffect(() => {
+    const invalidate = () => map.invalidateSize();
+    invalidate();
+    const raf = requestAnimationFrame(invalidate);
+    const timer = setTimeout(invalidate, 300);
+    window.addEventListener("resize", invalidate);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+      window.removeEventListener("resize", invalidate);
+    };
+  }, [map]);
+
+  return null;
+}
+
 function DonationClusterLayer({ features }: { features: DonationMapFeature[] }) {
   const map = useMap();
 
@@ -119,6 +142,7 @@ export default function DonationMap({
             },
           }}
         />
+        <InvalidateSizeOnMount />
         <DonationClusterLayer features={features} />
         <FitDonationBounds features={features} userLocation={userLocation} />
         <UserLocationMarker location={userLocation} />

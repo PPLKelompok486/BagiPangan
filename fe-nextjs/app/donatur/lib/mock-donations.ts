@@ -6,6 +6,19 @@ export type DonorDonationStatus =
   | "completed"
   | "cancelled";
 
+export type ApiClaimReceiver = {
+  id: number;
+  name: string;
+  organization?: string | null;
+  city?: string | null;
+};
+
+export type ApiDonationClaim = {
+  id: number;
+  status: string;
+  receiver?: ApiClaimReceiver | null;
+};
+
 export type ApiDonation = {
   id: number;
   title: string;
@@ -20,6 +33,7 @@ export type ApiDonation = {
   created_at: string;
   updated_at: string;
   category?: { id: number; name: string } | null;
+  claims?: ApiDonationClaim[];
 };
 
 export type DonorDonation = {
@@ -99,6 +113,10 @@ function resolvePickupAddress(donation: ApiDonation): string {
 }
 
 export function mapApiDonationToDonor(donation: ApiDonation): DonorDonation {
+  // The backend returns the active claims (latest first) with their receiver.
+  // Surface the most recent claimant for the "Komunitas penerima" card.
+  const claimant = donation.claims?.find((claim) => claim.receiver)?.receiver ?? null;
+
   return {
     id: donation.id,
     title: donation.title,
@@ -110,7 +128,12 @@ export function mapApiDonationToDonor(donation: ApiDonation): DonorDonation {
     active_claims_count: donation.active_claims_count ?? 0,
     created_at: donation.created_at,
     estimated_meals: donation.portion_count,
-    receiver: null,
+    receiver: claimant
+      ? {
+          name: claimant.name,
+          org: claimant.organization ?? claimant.city ?? undefined,
+        }
+      : null,
   };
 }
 

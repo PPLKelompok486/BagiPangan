@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, CalendarClock, Clock, MapPin, Package, Tag } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
 import { formatPickupTime, type ApiDonation, type Donation, mapApiDonation, imageForDonation } from "@/lib/donations";
+import { resolveUploadUrl } from "@/lib/media";
 import {
   donorStatusSummary,
   STATUS_LABEL,
@@ -114,7 +115,7 @@ export default function DonorDonationDetailPage({ params }: Props) {
         <div className="relative h-56 sm:h-72 overflow-hidden bg-[var(--brand-50)] rounded-2xl mb-6 border border-[var(--brand-100)]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={donation.image ? `${process.env.LARAVEL_API_BASE ?? "http://localhost:8000"}${donation.image}` : imageForDonation(donation)}
+            src={donation.image ? resolveUploadUrl(donation.image) : imageForDonation(donation)}
             alt={donation.title}
             className="h-full w-full object-cover"
           />

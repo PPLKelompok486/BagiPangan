@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { User, Mail, Phone, MapPin, Building, Briefcase, ArrowLeft, Loader2, CheckCircle2, Trash2, Edit3, Save, X } from "lucide-react";
+import { resolveUploadUrl } from "@/lib/media";
 
 type ProfileForm = {
   name: string;
@@ -356,7 +357,7 @@ export default function ProfilePage() {
               <div className="relative w-24 h-24 rounded-full bg-[var(--brand-100)] flex items-center justify-center overflow-hidden border-2 border-[var(--brand-200)]">
                 {avatarUrl ? (
                   <Image
-                    src={avatarUrl.startsWith("blob:") ? avatarUrl : `${process.env.LARAVEL_API_BASE ?? "http://localhost:8000"}${avatarUrl}`}
+                    src={resolveUploadUrl(avatarUrl)}
                     alt="Avatar"
                     width={96}
                     height={96}
