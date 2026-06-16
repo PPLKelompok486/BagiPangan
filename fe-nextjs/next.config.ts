@@ -24,9 +24,10 @@ const nextConfig: NextConfig = {
         pathname: "/storage/**",
       },
       {
-        protocol: "https",
-        hostname: "*.laravel.cloud",
-        pathname: "/storage/**",
+        protocol: "http",
+        hostname: "localhost",
+        port: "8000",
+        pathname: "/uploads/**",
       },
       {
         protocol: "https",
@@ -47,7 +48,6 @@ const nextConfig: NextConfig = {
       "framer-motion",
     ],
   },
-
   // ── Headers: cache public images (stale-while-revalidate) ───────────────────
   // Note: _next/static is handled automatically by Next.js with immutable headers.
   async headers() {

@@ -89,10 +89,6 @@ export async function PUT(req: NextRequest) {
     }
 
     const formData = await req.formData();
-    const body: Record<string, FormDataEntryValue> = {};
-    formData.forEach((value, key) => {
-      body[key] = value;
-    });
 
     const res = await fetch(BACKEND_URL, {
       method: "PUT",

@@ -47,7 +47,7 @@ class ProfileController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'phone' => 'nullable|digits_between:8,15',
+            'phone' => 'nullable|regex:/^\+?[0-9]{7,15}$/',
             'city' => 'nullable|string|max:100',
             'organization' => 'nullable|string|max:255',
             'job' => 'nullable|string|max:100',
@@ -56,7 +56,7 @@ class ProfileController extends Controller
             'email.required' => 'Email wajib diisi',
             'email.email' => 'Format email tidak valid',
             'email.unique' => 'Email sudah terdaftar',
-            'phone.digits_between' => 'Nomor telepon harus berupa angka 8-15 digit',
+            'phone.regex' => 'Nomor telepon harus berupa angka dengan minimal 7 digit (contoh: +62812345678 atau 08123456789)',
         ]);
 
         if ($validator->fails()) {
@@ -113,7 +113,7 @@ class ProfileController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
-            'phone' => 'nullable|digits_between:8,15',
+            'phone' => 'nullable|regex:/^\+?[0-9]{7,15}$/',
             'city' => 'nullable|string|max:100',
             'organization' => 'nullable|string|max:255',
             'job' => 'nullable|string|max:100',
@@ -123,7 +123,7 @@ class ProfileController extends Controller
             'email.required' => 'Email wajib diisi',
             'email.email' => 'Format email tidak valid',
             'email.unique' => 'Email sudah terdaftar',
-            'phone.digits_between' => 'Nomor telepon harus berupa angka 8-15 digit',
+            'phone.regex' => 'Nomor telepon harus berupa angka dengan minimal 7 digit (contoh: +62812345678 atau 08123456789)',
             'avatar.image' => 'Avatar harus berupa gambar',
             'avatar.mimes' => 'Avatar harus berformat jpeg, png, jpg, atau gif',
             'avatar.max' => 'Ukuran avatar maksimal 2MB',
@@ -148,18 +148,58 @@ class ProfileController extends Controller
 
             // Handle avatar upload
             if ($request->hasFile('avatar')) {
-                $avatar = $request->file('avatar');
-                $avatarName = time() . '_' . $user->id . '.' . $avatar->getClientOriginalExtension();
-                $avatar->move(public_path('uploads/avatars'), $avatarName);
-                $updateData['avatar'] = '/uploads/avatars/' . $avatarName;
+                try {
+                    $avatar = $request->file('avatar');
+
+                    // Use temp directory approach for Windows/OneDrive compatibility
+                    $tempDir = sys_get_temp_dir();
+                    $tempFile = $tempDir . DIRECTORY_SEPARATOR . 'avatar_' . uniqid() . '.' . $avatar->getClientOriginalExtension();
+                    $avatar->move($tempDir, basename($tempFile));
+
+                    // Delete old avatar if exists
+                    if ($user->avatar && file_exists(public_path($user->avatar))) {
+                        try {
+                            unlink(public_path($user->avatar));
+                        } catch (\Exception $e) {
+                            // Continue if delete fails
+                        }
+                    }
+
+                    // Create uploads directory if needed
+                    $uploadDir = public_path('uploads' . DIRECTORY_SEPARATOR . 'avatars');
+                    @mkdir($uploadDir, 0777, true);
+
+                    // Move from temp to uploads
+                    $avatarName = time() . '_' . $user->id . '.' . $avatar->getClientOriginalExtension();
+                    $finalPath = $uploadDir . DIRECTORY_SEPARATOR . $avatarName;
+
+                    if (!rename($tempFile, $finalPath)) {
+                        throw new \Exception('Failed to move uploaded file to destination');
+                    }
+
+                    // Make file readable
+                    @chmod($finalPath, 0644);
+
+                    $updateData['avatar'] = '/uploads/avatars/' . $avatarName;
+                } catch (\Exception $fileError) {
+                    return response()->json([
+                        'message' => 'Validasi data gagal. Silakan periksa kembali input Anda.',
+                        'errors' => [
+                            'avatar' => ['Gagal mengunggah foto profil. Pastikan file adalah gambar dan ukurannya kurang dari 2MB.']
+                        ]
+                    ], 422);
+                }
             }
 
             // Handle avatar deletion
             if ($request->delete_avatar === 'true' && $user->avatar) {
-                // Delete old avatar file if exists
-                $oldAvatarPath = public_path($user->avatar);
-                if (file_exists($oldAvatarPath)) {
-                    unlink($oldAvatarPath);
+                try {
+                    $avatarPath = public_path($user->avatar);
+                    if (file_exists($avatarPath)) {
+                        @unlink($avatarPath);
+                    }
+                } catch (\Exception $e) {
+                    // Continue even if delete fails
                 }
                 $updateData['avatar'] = null;
             }
