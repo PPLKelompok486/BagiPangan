@@ -132,9 +132,10 @@ export default function DonaturLayout({ children }: { children: React.ReactNode 
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-[var(--brand-700)] border border-[var(--brand-100)] hover:bg-[var(--brand-50)]"
+              aria-label="Keluar"
             >
               <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Keluar</span>
+              <span>Keluar</span>
             </button>
           </div>
         </div>

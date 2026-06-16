@@ -13,14 +13,8 @@ export default function ReceiverLayout({ children }: { children: React.ReactNode
   const pathname = usePathname();
   const [avatarUrl, setAvatarUrl] = useState<string>("");
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-
-  const [user] = useState<AuthUser | null>(() => {
-    const u = getUser();
-    if (u?.role !== "penerima") {
-      return null;
-    }
-    return u;
-  });
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [hydrated, setHydrated] = useState(false);
 
   const fetchAvatar = async () => {
     // Check session cache first — avoids waterfall request on every navigation
@@ -53,7 +47,8 @@ export default function ReceiverLayout({ children }: { children: React.ReactNode
       router.replace("/donatur/dashboard");
       return;
     }
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setUser(u);
+    setHydrated(true);
     fetchAvatar();
   }, [router]);
 
@@ -72,6 +67,7 @@ export default function ReceiverLayout({ children }: { children: React.ReactNode
     router.replace("/login");
   };
 
+  if (!hydrated) return null;
   if (!user) return null;
 
   const navItems = [

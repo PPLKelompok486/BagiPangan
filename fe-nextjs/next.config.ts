@@ -21,23 +21,11 @@ const nextConfig: NextConfig = {
         pathname: "/storage/**",
       },
       {
-        protocol: "https",
-        hostname: "*.laravel.cloud",
-        pathname: "/storage/**",
+        protocol: "http",
+        hostname: "localhost",
+        port: "8000",
+        pathname: "/uploads/**",
       },
-    ],
-  },
-
-  // ── Compression ─────────────────────────────────────────────────────────────
-  compress: true,
-
-  // ── Package tree-shaking ────────────────────────────────────────────────────
-  experimental: {
-    optimizePackageImports: [
-      "lucide-react",
-      "react-icons",
-      "framer-motion",
-      "@supabase/supabase-js",
     ],
   },
 

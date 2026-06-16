@@ -60,6 +60,7 @@ export default function ProfilePage() {
   });
   const [avatar, setAvatar] = useState<File | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string>("");
+  const [role, setRole] = useState<"donatur" | "penerima" | "admin" | "">("");
   const [deleteAvatar, setDeleteAvatar] = useState(false);
   const [showDeleteAvatarConfirm, setShowDeleteAvatarConfirm] = useState(false);
   const [errors, setErrors] = useState<ProfileErrors>({});
@@ -95,6 +96,7 @@ export default function ProfilePage() {
           job: data.user.job || "",
         });
         setAvatarUrl(data.user.avatar || "");
+        setRole(data.user.role || "");
       }
     } catch {
       setNotification("Gagal memuat profil");
@@ -114,8 +116,8 @@ export default function ProfilePage() {
     if (!form.email) newErrors.email = "Email wajib diisi";
     else if (!/^\S+@\S+\.\S+$/.test(form.email))
       newErrors.email = "Format email tidak valid";
-    if (form.phone && !/^\d+$/.test(form.phone))
-      newErrors.phone = "Nomor telepon harus berupa angka";
+    if (form.phone && !/^\+?[0-9]{7,15}$/.test(form.phone))
+      newErrors.phone = "Nomor telepon harus berupa angka dengan minimal 7 digit (contoh: +62812345678 atau 08123456789)";
     return newErrors;
   };
 
@@ -343,7 +345,7 @@ export default function ProfilePage() {
               <div className="relative w-24 h-24 rounded-full bg-[var(--brand-100)] flex items-center justify-center overflow-hidden border-2 border-[var(--brand-200)]">
                 {avatarUrl ? (
                   <Image
-                    src={`${process.env.LARAVEL_API_BASE ?? "http://localhost:8000"}${avatarUrl}`}
+                    src={avatarUrl.startsWith("blob:") ? avatarUrl : `${process.env.LARAVEL_API_BASE ?? "http://localhost:8000"}${avatarUrl}`}
                     alt="Avatar"
                     width={96}
                     height={96}
@@ -363,9 +365,24 @@ export default function ProfilePage() {
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {
+                          // Validate file type
+                          const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
+                          if (!validTypes.includes(file.type)) {
+                            setNotification('Format file tidak valid. Gunakan JPEG, PNG, JPG, atau GIF.');
+                            return;
+                          }
+                          
+                          // Validate file size (max 2MB)
+                          const maxSize = 2 * 1024 * 1024; // 2MB
+                          if (file.size > maxSize) {
+                            setNotification(`Ukuran file terlalu besar. Maksimal 2MB (file Anda: ${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+                            return;
+                          }
+                          
                           setAvatar(file);
                           setAvatarUrl(URL.createObjectURL(file));
                           setDeleteAvatar(false);
+                          setNotification(''); // Clear any previous errors
                         }
                       }}
                       className="hidden"
@@ -446,7 +463,10 @@ export default function ProfilePage() {
                 <span className="text-xs text-[var(--text-mid)] font-normal ml-1">(readonly)</span>
               </label>
               <div className="w-full border border-[var(--brand-100)] bg-[var(--brand-50)] rounded-xl p-3 text-[var(--text-mid)] cursor-not-allowed">
-                {form.name ? "Donatur" : "Penerima"}
+                {role === "donatur" && "Donatur"}
+                {role === "penerima" && "Penerima"}
+                {role === "admin" && "Admin"}
+                {!role && "-"}
               </div>
             </motion.div>
           </motion.form>
