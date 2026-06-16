@@ -73,7 +73,7 @@ function NotificationRow({
           {notificationTimeAgo(notification.created_at)}
         </span>
       </Link>
-      <div className="flex shrink-0 flex-col gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="flex shrink-0 flex-col gap-1">
         {unread && (
           <button
             type="button"

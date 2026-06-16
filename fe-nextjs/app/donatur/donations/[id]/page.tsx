@@ -125,7 +125,7 @@ export default function DonorDonationDetailPage({ params }: Props) {
             <p className="text-xs uppercase tracking-[0.24em] font-semibold text-[var(--brand-600)]">Donasi</p>
             <h1 className="mt-1 text-2xl font-bold text-[var(--brand-950)]">{donation.title}</h1>
           </div>
-          <span className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${STATUS_TONE[donation.status]}`}>
+          <span className={`inline-flex w-max items-center justify-center rounded-full border px-4 py-1.5 text-center text-xs font-semibold leading-none whitespace-nowrap ${STATUS_TONE[donation.status]}`}>
             {STATUS_LABEL[donation.status]}
           </span>
         </div>

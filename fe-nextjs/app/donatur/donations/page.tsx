@@ -255,7 +255,7 @@ function DonationCard({ donation, index }: { donation: DonorDonation; index: num
         <h3 className="font-bold text-[var(--brand-950)] leading-tight line-clamp-1">
           {donation.title}
         </h3>
-        <span className={`text-[11px] font-semibold px-2 py-1 rounded-full border whitespace-nowrap ${STATUS_TONE[donation.status]}`}>
+        <span className={`inline-flex w-max items-center justify-center px-4 py-1 rounded-full border whitespace-nowrap text-center text-[11px] font-semibold leading-none ${STATUS_TONE[donation.status]}`}>
           {STATUS_LABEL[donation.status]}
         </span>
       </div>
