@@ -8,6 +8,7 @@ import { MapPin, Clock, Package, ArrowRight, Flame, Search, Filter, X, RefreshCw
 import useSWR from "swr";
 import { ApiError, apiFetch, getUser, type AuthUser } from "@/lib/api";
 import { type Donation, type PaginatedDonations, formatPickupTime, imageForDonation, mapApiDonation } from "@/lib/donations";
+import { resolveUploadUrl } from "@/lib/media";
 import { CountUp } from "@/lib/count-up";
 
 const URGENT_WINDOW_HOURS = 6;
@@ -237,7 +238,7 @@ export default function ReceiverDashboard() {
       {/* ------------------------------------------------------------------ */}
       {/* SEARCH / FILTER BAR                                                 */}
       {/* ------------------------------------------------------------------ */}
-      {donations && donations.length > 0 && (
+      {((donations && donations.length > 0) || hasActiveFilter) && (
         <div className="mb-5 sticky top-[72px] z-10 -mx-2 px-2 py-3 bg-[var(--cream)]/85 backdrop-blur rounded-2xl">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative flex-1 max-w-sm">
@@ -378,19 +379,19 @@ export default function ReceiverDashboard() {
       {/* ------------------------------------------------------------------ */}
       {isLoading && !donations && <SkeletonGrid />}
 
-      {donations && donations.length === 0 && !error && (
+      {donations && donations.length === 0 && !hasActiveFilter && !error && (
         <EmptyState
           title="Belum ada donasi tersedia"
           body="Donatur baru bergabung setiap hari. Aktifkan notifikasi atau periksa kembali dalam beberapa jam."
         />
       )}
 
-      {donations && donations.length > 0 && filtered && filtered.length === 0 && (
+      {donations && filtered && filtered.length === 0 && hasActiveFilter && !error && (
         <EmptyState
           title="Tidak ada hasil"
-          body={hasActiveFilter ? "Coba ubah kata kunci atau hapus filter." : "Belum ada donasi yang cocok."}
+          body="Coba ubah kata kunci, ganti kategori, atau hapus filter."
           action={
-            hasActiveFilter && (
+            (
               <button
                 type="button"
                 onClick={() => {
@@ -454,7 +455,7 @@ export default function ReceiverDashboard() {
 
 function DonationCard({ donation, index }: { donation: Donation; index: number }) {
   const image = donation.image
-    ? `${process.env.NEXT_PUBLIC_LARAVEL_API_BASE ?? "http://localhost:8000"}${donation.image}`
+    ? resolveUploadUrl(donation.image)
     : imageForDonation(donation);
   const urg = urgencyLabel(donation.available_until ?? "");
 

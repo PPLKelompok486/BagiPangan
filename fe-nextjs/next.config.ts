@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 
+const laravelBaseUrl = process.env.NEXT_PUBLIC_LARAVEL_API_BASE ?? "http://localhost:8000";
+const laravelUrl = new URL(laravelBaseUrl);
 const laravelImageHost =
-  process.env.NEXT_PUBLIC_LARAVEL_IMAGE_HOST ?? "api.bagipangan.example.com";
+  process.env.NEXT_PUBLIC_LARAVEL_IMAGE_HOST ?? laravelUrl.hostname;
+const laravelImagePort = laravelUrl.port || undefined;
+const laravelImageProtocol = laravelUrl.protocol.replace(":", "") as "http" | "https";
 
 const nextConfig: NextConfig = {
   // ── Turbopack workspace root ────────────────────────────────────────────────
@@ -18,15 +22,15 @@ const nextConfig: NextConfig = {
     // Allow Next.js Image to serve the Laravel backend's avatar URLs
     remotePatterns: [
       {
-        protocol: "http",
-        hostname: "localhost",
-        port: "8000",
+        protocol: laravelImageProtocol,
+        hostname: laravelImageHost,
+        port: laravelImagePort,
         pathname: "/storage/**",
       },
       {
-        protocol: "http",
-        hostname: "localhost",
-        port: "8000",
+        protocol: laravelImageProtocol,
+        hostname: laravelImageHost,
+        port: laravelImagePort,
         pathname: "/uploads/**",
       },
       {

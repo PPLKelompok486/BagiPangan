@@ -8,6 +8,7 @@ import { LogOut, Package, ListChecks, Map as MapIcon, User } from "lucide-react"
 import "../bagipangan/landing.css";
 import NotificationBell from "@/components/NotificationBell";
 import { apiFetch, clearAuth, getUser, type AuthUser } from "@/lib/api";
+import { resolveUploadUrl } from "@/lib/media";
 
 export default function ReceiverLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -48,6 +49,8 @@ export default function ReceiverLayout({ children }: { children: React.ReactNode
       router.replace("/donatur/dashboard");
       return;
     }
+    // One-time hydration from localStorage on mount; safe to set state here.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setUser(u);
     setHydrated(true);
     fetchAvatar();
@@ -114,10 +117,11 @@ export default function ReceiverLayout({ children }: { children: React.ReactNode
             <Link href="/profile" className="flex items-center gap-3 hidden sm:block hover:opacity-80 transition-opacity">
               {avatarUrl ? (
                 <Image
-                  src={`${process.env.LARAVEL_API_BASE ?? "http://localhost:8000"}${avatarUrl}`}
+                  src={resolveUploadUrl(avatarUrl)}
                   alt="Avatar"
                   width={40}
                   height={40}
+                  unoptimized
                   className="w-10 h-10 rounded-full object-cover border-2 border-[var(--brand-200)]"
                 />
               ) : (

@@ -279,13 +279,23 @@ class DonationController extends Controller
 
     public function mine(Request $request)
     {
-        $donations = Donation::with('category')
+        $activeStatuses = [
+            Claim::STATUS_REQUESTED,
+            Claim::STATUS_APPROVED,
+            Claim::STATUS_COMPLETED,
+        ];
+
+        $donations = Donation::with([
+                'category',
+                // Expose the receivers who claimed each donation so the donor
+                // dashboard "Komunitas penerima" card can render them.
+                'claims' => fn ($query) => $query
+                    ->whereIn('status', $activeStatuses)
+                    ->latest()
+                    ->with('receiver:id,name,organization,city'),
+            ])
             ->withCount([
-                'claims as active_claims_count' => fn ($query) => $query->whereIn('status', [
-                    Claim::STATUS_REQUESTED,
-                    Claim::STATUS_APPROVED,
-                    Claim::STATUS_COMPLETED,
-                ]),
+                'claims as active_claims_count' => fn ($query) => $query->whereIn('status', $activeStatuses),
             ])
             ->where('user_id', Auth::id())
             ->orderByDesc('created_at')

@@ -30,6 +30,7 @@ import {
   STATUS_LABEL,
   STATUS_TONE,
 } from "@/lib/donations";
+import { resolveUploadUrl } from "@/lib/media";
 
 type Props = { params: Promise<{ id: string }> };
 type ApiClaimWithoutDonation = Omit<ApiClaim, "donation">;
@@ -550,7 +551,7 @@ function ClaimCompleted({ claim, compact }: { claim: Claim; compact?: boolean })
         <div className="mt-2 text-xs text-emerald-700">
           Bukti: {" "}
           <a
-            href={claim.proof_image_url}
+            href={resolveUploadUrl(claim.proof_image_url)}
             target="_blank"
             rel="noreferrer"
             className="font-semibold underline"

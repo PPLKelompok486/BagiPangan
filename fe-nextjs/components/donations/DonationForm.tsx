@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
+import { resolveUploadUrl } from "@/lib/media";
 
 export type DonationFormData = {
   title: string;
@@ -265,7 +266,7 @@ export default function DonationForm({
                   <div className="relative w-full max-w-[320px] aspect-video rounded-2xl overflow-hidden border border-[var(--brand-100)] shadow-[var(--shadow-card)]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={formData.imageUrl.startsWith("blob:") ? formData.imageUrl : `${process.env.LARAVEL_API_BASE ?? "http://localhost:8000"}${formData.imageUrl}`}
+                      src={resolveUploadUrl(formData.imageUrl)}
                       alt="Foto donasi"
                       className="w-full h-full object-cover"
                     />
