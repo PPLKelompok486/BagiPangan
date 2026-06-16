@@ -23,7 +23,8 @@ export function HowItWorks() {
     offset: ["start 0.7", "end 0.5"],
   });
 
-  const lineWidth = useTransform(scrollYProgress, [0, 1], ["0%", "68%"]);
+  // Use scaleX instead of width to prevent Layout reflows during scroll
+  const lineScaleX = useTransform(scrollYProgress, [0, 1], [0, 0.68]);
 
   return (
     <section
@@ -46,10 +47,11 @@ export function HowItWorks() {
         <div className="relative mt-14 lg:mt-16">
           {/* Scroll-linked connecting line */}
           <motion.div
-            className="absolute left-[16%] top-10 hidden h-px bg-[linear-gradient(90deg,var(--brand-300),var(--lime),var(--brand-300))] lg:block"
+            className="absolute left-[16%] top-10 hidden h-px w-full bg-[linear-gradient(90deg,var(--brand-300),var(--lime),var(--brand-300))] lg:block"
             style={{
-              width: reducedMotion ? "68%" : lineWidth,
+              scaleX: reducedMotion ? 0.68 : lineScaleX,
               opacity: isInView ? 1 : 0,
+              transformOrigin: "left",
             }}
             transition={withMotionPreference(reducedMotion, { duration: 0.4 })}
           />
@@ -66,14 +68,8 @@ export function HowItWorks() {
               return (
                 <motion.article
                   key={step.number}
-                  className="group relative flex flex-col overflow-hidden rounded-[2rem] border border-[var(--brand-100)] bg-white shadow-[var(--shadow-card)] transition-shadow hover:shadow-[0_24px_60px_rgba(13,43,26,0.12)]"
+                  className="group relative flex flex-col overflow-hidden rounded-[2rem] border border-[var(--brand-100)] bg-white shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-1.5 hover:border-[var(--brand-300)] hover:shadow-[0_24px_60px_rgba(13,43,26,0.12)]"
                   variants={createFadeUpVariants(reducedMotion)}
-                  whileHover={
-                    reducedMotion
-                      ? undefined
-                      : { y: -6, borderColor: "var(--brand-300)" }
-                  }
-                  transition={{ type: "spring", stiffness: 260, damping: 25 }}
                 >
                   <div className="relative h-44 overflow-hidden bg-[var(--brand-50)]">
                     <Image
@@ -109,16 +105,14 @@ export function HowItWorks() {
                       </motion.div>
                     </div>
                     {/* Icon chip bottom-right */}
-                    <motion.div
+                    <div
                       className={cn(
-                        "absolute right-5 bottom-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[var(--brand-700)] shadow-[0_10px_24px_rgba(13,43,26,0.18)] transition-colors",
-                        "group-hover:bg-[var(--brand-600)] group-hover:text-white",
+                        "absolute right-5 bottom-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[var(--brand-700)] shadow-[0_10px_24px_rgba(13,43,26,0.18)] transition-all duration-300",
+                        "group-hover:bg-[var(--brand-600)] group-hover:text-white group-hover:scale-110",
                       )}
-                      whileHover={reducedMotion ? undefined : { rotate: 10, scale: 1.08 }}
-                      transition={{ type: "spring", stiffness: 300, damping: 15 }}
                     >
-                      <Icon className="h-5 w-5" />
-                    </motion.div>
+                      <Icon className="h-5 w-5 transition-transform duration-300 group-hover:rotate-12" />
+                    </div>
                   </div>
 
                   <div className="flex flex-1 flex-col gap-3 p-7">

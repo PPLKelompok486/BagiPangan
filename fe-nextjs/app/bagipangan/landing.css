@@ -62,7 +62,6 @@
     radial-gradient(circle at 80% 0%, rgba(255, 255, 255, 0.22) 0 1px, transparent 1px),
     radial-gradient(circle at 40% 60%, rgba(255, 255, 255, 0.16) 0 1px, transparent 1px);
   background-size: 24px 24px, 32px 32px, 28px 28px;
-  mix-blend-mode: soft-light;
 }
 
 .bagi-ring {
@@ -129,6 +128,49 @@
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* CSS-driven infinite animations (GPU-optimized) */
+.bagi-animate-pulse-subtle {
+  animation: bagi-pulse-subtle 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes bagi-pulse-subtle {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.08); opacity: 1; }
+}
+
+.bagi-animate-ping-slow {
+  animation: bagi-ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes bagi-ping-slow {
+  0% { transform: scale(1); opacity: 0.6; }
+  80%, 100% { transform: scale(2.2); opacity: 0; }
+}
+
+.bagi-animate-bounce-subtle {
+  animation: bagi-bounce-subtle 1.9s ease-in-out infinite;
+}
+
+@keyframes bagi-bounce-subtle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(8px); }
+}
+
+.bagi-animate-bob-slow {
+  animation: bagi-bob 5.4s ease-in-out infinite alternate;
+}
+.bagi-animate-bob-mid {
+  animation: bagi-bob 4.7s ease-in-out infinite alternate-reverse;
+}
+.bagi-animate-bob-fast {
+  animation: bagi-bob 5.9s ease-in-out infinite alternate;
+}
+
+@keyframes bagi-bob {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-14px); }
 }
 
 @media (prefers-reduced-motion: reduce) {

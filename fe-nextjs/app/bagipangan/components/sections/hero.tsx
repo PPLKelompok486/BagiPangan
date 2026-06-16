@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { motion, useReducedMotion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
+import { motion, useReducedMotion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { useCallback, useRef } from "react";
 import { Button } from "../ui/button";
@@ -10,59 +10,44 @@ import {
   createFadeUpVariants,
   withMotionPreference,
 } from "../../lib/motion";
+import { cn } from "../../lib/cn";
 import { useSmoothScroll } from "../../providers/smooth-scroll-provider";
 
 const words = ["Bagi", "Makanan,", "Kurangi", "Pemborosan"];
 
-const blobs: Array<{
-  className: string;
-  animate: { x: number[]; y: number[]; scale: number[] };
-  duration: number;
-  parallaxSpeed: number;
-}> = [
+const blobs = [
   {
-    className: "left-[-10%] top-[10%] h-[26rem] w-[26rem] bg-[var(--brand-500)]",
-    animate: { x: [0, 40, -10], y: [0, 30, -15], scale: [1, 1.08, 0.96] },
-    duration: 18,
+    className: "left-[-10%] top-[0%] h-[800px] w-[800px]",
+    background: "radial-gradient(circle, var(--brand-500) 0%, transparent 60%)",
+    parallaxSpeed: 0.1,
+  },
+  {
+    className: "right-[-10%] top-[0%] h-[600px] w-[600px]",
+    background: "radial-gradient(circle, var(--brand-400) 0%, transparent 60%)",
     parallaxSpeed: 0.15,
   },
   {
-    className: "right-[-12%] top-[8%] h-[20rem] w-[20rem] bg-[var(--brand-400)]",
-    animate: { x: [0, -28, 12], y: [0, 24, -18], scale: [1, 0.95, 1.06] },
-    duration: 14,
-    parallaxSpeed: 0.25,
-  },
-  {
-    className: "left-[25%] bottom-[18%] h-[18rem] w-[18rem] bg-[var(--lime)]",
-    animate: { x: [0, 20, -16], y: [0, -18, 14], scale: [1, 1.1, 0.94] },
-    duration: 17,
-    parallaxSpeed: 0.2,
+    className: "left-[20%] bottom-[-10%] h-[600px] w-[600px]",
+    background: "radial-gradient(circle, var(--lime) 0%, transparent 60%)",
+    parallaxSpeed: 0.12,
   },
 ];
 
 const chips: Array<{
   label: string;
   className: string;
-  y: number[];
-  duration: number;
 }> = [
   {
     label: "1,200+ Donatur",
-    className: "left-0 top-8 md:-left-8",
-    y: [0, -14, 0],
-    duration: 5.4,
+    className: "left-0 top-8 md:-left-8 bagi-animate-bob-slow",
   },
   {
     label: "Real-time",
-    className: "right-6 top-20 md:right-0",
-    y: [0, -10, 0],
-    duration: 4.7,
+    className: "right-6 top-20 md:right-0 bagi-animate-bob-mid",
   },
   {
     label: "Gratis 100%",
-    className: "right-2 bottom-10 md:right-10",
-    y: [0, -12, 0],
-    duration: 5.9,
+    className: "right-2 bottom-10 md:right-10 bagi-animate-bob-fast",
   },
 ];
 
@@ -74,7 +59,8 @@ function HeroMealPhoto() {
         className="rounded-[1.5rem] object-cover"
         fill
         priority
-        sizes="(max-width: 1024px) 100vw, 50vw"
+        quality={75}
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px"
         src="/images/hero-meal.jpg"
         style={{ objectPosition: "50% 35%" }}
       />
@@ -101,17 +87,6 @@ export function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
   const bowlRef = useRef<HTMLDivElement>(null);
 
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start start", "end start"],
-  });
-
-  // Parallax transforms for blobs at different speeds
-  const blobParallax = blobs.map((blob) =>
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useTransform(scrollYProgress, [0, 1], [0, -120 * blob.parallaxSpeed]),
-  );
-
   // Interactive bowl tilt
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -130,8 +105,11 @@ export function Hero() {
       const rect = bowlRef.current.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
-      mouseX.set(e.clientX - centerX);
-      mouseY.set(e.clientY - centerY);
+      
+      // Update motion values directly (avoids React render)
+      // We divide by 20 to dampen the range slightly for the spring
+      mouseX.set((e.clientX - centerX) / 1);
+      mouseY.set((e.clientY - centerY) / 1);
     },
     [reducedMotion, mouseX, mouseY],
   );
@@ -149,23 +127,15 @@ export function Hero() {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
-      <div className="absolute inset-0 overflow-hidden">
-        {blobs.map((blob, index) => (
-          <motion.div
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* We use CSS radial gradients instead of DOM elements with blur-3xl. 
+            blur-3xl forces the GPU to rasterize huge textures every frame.
+            radial-gradient is mathematically computed and nearly free. */}
+        {blobs.map((blob) => (
+          <div
             key={blob.className}
-            animate={reducedMotion ? undefined : blob.animate}
-            className={`absolute rounded-full opacity-8 blur-3xl ${blob.className}`}
-          style={{ y: reducedMotion ? 0 : blobParallax[index], willChange: "transform" }}
-            transition={
-              reducedMotion
-                ? { duration: 0 }
-                : {
-                    duration: blob.duration,
-                    ease: "easeInOut",
-                    repeat: Number.POSITIVE_INFINITY,
-                    repeatType: "mirror",
-                  }
-            }
+            className={`absolute opacity-15 ${blob.className}`}
+            style={{ background: blob.background }}
           />
         ))}
       </div>
@@ -175,20 +145,15 @@ export function Hero() {
           animate="visible"
           className="relative z-10 max-w-3xl pt-6"
           initial="hidden"
-          variants={createStaggerContainer(reducedMotion, 0.14, 0.1)}
+          // Minimal JS-driven stagger for the critical above-the-fold content
+          variants={createStaggerContainer(reducedMotion, 0.05, 0)}
         >
           <motion.div
             className="mb-7 inline-flex items-center gap-3 rounded-full border border-white/12 bg-white/8 px-4 py-2 text-sm font-semibold text-white/90 shadow-[0_12px_30px_rgba(0,0,0,0.12)] backdrop-blur"
             variants={createFadeUpVariants(reducedMotion)}
           >
-            <motion.span
-              animate={
-                reducedMotion ? undefined : { opacity: [0.6, 1, 0.6], scale: [1, 1.08, 1] }
-              }
-              className="h-2.5 w-2.5 rounded-full bg-[var(--lime)]"
-              transition={
-                reducedMotion ? { duration: 0 } : { duration: 1.8, repeat: Number.POSITIVE_INFINITY }
-              }
+            <span
+              className={cn("h-2.5 w-2.5 rounded-full bg-[var(--lime)]", !reducedMotion && "bagi-animate-pulse-subtle")}
             />
             Terhubung untuk donatur, penerima, dan relawan
           </motion.div>
@@ -198,7 +163,7 @@ export function Hero() {
             aria-label="Bagi Makanan, Kurangi Pemborosan"
             className="bagi-display bagi-text-balance text-5xl font-semibold leading-[0.95] sm:text-6xl lg:text-[5.2rem]"
             style={{ perspective: "600px" }}
-            variants={createFadeUpVariants(reducedMotion, 0.04)}
+            variants={createFadeUpVariants(reducedMotion, 0.02)}
           >
             <span className="flex flex-wrap gap-x-4 gap-y-3">
               {words.map((word, index) => (
@@ -214,13 +179,11 @@ export function Hero() {
                       opacity: reducedMotion ? 1 : 0,
                       y: reducedMotion ? 0 : 40,
                       rotateX: reducedMotion ? 0 : 45,
-                      filter: reducedMotion ? "blur(0px)" : "blur(6px)",
                     },
                     visible: {
                       opacity: 1,
                       y: 0,
                       rotateX: 0,
-                      filter: "blur(0px)",
                     },
                   }}
                 >
@@ -234,7 +197,7 @@ export function Hero() {
 
           <motion.p
             className="mt-7 max-w-2xl text-lg leading-8 text-white/78 sm:text-xl"
-            variants={createFadeUpVariants(reducedMotion, 0.18)}
+            variants={createFadeUpVariants(reducedMotion, 0.08)}
           >
             Platform distribusi makanan berlebih yang membantu restoran, katering,
             dan rumah tangga menyalurkan porsi layak konsumsi dengan cepat, aman,
@@ -243,7 +206,7 @@ export function Hero() {
 
           <motion.div
             className="mt-10 flex flex-col gap-4 sm:flex-row"
-            variants={createFadeUpVariants(reducedMotion, 0.26)}
+            variants={createFadeUpVariants(reducedMotion, 0.12)}
           >
             <Button
               className="bg-[var(--lime)] text-[var(--brand-950)] hover:bg-[var(--brand-100)]"
@@ -262,25 +225,11 @@ export function Hero() {
 
           <motion.div
             className="mt-8 inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/8 px-4 py-2.5 text-sm font-medium text-white/85 shadow-[0_10px_30px_rgba(0,0,0,0.22)] backdrop-blur ring-1 ring-inset ring-white/5"
-            variants={createFadeUpVariants(reducedMotion, 0.3)}
+            variants={createFadeUpVariants(reducedMotion, 0.16)}
           >
             <span className="relative flex h-2.5 w-2.5">
-              <motion.span
-                animate={
-                  reducedMotion
-                    ? undefined
-                    : { scale: [1, 2.2, 2.2], opacity: [0.6, 0, 0] }
-                }
-                className="absolute inline-flex h-full w-full rounded-full bg-[var(--lime)]"
-                transition={
-                  reducedMotion
-                    ? { duration: 0 }
-                    : {
-                        duration: 2,
-                        ease: "easeOut",
-                        repeat: Number.POSITIVE_INFINITY,
-                      }
-                }
+              <span
+                className={cn("absolute inline-flex h-full w-full rounded-full bg-[var(--lime)]", !reducedMotion && "bagi-animate-ping-slow")}
               />
               <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--lime)]" />
             </span>
@@ -294,7 +243,7 @@ export function Hero() {
 
           <motion.div
             className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-white/65"
-            variants={createFadeUpVariants(reducedMotion, 0.36)}
+            variants={createFadeUpVariants(reducedMotion, 0.2)}
           >
             <span className="inline-flex items-center gap-2">
               <span className="bagi-display text-xl font-semibold text-[var(--lime)]">
@@ -321,7 +270,7 @@ export function Hero() {
           initial={{ opacity: reducedMotion ? 1 : 0, x: reducedMotion ? 0 : 48 }}
           transition={withMotionPreference(reducedMotion, {
             duration: 0.9,
-            delay: 0.18,
+            delay: 0.1,
             ease: [0.16, 1, 0.3, 1],
           })}
           whileInView={{ opacity: 1, x: 0 }}
@@ -339,6 +288,8 @@ export function Hero() {
                     rotateX: bowlRotateX,
                     rotateY: bowlRotateY,
                     transformStyle: "preserve-3d",
+                    willChange: "transform",
+                    transform: "translateZ(0)",
                   }
             }
           >
@@ -351,42 +302,28 @@ export function Hero() {
             </div>
 
             {chips.map((chip) => (
-              <motion.div
+              <div
                 key={chip.label}
-                animate={reducedMotion ? undefined : { y: chip.y }}
-                className={`absolute ${chip.className} rounded-full border border-white/20 bg-[var(--brand-900)]/70 px-4 py-2 text-sm font-semibold text-white shadow-[0_18px_34px_rgba(0,0,0,0.24)] backdrop-blur-md`}
-                transition={{
-                  duration: reducedMotion ? 0 : chip.duration,
-                  ease: "easeInOut",
-                  repeat: Number.POSITIVE_INFINITY,
-                }}
-                whileHover={
-                  reducedMotion
-                    ? undefined
-                    : { scale: 1.08, borderColor: "rgba(168, 230, 61, 0.5)" }
-                }
+                className={`absolute ${chip.className} rounded-full border border-white/20 bg-[var(--brand-900)]/70 px-4 py-2 text-sm font-semibold text-white shadow-[0_18px_34px_rgba(0,0,0,0.24)] backdrop-blur-md transition-all duration-300 hover:scale-[1.08] hover:border-[rgba(168,230,61,0.5)]`}
               >
                 {chip.label}
-              </motion.div>
+              </div>
             ))}
           </motion.div>
         </motion.div>
       </div>
 
-      <motion.button
-        animate={reducedMotion ? undefined : { y: [0, 8, 0] }}
-        className="absolute bottom-8 left-1/2 z-10 inline-flex -translate-x-1/2 flex-col items-center gap-2 text-xs font-semibold tracking-[0.28em] text-white/65"
+      <button
+        className={cn(
+          "absolute bottom-8 left-1/2 z-10 inline-flex -translate-x-1/2 flex-col items-center gap-2 text-xs font-semibold tracking-[0.28em] text-white/65",
+          !reducedMotion && "bagi-animate-bounce-subtle"
+        )}
         onClick={() => scrollTo("#statistik")}
-        transition={{
-          duration: reducedMotion ? 0 : 1.9,
-          ease: "easeInOut",
-          repeat: Number.POSITIVE_INFINITY,
-        }}
         type="button"
       >
         SCROLL
         <ChevronDown className="h-4 w-4" />
-      </motion.button>
+      </button>
     </section>
   );
 }

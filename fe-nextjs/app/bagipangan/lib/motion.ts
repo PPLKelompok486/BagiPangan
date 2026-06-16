@@ -81,7 +81,7 @@ export function createStaggerContainer(
 
 export function createTextRevealVariants(
   reducedMotion: boolean | null,
-  stagger = 0.04,
+  stagger = 0.02,
 ): { container: Variants; child: Variants } {
   return {
     container: {
@@ -89,7 +89,7 @@ export function createTextRevealVariants(
       visible: {
         transition: reducedMotion
           ? { duration: 0 }
-          : { staggerChildren: stagger, delayChildren: 0.1 },
+          : { staggerChildren: stagger, delayChildren: 0.05 },
       },
     },
     child: {
@@ -97,13 +97,11 @@ export function createTextRevealVariants(
         opacity: reducedMotion ? 1 : 0,
         y: reducedMotion ? 0 : 40,
         rotateX: reducedMotion ? 0 : 45,
-        filter: reducedMotion ? "blur(0px)" : "blur(6px)",
       },
       visible: {
         opacity: 1,
         y: 0,
         rotateX: 0,
-        filter: "blur(0px)",
         transition: withMotionPreference(reducedMotion, {
           duration: 0.6,
           ease: easeOut,

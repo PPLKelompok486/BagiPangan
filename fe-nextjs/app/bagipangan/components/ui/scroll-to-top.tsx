@@ -32,10 +32,20 @@ export function ScrollToTop() {
   );
 
   useEffect(() => {
-    const handle = () => setVisible(window.scrollY > 640);
+    let rafId: number | null = null;
+    const handle = () => {
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        setVisible(window.scrollY > 640);
+      });
+    };
     handle();
     window.addEventListener("scroll", handle, { passive: true });
-    return () => window.removeEventListener("scroll", handle);
+    return () => {
+      window.removeEventListener("scroll", handle);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+    };
   }, []);
 
   const handleClick = () => {

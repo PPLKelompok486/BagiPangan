@@ -19,8 +19,8 @@ type AuthMode = "login" | "reset-step1" | "reset-step2";
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-[#111412]">
-        <Loader2 className="h-10 w-10 animate-spin text-[#ccff80]" />
+      <div className="bagi-theme min-h-screen flex items-center justify-center bg-[var(--cream)]">
+        <Loader2 className="h-10 w-10 animate-spin text-[var(--brand-600)]" />
       </div>
     }>
       <LoginForm />
@@ -274,46 +274,125 @@ function LoginForm() {
   };
 
   return (
-    <div
-      className="min-h-screen flex flex-col relative overflow-hidden bg-[#111412] text-[#e1e3de] selection:bg-[#ccff80] selection:text-[#213600]"
-      style={{
-        /* Font CSS vars injected by layout.tsx via next/font — no @import needed */
-        fontFamily: "var(--font-login-sans, 'Plus Jakarta Sans', sans-serif)",
-        "--font-serif": "var(--font-login-serif, 'Newsreader', serif)",
-        "--font-sans": "var(--font-login-sans, 'Plus Jakarta Sans', sans-serif)",
-      } as CSSProperties & Record<"--font-serif" | "--font-sans", string>}
-    >
-
-      {/* Background Image with Overlay */}
-      <div className="absolute inset-0 z-0 opacity-55">
-        <div className="absolute inset-0 scale-105">
+    <div className="bagi-theme min-h-screen flex items-stretch bg-[var(--cream)] selection:bg-[var(--lime)] selection:text-[var(--brand-950)]">
+      {/* Left Panel */}
+      <motion.div
+        className="hidden w-1/2 flex-col justify-center items-center bg-[var(--brand-900)] p-12 relative overflow-hidden lg:flex"
+        initial={{ opacity: 0, x: -40 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <div className="absolute inset-0 z-0">
           <Image
-            alt="Relawan menyalurkan donasi pangan kepada komunitas"
+            alt="Relawan menyalurkan donasi pangan"
             src="/images/auth/helping-community.jpg"
             fill
-            priority
-            sizes="100vw"
-            className="object-cover"
+            sizes="50vw"
+            className="object-cover opacity-40 mix-blend-overlay"
             style={{ objectPosition: "50% 40%" }}
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-[var(--brand-950)] via-[var(--brand-900)]/80 to-[var(--brand-800)]/60" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(204,255,128,0.15),transparent_60%)]" />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-b from-[#111412]/90 via-[#111412]/70 to-[#111412]"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-[#111412]/50 via-transparent to-[#111412]/50"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(204,255,128,0.10),transparent_55%)]"></div>
-      </div>
 
-      {/* Main Content */}
-      <main className="flex-grow flex items-center justify-center relative z-10 px-6 py-20 w-full max-w-7xl mx-auto">
+        {/* Decorative elements */}
         <motion.div
-          className="w-full max-w-md bg-[#1d201e]/45 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-10 sm:p-12 shadow-[0_30px_90px_-20px_rgba(0,0,0,0.7)] overflow-hidden relative ring-1 ring-white/5"
+          className="absolute right-[-10%] top-[10%] h-80 w-80 rounded-full bg-[var(--brand-600)] opacity-20 blur-[100px]"
+          animate={{ scale: [1, 1.2, 1], x: [0, -30, 0] }}
+          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute left-[-5%] bottom-[15%] h-72 w-72 rounded-full bg-[var(--lime)] opacity-15 blur-[90px]"
+          animate={{ scale: [1, 1.15, 1], y: [0, -20, 0] }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+        />
+
+        <div className="relative z-10 flex flex-col items-center max-w-md mt-auto mb-auto">
+          <motion.div
+            className="mb-8 relative group cursor-pointer"
+            initial={{ scale: 0, rotate: -15 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.2 }}
+            onClick={() => router.push("/")}
+          >
+            <div className="absolute inset-0 -m-8 rounded-full bg-[var(--lime)]/10 blur-2xl group-hover:bg-[var(--lime)]/20 transition-all duration-500" />
+            <div className="relative bg-[var(--brand-600)] rounded-[2rem] w-24 h-24 flex items-center justify-center shadow-[0_8px_32px_rgba(34,197,94,0.3)] ring-1 ring-white/20 overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/20 before:to-transparent">
+              <span className="text-[var(--lime)] text-4xl font-serif font-bold italic pr-1">BP</span>
+            </div>
+          </motion.div>
+
+          <motion.span
+            className="text-[10px] tracking-[0.35em] uppercase text-[var(--lime)] font-bold mb-4 px-4 py-1.5 rounded-full border border-[var(--lime)]/30 bg-[var(--lime)]/5 backdrop-blur-sm"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            Akses Platform
+          </motion.span>
+
+          <motion.h1
+            className="text-4xl md:text-5xl font-serif text-white mb-4 text-center leading-tight"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
+            Selamat datang <br/><span className="text-[var(--lime)] italic">kembali.</span>
+          </motion.h1>
+
+          <motion.p
+            className="text-white/70 text-center mb-10 max-w-[85%] text-lg"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+          >
+            Lanjutkan misi mengurangi food waste dan berbagi kebaikan hari ini.
+          </motion.p>
+          
+          <div className="grid grid-cols-3 gap-4 w-full px-4">
+            {[
+              { value: "4.5K+", label: "Porsi tersalur" },
+              { value: "320+", label: "Donatur aktif" },
+              { value: "12 Kota", label: "Jangkauan" },
+            ].map((stat, i) => (
+              <motion.div
+                key={stat.label}
+                className="text-center relative group"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.6 + i * 0.1 }}
+              >
+                <div className="absolute inset-0 bg-white/5 rounded-2xl scale-95 opacity-0 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300" />
+                <div className="relative p-3">
+                  <div className="font-serif text-2xl text-[var(--lime)] font-bold mb-1">{stat.value}</div>
+                  <div className="text-[9px] uppercase tracking-widest text-white/50 font-bold">
+                    {stat.label}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+        
+        <div className="relative z-10 mt-auto w-full flex justify-between items-center text-xs text-white/40">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-[var(--lime)]/50" />
+            Terverifikasi & Aman
+          </div>
+          <span>BagiPangan © {new Date().getFullYear()}</span>
+        </div>
+      </motion.div>
+
+      {/* Right Panel (Form) */}
+      <div className="w-full flex flex-col justify-center px-6 sm:px-12 lg:w-1/2 lg:px-20 relative overflow-hidden">
+        {/* Subtle background pattern for right panel */}
+        <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(var(--brand-900) 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
+
+        <motion.div
+          className="relative z-10 w-full max-w-md mx-auto"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
         >
-          {/* Accent Glows */}
-          <div className="absolute -top-24 -right-24 w-56 h-56 bg-[#ccff80] opacity-15 blur-[90px]"></div>
-          <div className="absolute -bottom-32 -left-24 w-56 h-56 bg-[#a3e635] opacity-8 blur-[100px]"></div>
-          <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#ccff80]/40 to-transparent"></div>
 
           <AnimatePresence mode="wait">
             {/* LOGIN MODE */}
@@ -324,34 +403,34 @@ function LoginForm() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.4 }}
+                className="bg-white rounded-3xl shadow-[var(--shadow-soft)] p-8 sm:p-12 w-full border border-[var(--brand-100)]"
               >
-                <div className="text-center mb-10">
-                  <motion.div
-                    className="relative inline-flex items-center justify-center mb-6"
-                    whileHover={{ scale: 1.04 }}
-                  >
-                    <div className="absolute inset-0 -m-6 rounded-full bg-[#ccff80]/15 blur-3xl" aria-hidden />
-                    <span className="relative font-serif text-5xl font-semibold text-[#ccff80] tracking-tighter">
-                      BagiPangan
-                    </span>
-                  </motion.div>
-                  <h1 className="font-serif text-3xl text-[#e1e3de] mb-2">Selamat datang kembali</h1>
-                  <p className="font-sans text-[#c2cab0] text-sm">Lanjutkan misi mengurangi food waste hari ini</p>
+                <div className="mb-8 lg:hidden flex justify-center">
+                  <div className="bg-[var(--brand-600)] rounded-xl w-12 h-12 flex items-center justify-center shadow-md">
+                    <span className="text-[var(--lime)] text-xl font-serif font-bold italic pr-0.5">BP</span>
+                  </div>
+                </div>
+
+                <div className="mb-10 text-center lg:text-left">
+                  <span className="text-xs tracking-[0.24em] text-[var(--brand-600)] font-semibold uppercase">Masuk</span>
+                  <h2 className="text-3xl font-bold mt-2 mb-2 text-[var(--brand-950)]">Selamat datang kembali</h2>
+                  <p className="text-[var(--text-mid)] text-sm">Masuk untuk melanjutkan sesi Anda</p>
                 </div>
 
                 {notification.message && (
-                  <div className={`mb-6 p-4 rounded-2xl text-sm font-semibold border ${
-                    notification.type === "success" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"
+                  <div className={`mb-6 p-4 rounded-2xl text-sm font-semibold border flex items-start gap-3 ${
+                    notification.type === "success" ? "bg-[var(--brand-50)] text-[var(--brand-700)] border-[var(--brand-200)]" : "bg-red-50 text-red-600 border-red-200"
                   }`}>
-                    {notification.message}
+                    {notification.type === "success" ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <div className="w-2 h-2 mt-1.5 rounded-full bg-red-500 shrink-0" />}
+                    <span>{notification.message}</span>
                   </div>
                 )}
 
-                <form onSubmit={handleLogin} className="space-y-6">
+                <form onSubmit={handleLogin} className="space-y-5">
                   <div className="space-y-2">
-                    <label htmlFor="login-email" className="text-[10px] uppercase tracking-[0.2em] text-[#c2cab0] font-bold ml-1">Alamat Email</label>
+                    <label htmlFor="login-email" className="block font-semibold text-[var(--brand-950)] text-sm">Email</label>
                     <div className="relative group">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#c2cab0]/40 group-focus-within:text-[#ccff80] transition-colors" />
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-light)] group-focus-within:text-[var(--brand-600)] transition-colors" />
                       <input
                         id="login-email"
                         type="email"
@@ -360,24 +439,24 @@ function LoginForm() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="hello@bagipangan.org"
-                        className="w-full bg-[#272b28]/50 border border-white/5 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#ccff80]/50 focus:ring-4 focus:ring-[#ccff80]/5 transition-all text-[#e1e3de] placeholder-[#c2cab0]/20"
+                        className="w-full bg-white border border-[var(--brand-200)] rounded-xl py-3.5 pl-12 pr-4 focus:outline-none focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-50)] transition-all text-[var(--brand-950)] placeholder:text-[var(--text-light)]"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <div className="flex justify-between items-center ml-1">
-                      <label htmlFor="login-password" className="text-[10px] uppercase tracking-[0.2em] text-[#c2cab0] font-bold">Kata Sandi</label>
+                    <div className="flex justify-between items-center">
+                      <label htmlFor="login-password" className="block font-semibold text-[var(--brand-950)] text-sm">Kata Sandi</label>
                       <button
                         type="button"
                         onClick={() => setMode("reset-step1")}
-                        className="text-[10px] uppercase tracking-[0.2em] text-[#ccff80] font-bold hover:text-white transition-colors"
+                        className="text-xs font-semibold text-[var(--brand-600)] hover:text-[var(--brand-800)] hover:underline transition-colors"
                       >
-                        Lupa kata sandi?
+                        Lupa sandi?
                       </button>
                     </div>
                     <div className="relative group">
-                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#c2cab0]/40 group-focus-within:text-[#ccff80] transition-colors" />
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-light)] group-focus-within:text-[var(--brand-600)] transition-colors" />
                       <input
                         id="login-password"
                         type={showPassword ? "text" : "password"}
@@ -386,12 +465,12 @@ function LoginForm() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full bg-[#272b28]/50 border border-white/5 rounded-2xl py-4 pl-12 pr-12 focus:outline-none focus:border-[#ccff80]/50 focus:ring-4 focus:ring-[#ccff80]/5 transition-all text-[#e1e3de] placeholder-[#c2cab0]/20"
+                        className="w-full bg-white border border-[var(--brand-200)] rounded-xl py-3.5 pl-12 pr-12 focus:outline-none focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-50)] transition-all text-[var(--brand-950)] placeholder:text-[var(--text-light)]"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[#c2cab0]/40 hover:text-[#ccff80]"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-light)] hover:text-[var(--brand-600)] transition-colors"
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
@@ -401,48 +480,25 @@ function LoginForm() {
                   <button
                     type="submit"
                     disabled={loading || !!lockoutUntil}
-                    className="w-full bg-[#ccff80] hover:bg-[#b2f746] text-[#213600] font-bold py-4 rounded-2xl transition-all hover:shadow-[0_0_30px_rgba(163,230,53,0.3)] flex items-center justify-center gap-2 mt-4 disabled:opacity-50 disabled:cursor-not-allowed group"
+                    className="w-full bg-[var(--brand-600)] hover:bg-[var(--brand-700)] text-white font-bold py-3.5 rounded-xl transition-all shadow-[0_8px_20px_rgba(45,122,79,0.2)] hover:shadow-[0_12px_25px_rgba(45,122,79,0.3)] hover:-translate-y-0.5 flex items-center justify-center gap-2 mt-8 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none group"
                   >
                     {loading ? (
                       <Loader2 className="h-5 w-5 animate-spin" />
                     ) : lockoutUntil ? (
                       `Terkunci (${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')})`
                     ) : (
-                      "Login"
+                      "Masuk"
                     )}
                     {!loading && !lockoutUntil && <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />}
                   </button>
                 </form>
 
-                <div className="mt-8 pt-6 border-t border-white/5">
-                  <div className="grid grid-cols-3 gap-2 mb-6">
-                    {[
-                      { value: "4.5K+", label: "Porsi tersalur" },
-                      { value: "320+", label: "Donatur aktif" },
-                      { value: "12 Kota", label: "Jangkauan" },
-                    ].map((stat, i) => (
-                      <div
-                        key={stat.label}
-                        className={`text-center px-1 ${i !== 0 ? "border-l border-white/5" : ""}`}
-                      >
-                        <div className="font-serif text-xl text-[#ccff80] font-bold leading-none">{stat.value}</div>
-                        <div className="text-[9px] uppercase tracking-[0.18em] text-[#c2cab0]/65 font-bold mt-1.5">
-                          {stat.label}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center justify-center gap-2 mb-4">
-                    <ShieldCheck className="h-3.5 w-3.5 text-[#ccff80]/70" />
-                    <span className="text-[10px] uppercase tracking-[0.22em] text-[#c2cab0]/60 font-bold">
-                      Koneksi aman & terenkripsi
-                    </span>
-                  </div>
-
-                  <p className="text-center text-sm text-[#c2cab0]">
+                <div className="mt-8 pt-8 border-t border-[var(--brand-100)]">
+                  <p className="text-center text-sm text-[var(--text-mid)]">
                     Belum punya akun?{" "}
-                    <Link href="/register" className="text-[#ccff80] font-bold hover:underline">Daftar di sini</Link>
+                    <Link href="/register" className="text-[var(--brand-600)] font-bold hover:underline">
+                      Daftar sekarang
+                    </Link>
                   </p>
                 </div>
               </motion.div>
@@ -456,36 +512,38 @@ function LoginForm() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.4 }}
+                className="bg-white rounded-3xl shadow-[var(--shadow-soft)] p-8 sm:p-12 w-full border border-[var(--brand-100)]"
               >
                 <button
                   type="button"
                   onClick={() => setMode("login")}
-                  className="flex items-center gap-2 text-[#c2cab0] hover:text-[#ccff80] transition-colors mb-10 text-[10px] font-bold uppercase tracking-widest"
+                  className="flex items-center gap-2 text-[var(--text-mid)] hover:text-[var(--brand-600)] transition-colors mb-8 text-xs font-bold uppercase tracking-widest"
                 >
-                  <ArrowLeft className="h-4 w-4" /> Kembali ke halaman masuk
+                  <ArrowLeft className="h-4 w-4" /> Kembali
                 </button>
 
-                <div className="text-center mb-10">
-                  <div className="inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-[#ccff80]/10 text-[#ccff80] mb-6">
-                    <ShieldCheck className="h-8 w-8" />
+                <div className="mb-10 text-center lg:text-left">
+                  <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--brand-50)] text-[var(--brand-600)] mb-6 border border-[var(--brand-100)]">
+                    <ShieldCheck className="h-7 w-7" />
                   </div>
-                  <h1 className="font-serif text-4xl text-[#e1e3de] mb-2">Reset kata sandi</h1>
-                  <p className="font-sans text-[#c2cab0] text-sm leading-relaxed">Masukkan email Anda untuk menerima tautan reset kata sandi.</p>
+                  <h2 className="text-3xl font-bold mb-2 text-[var(--brand-950)]">Lupa kata sandi?</h2>
+                  <p className="text-[var(--text-mid)] text-sm">Masukkan email yang terdaftar, kami akan mengirimkan tautan reset.</p>
                 </div>
 
                 {notification.message && (
-                  <div className={`mb-6 p-4 rounded-2xl text-sm font-semibold border ${
-                    notification.type === "success" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"
+                  <div className={`mb-6 p-4 rounded-2xl text-sm font-semibold border flex items-start gap-3 ${
+                    notification.type === "success" ? "bg-[var(--brand-50)] text-[var(--brand-700)] border-[var(--brand-200)]" : "bg-red-50 text-red-600 border-red-200"
                   }`}>
-                    {notification.message}
+                    {notification.type === "success" ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <div className="w-2 h-2 mt-1.5 rounded-full bg-red-500 shrink-0" />}
+                    <span>{notification.message}</span>
                   </div>
                 )}
 
-                <form onSubmit={handleResetStep1} className="space-y-8">
+                <form onSubmit={handleResetStep1} className="space-y-6">
                   <div className="space-y-2">
-                    <label htmlFor="reset-email" className="text-[10px] uppercase tracking-[0.2em] text-[#c2cab0] font-bold ml-1">Alamat Email</label>
+                    <label htmlFor="reset-email" className="block font-semibold text-[var(--brand-950)] text-sm">Email</label>
                     <div className="relative group">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#c2cab0]/40 group-focus-within:text-[#ccff80] transition-colors" />
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-light)] group-focus-within:text-[var(--brand-600)] transition-colors" />
                       <input
                         id="reset-email"
                         type="email"
@@ -494,7 +552,7 @@ function LoginForm() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="hello@bagipangan.org"
-                        className="w-full bg-[#272b28]/50 border border-white/5 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#ccff80]/50 focus:ring-4 focus:ring-[#ccff80]/5 transition-all text-[#e1e3de]"
+                        className="w-full bg-white border border-[var(--brand-200)] rounded-xl py-3.5 pl-12 pr-4 focus:outline-none focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-50)] transition-all text-[var(--brand-950)] placeholder:text-[var(--text-light)]"
                       />
                     </div>
                   </div>
@@ -502,9 +560,9 @@ function LoginForm() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-[#ccff80] text-[#213600] py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 group"
+                    className="w-full bg-[var(--brand-600)] hover:bg-[var(--brand-700)] text-white font-bold py-3.5 rounded-xl transition-all shadow-[0_8px_20px_rgba(45,122,79,0.2)] hover:shadow-[0_12px_25px_rgba(45,122,79,0.3)] hover:-translate-y-0.5 flex items-center justify-center gap-2 mt-8 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none group"
                   >
-                    {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Kirim tautan reset"}
+                    {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Kirim tautan"}
                     {!loading && <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />}
                   </button>
                 </form>
@@ -519,54 +577,63 @@ function LoginForm() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.4 }}
+                className="bg-white rounded-3xl shadow-[var(--shadow-soft)] p-8 sm:p-12 w-full border border-[var(--brand-100)]"
               >
-                <div className="text-center mb-10">
-                  <div className="inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-[#ccff80]/10 text-[#ccff80] mb-6">
-                    <Lock className="h-8 w-8" />
+                <div className="mb-10 text-center lg:text-left">
+                  <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--brand-50)] text-[var(--brand-600)] mb-6 border border-[var(--brand-100)]">
+                    <Lock className="h-7 w-7" />
                   </div>
-                  <h1 className="font-serif text-4xl text-[#e1e3de] mb-2">Kata sandi baru</h1>
-                  <p className="font-sans text-[#c2cab0] text-sm leading-relaxed">Akun terverifikasi. Buat kata sandi baru yang kuat.</p>
+                  <h2 className="text-3xl font-bold mb-2 text-[var(--brand-950)]">Kata sandi baru</h2>
+                  <p className="text-[var(--text-mid)] text-sm">Silakan buat kata sandi baru untuk akun Anda.</p>
                 </div>
 
                 {notification.message && (
-                  <div className={`mb-6 p-4 rounded-2xl text-sm font-semibold border ${
-                    notification.type === "success" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"
+                  <div className={`mb-6 p-4 rounded-2xl text-sm font-semibold border flex items-start gap-3 ${
+                    notification.type === "success" ? "bg-[var(--brand-50)] text-[var(--brand-700)] border-[var(--brand-200)]" : "bg-red-50 text-red-600 border-red-200"
                   }`}>
-                    {notification.message}
+                    {notification.type === "success" ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <div className="w-2 h-2 mt-1.5 rounded-full bg-red-500 shrink-0" />}
+                    <span>{notification.message}</span>
                   </div>
                 )}
 
-                <form onSubmit={handleResetStep2} className="space-y-6">
+                <form onSubmit={handleResetStep2} className="space-y-5">
                   <div className="space-y-2">
-                    <label htmlFor="new-password" className="text-[10px] uppercase tracking-[0.2em] text-[#c2cab0] font-bold ml-1">Kata Sandi Baru</label>
+                    <label htmlFor="new-password" className="block font-semibold text-[var(--brand-950)] text-sm">Sandi Baru</label>
                     <div className="relative group">
-                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#c2cab0]/40 group-focus-within:text-[#ccff80] transition-colors" />
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-light)] group-focus-within:text-[var(--brand-600)] transition-colors" />
                       <input
                         id="new-password"
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         name="new-password"
                         autoComplete="new-password"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full bg-[#272b28]/50 border border-white/5 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#ccff80]/50 focus:ring-4 focus:ring-[#ccff80]/5 transition-all text-[#e1e3de]"
+                        className="w-full bg-white border border-[var(--brand-200)] rounded-xl py-3.5 pl-12 pr-12 focus:outline-none focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-50)] transition-all text-[var(--brand-950)] placeholder:text-[var(--text-light)]"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-light)] hover:text-[var(--brand-600)] transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label htmlFor="confirm-password" className="text-[10px] uppercase tracking-[0.2em] text-[#c2cab0] font-bold ml-1">Konfirmasi Kata Sandi</label>
+                    <label htmlFor="confirm-password" className="block font-semibold text-[var(--brand-950)] text-sm">Konfirmasi Sandi Baru</label>
                     <div className="relative group">
-                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#c2cab0]/40 group-focus-within:text-[#ccff80] transition-colors" />
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-light)] group-focus-within:text-[var(--brand-600)] transition-colors" />
                       <input
                         id="confirm-password"
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         name="confirm-password"
                         autoComplete="new-password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full bg-[#272b28]/50 border border-white/5 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#ccff80]/50 focus:ring-4 focus:ring-[#ccff80]/5 transition-all text-[#e1e3de]"
+                        className="w-full bg-white border border-[var(--brand-200)] rounded-xl py-3.5 pl-12 pr-12 focus:outline-none focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-50)] transition-all text-[var(--brand-950)] placeholder:text-[var(--text-light)]"
                       />
                     </div>
                   </div>
@@ -574,26 +641,17 @@ function LoginForm() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-[#ccff80] text-[#213600] py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 group mt-4"
+                    className="w-full bg-[var(--brand-600)] hover:bg-[var(--brand-700)] text-white font-bold py-3.5 rounded-xl transition-all shadow-[0_8px_20px_rgba(45,122,79,0.2)] hover:shadow-[0_12px_25px_rgba(45,122,79,0.3)] hover:-translate-y-0.5 flex items-center justify-center gap-2 mt-8 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none group"
                   >
-                    {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Perbarui kata sandi"}
-                    {!loading && <CheckCircle2 className="h-4 w-4" />}
+                    {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Simpan sandi"}
+                    {!loading && <CheckCircle2 className="h-5 w-5" />}
                   </button>
                 </form>
               </motion.div>
             )}
           </AnimatePresence>
         </motion.div>
-      </main>
-
-      {/* Footer */}
-      <footer className="w-full py-12 mt-auto bg-[#1A3A32]/40 backdrop-blur-md border-t border-white/5 relative z-10 flex flex-col items-center px-8 gap-6">
-        <div className="flex flex-col md:flex-row justify-between items-center w-full max-w-7xl gap-6">
-          <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-[#c2cab0]/40 text-center md:text-left">
-            © {new Date().getFullYear()} BagiPangan. Menumbuhkan keberlanjutan komunitas.
-          </p>
-        </div>
-      </footer>
+      </div>
     </div>
   );
 }

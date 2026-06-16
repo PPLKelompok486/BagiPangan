@@ -57,18 +57,8 @@ export function ProblemStatement() {
           {problemStats.map((stat, index) => (
             <motion.div
               key={stat.label}
-              className="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-colors"
+              className="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-[rgba(168,230,61,0.3)] hover:bg-[rgba(255,255,255,0.08)]"
               variants={createFadeSideVariants(reducedMotion, "right")}
-              whileHover={
-                reducedMotion
-                  ? undefined
-                  : {
-                      borderColor: "rgba(168, 230, 61, 0.3)",
-                      backgroundColor: "rgba(255, 255, 255, 0.08)",
-                      y: -4,
-                    }
-              }
-              transition={{ type: "spring", stiffness: 260, damping: 25 }}
             >
               <p className="bagi-display text-3xl font-semibold text-[var(--lime)] sm:text-4xl">
                 {stat.value}

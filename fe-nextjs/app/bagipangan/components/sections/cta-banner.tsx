@@ -4,6 +4,7 @@ import { motion, useInView, useReducedMotion } from "framer-motion";
 import { useRef } from "react";
 import { Button } from "../ui/button";
 import { createFadeUpVariants, createStaggerContainer } from "../../lib/motion";
+import { cn } from "../../lib/cn";
 import { useSmoothScroll } from "../../providers/smooth-scroll-provider";
 
 export function CtaBanner() {
@@ -20,29 +21,13 @@ export function CtaBanner() {
       id="cta"
       ref={ref}
     >
-      {/* Radial glow behind content */}
+      {/* Radial glow behind content — using CSS keyframes is much cheaper than JS
+          and standard blur is lighter on VRAM than blur-3xl */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 flex items-center justify-center"
+        className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-30"
       >
-        <motion.div
-          animate={
-            rm
-              ? undefined
-              : { scale: [1, 1.15, 1], opacity: [0.08, 0.15, 0.08] }
-          }
-          className="h-[700px] w-[700px] rounded-full bg-[var(--brand-500)] blur-3xl"
-          transition={
-            rm
-              ? { duration: 0 }
-              : {
-                  duration: 9,
-                  ease: "easeInOut",
-                  repeat: Number.POSITIVE_INFINITY,
-                  repeatType: "mirror",
-                }
-          }
-        />
+        <div className="h-[500px] w-[500px] rounded-full bg-[radial-gradient(circle,var(--brand-500)_0%,transparent_70%)]" />
       </div>
 
       {/* Decorative corner blobs */}
@@ -66,12 +51,8 @@ export function CtaBanner() {
           className="mb-8 inline-flex items-center gap-3 rounded-full border border-white/12 bg-white/8 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-white/75 shadow-[0_12px_30px_rgba(0,0,0,0.12)] backdrop-blur"
           variants={createFadeUpVariants(rm)}
         >
-          <motion.span
-            animate={rm ? undefined : { opacity: [0.5, 1, 0.5], scale: [1, 1.12, 1] }}
-            className="h-2 w-2 rounded-full bg-[var(--lime)]"
-            transition={
-              rm ? { duration: 0 } : { duration: 1.9, repeat: Number.POSITIVE_INFINITY }
-            }
+          <span
+            className={cn("h-2 w-2 rounded-full bg-[var(--lime)]", !rm && "bagi-animate-pulse-subtle")}
           />
           Mulai Hari Ini
         </motion.div>

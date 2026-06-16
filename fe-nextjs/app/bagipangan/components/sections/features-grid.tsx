@@ -1,10 +1,10 @@
 "use client";
 
-import { motion, useInView, useReducedMotion, type Variants } from "framer-motion";
-import { useCallback, useRef, useState } from "react";
+import { motion, useInView, useMotionValue, useReducedMotion, useSpring, useTransform, type Variants } from "framer-motion";
+import { useCallback, useRef } from "react";
 import { features } from "../../data";
 import { cn } from "../../lib/cn";
-import { createFadeUpVariants, createStaggerContainer, compute3DTilt, computeSpotlight } from "../../lib/motion";
+import { createFadeUpVariants, createStaggerContainer, computeSpotlight } from "../../lib/motion";
 import { SectionHeader } from "../ui/section-header";
 
 const sizeClasses: Record<string, string> = {
@@ -28,50 +28,90 @@ function TiltCard({
   spotlightColor: string;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
-  const [tilt, setTilt] = useState({ rotateX: 0, rotateY: 0 });
-  const [spotlight, setSpotlight] = useState("");
-  const [isHovered, setIsHovered] = useState(false);
+  const spotlightRef = useRef<HTMLDivElement>(null);
+  // Cache rect on mouseEnter — avoids forced layout read on every mousemove
+  const cachedRect = useRef<DOMRect | null>(null);
+
+  // useMotionValue + useSpring → tilt updates skip React render cycle entirely
+  const rawRotateX = useMotionValue(0);
+  const rawRotateY = useMotionValue(0);
+  const rawY = useMotionValue(0);
+  const rotateX = useSpring(rawRotateX, { stiffness: 260, damping: 25 });
+  const rotateY = useSpring(rawRotateY, { stiffness: 260, damping: 25 });
+  const y = useSpring(rawY, { stiffness: 260, damping: 25 });
+
+  const handleMouseEnter = useCallback(() => {
+    // Single getBoundingClientRect() read on enter — not on every move
+    if (reducedMotion || !cardRef.current) return;
+    cachedRect.current = cardRef.current.getBoundingClientRect();
+    rawY.set(-8);
+    if (cardRef.current) {
+      cardRef.current.style.willChange = "transform";
+    }
+  }, [reducedMotion, rawY]);
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {
-      if (reducedMotion || !cardRef.current) return;
-      const rect = cardRef.current.getBoundingClientRect();
-      const { rotateX, rotateY } = compute3DTilt(e.clientX, e.clientY, rect, 10);
-      setTilt({ rotateX, rotateY });
-      setSpotlight(computeSpotlight(e.clientX, e.clientY, rect, spotlightColor, 300));
+      if (reducedMotion || !cachedRect.current) return;
+      const rect = cachedRect.current;
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const percentX = (e.clientX - centerX) / (rect.width / 2);
+      const percentY = (e.clientY - centerY) / (rect.height / 2);
+
+      // Write motion values directly — zero React re-renders
+      rawRotateX.set(-percentY * 10);
+      rawRotateY.set(percentX * 10);
+
+      // Write spotlight directly to DOM via ref — no setState, no re-render
+      if (spotlightRef.current) {
+        spotlightRef.current.style.backgroundImage = computeSpotlight(
+          e.clientX,
+          e.clientY,
+          rect,
+          spotlightColor,
+          300,
+        );
+        spotlightRef.current.style.opacity = "1";
+      }
     },
-    [reducedMotion, spotlightColor],
+    [reducedMotion, rawRotateX, rawRotateY, spotlightColor],
   );
 
   const handleMouseLeave = useCallback(() => {
-    setTilt({ rotateX: 0, rotateY: 0 });
-    setSpotlight("");
-    setIsHovered(false);
-  }, []);
+    cachedRect.current = null;
+    rawRotateX.set(0);
+    rawRotateY.set(0);
+    rawY.set(0);
+    if (spotlightRef.current) {
+      spotlightRef.current.style.opacity = "0";
+    }
+    if (cardRef.current) {
+      cardRef.current.style.willChange = "auto";
+    }
+  }, [rawRotateX, rawRotateY, rawY]);
 
   return (
     <motion.article
       ref={cardRef}
       className={className}
       variants={variants}
+      onMouseEnter={handleMouseEnter}
       onMouseMove={handleMouseMove}
-      onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={handleMouseLeave}
-      animate={{
-        rotateX: reducedMotion ? 0 : tilt.rotateX,
-        rotateY: reducedMotion ? 0 : tilt.rotateY,
-        y: isHovered && !reducedMotion ? -8 : 0,
-      }}
-      transition={{ type: "spring", stiffness: 260, damping: 25 }}
-      style={{ perspective: "600px", transformStyle: "preserve-3d" }}
+      style={
+        reducedMotion
+          ? { perspective: "600px" }
+          : { perspective: "600px", transformStyle: "preserve-3d", rotateX, rotateY, y }
+      }
     >
-      {/* Spotlight overlay */}
-      {spotlight && (
-        <div
-          className="pointer-events-none absolute inset-0 z-10 rounded-[2rem] transition-opacity duration-200"
-          style={{ backgroundImage: spotlight, opacity: isHovered ? 1 : 0 }}
-        />
-      )}
+      {/* Spotlight overlay — updated via direct DOM ref, no re-renders */}
+      <div
+        ref={spotlightRef}
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-10 rounded-[2rem]"
+        style={{ opacity: 0, transition: "opacity 200ms" }}
+      />
       {children}
     </motion.article>
   );
@@ -134,22 +174,17 @@ export function FeaturesGrid() {
                     isFull && "items-center text-center",
                   )}
                 >
-                  <motion.div
+                  <div
                     className={cn(
-                      "flex items-center justify-center rounded-2xl",
+                      "flex items-center justify-center rounded-2xl transition-all duration-300",
                       isLarge || isFull
                         ? "h-16 w-16 bg-white/15 text-white"
                         : "h-14 w-14 bg-[var(--brand-100)] text-[var(--brand-700)]",
+                      "group-hover:scale-110 group-hover:rotate-6"
                     )}
-                    whileHover={
-                      reducedMotion
-                        ? undefined
-                        : { scale: 1.15, rotate: 12 }
-                    }
-                    transition={{ type: "spring", stiffness: 300, damping: 15 }}
                   >
                     <Icon className={isLarge ? "h-7 w-7" : "h-6 w-6"} />
-                  </motion.div>
+                  </div>
                   <h3
                     className={cn(
                       "mt-6 font-semibold",

@@ -36,7 +36,7 @@ const variantStyles: Record<ButtonVariant, string> = {
 
 function sharedClassName(variant: ButtonVariant, className?: string) {
   return cn(
-    "relative inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold tracking-tight transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent overflow-hidden sm:px-6",
+    "relative inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold tracking-tight transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent overflow-hidden sm:px-6 hover:scale-[1.02] hover:-translate-y-[2px] hover:shadow-[0_20px_36px_rgba(13,43,26,0.16)] active:scale-[0.98]",
     variantStyles[variant],
     className,
   );
@@ -60,6 +60,7 @@ function useRipple(reducedMotion: boolean | null) {
         size,
       };
       setRipples((prev) => [...prev, ripple]);
+      // Use animation duration (600ms) for cleanup
       setTimeout(() => {
         setRipples((prev) => prev.filter((r) => r.id !== ripple.id));
       }, 600);
@@ -100,14 +101,6 @@ export function Button(props: LinkButtonProps | ActionButtonProps) {
   const reducedMotion = useReducedMotion();
   const { addRipple, rippleElements } = useRipple(reducedMotion);
 
-  const hover = reducedMotion
-    ? {}
-    : {
-        scale: 1.02,
-        y: -2,
-        boxShadow: "0 20px 36px rgba(13, 43, 26, 0.16)",
-      };
-  const tap = reducedMotion ? {} : { scale: 0.98 };
   const variant = props.variant ?? "primary";
 
   if ("href" in props && props.href) {
@@ -119,34 +112,30 @@ export function Button(props: LinkButtonProps | ActionButtonProps) {
         href={linkProps.href}
         onClick={linkProps.onClick}
       >
-        <motion.span
+        <span
           className={cn("group/btn", sharedClassName(variant, linkProps.className))}
-          whileHover={hover}
-          whileTap={tap}
           onMouseDown={addRipple}
         >
           <Shine reducedMotion={reducedMotion} />
           {rippleElements}
           <span className="relative z-10">{linkProps.children}</span>
-        </motion.span>
+        </span>
       </Link>
     );
   }
 
   const actionProps = props as ActionButtonProps;
   return (
-    <motion.button
+    <button
       aria-label={actionProps.ariaLabel}
       className={cn("group/btn", sharedClassName(variant, actionProps.className))}
       onClick={actionProps.onClick}
       type={actionProps.type ?? "button"}
-      whileHover={hover}
-      whileTap={tap}
       onMouseDown={addRipple}
     >
       <Shine reducedMotion={reducedMotion} />
       {rippleElements}
       <span className="relative z-10">{actionProps.children}</span>
-    </motion.button>
+    </button>
   );
 }

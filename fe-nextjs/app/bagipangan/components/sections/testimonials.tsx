@@ -2,7 +2,7 @@
 
 import { motion, useInView, useReducedMotion } from "framer-motion";
 import { Star } from "lucide-react";
-import { useRef, useState } from "react";
+import { useRef, useState, useLayoutEffect } from "react";
 import { testimonials } from "../../data";
 import { createFadeUpVariants, createStaggerContainer } from "../../lib/motion";
 import { SectionHeader } from "../ui/section-header";
@@ -15,14 +15,26 @@ export function Testimonials() {
   const carouselRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
 
-  // Calculate drag constraints after render
-  const updateConstraints = () => {
-    if (carouselRef.current && innerRef.current) {
-      const containerWidth = carouselRef.current.offsetWidth;
-      const contentWidth = innerRef.current.scrollWidth;
-      setDragConstraintLeft(-(contentWidth - containerWidth));
-    }
-  };
+  // Calculate drag constraints via ResizeObserver (avoids Layout thrash on interaction)
+  useLayoutEffect(() => {
+    if (!carouselRef.current || !innerRef.current) return;
+    
+    const updateConstraints = () => {
+      if (carouselRef.current && innerRef.current) {
+        const containerWidth = carouselRef.current.offsetWidth;
+        const contentWidth = innerRef.current.scrollWidth;
+        setDragConstraintLeft(-(contentWidth - containerWidth));
+      }
+    };
+
+    updateConstraints();
+
+    const observer = new ResizeObserver(updateConstraints);
+    observer.observe(carouselRef.current);
+    observer.observe(innerRef.current);
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <section
@@ -60,7 +72,6 @@ export function Testimonials() {
         <div
           ref={carouselRef}
           className="mt-14 cursor-grab active:cursor-grabbing md:hidden"
-          onPointerEnter={updateConstraints}
         >
           <motion.div
             ref={innerRef}
@@ -117,18 +128,8 @@ function TestimonialCard({
 
   const card = (
     <motion.article
-      className="flex h-full flex-col rounded-[2rem] border border-[var(--brand-100)] bg-[var(--cream)] p-7 shadow-[var(--shadow-card)] transition-shadow"
+      className="flex h-full flex-col rounded-[2rem] border border-[var(--brand-100)] bg-[var(--cream)] p-7 shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-1.5 hover:border-[var(--brand-300)] hover:shadow-[0_24px_60px_rgba(13,43,26,0.12)]"
       variants={isDraggable ? undefined : createFadeUpVariants(reducedMotion)}
-      whileHover={
-        rm
-          ? undefined
-          : {
-              y: -6,
-              borderColor: "var(--brand-300)",
-              boxShadow: "0 24px 60px rgba(13, 43, 26, 0.12)",
-            }
-      }
-      transition={{ type: "spring", stiffness: 260, damping: 25 }}
     >
       <div className="flex items-center gap-4">
         <motion.div

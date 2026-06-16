@@ -67,21 +67,17 @@ export function FAQ() {
 
                 <button
                   aria-expanded={isOpen}
-                  className="flex w-full items-center justify-between gap-4 py-6 pl-4 text-left transition-colors"
+                  className="flex w-full items-center justify-between gap-4 py-6 pl-4 text-left group"
                   onClick={() => toggle(index)}
                   type="button"
                 >
-                  <motion.span
-                    className="text-lg font-semibold text-[var(--brand-900)]"
-                    animate={
-                      isOpen
-                        ? { color: "var(--brand-600)" }
-                        : { color: "var(--brand-900)" }
-                    }
-                    transition={rm ? { duration: 0 } : { duration: 0.2 }}
+                  <span
+                    className={`text-lg font-semibold transition-colors duration-200 ${
+                      isOpen ? "text-[var(--brand-600)]" : "text-[var(--brand-900)]"
+                    }`}
                   >
                     {faq.question}
-                  </motion.span>
+                  </span>
                   <motion.span
                     animate={{ rotate: isOpen ? 180 : 0 }}
                     className="flex-shrink-0 text-[var(--brand-600)]"
@@ -102,30 +98,22 @@ export function FAQ() {
                   />
                 )}
 
-                <AnimatePresence initial={false}>
-                  {isOpen && (
-                    <motion.div
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      initial={{ height: 0, opacity: 0 }}
-                      style={{ overflow: "hidden" }}
-                      transition={
-                        rm
-                          ? { duration: 0 }
-                          : { duration: 0.35, ease: [0.16, 1, 0.3, 1] }
-                      }
+                {/* Accordion expand — using CSS Grid is much cheaper than animating height directly */}
+                <div
+                  className="grid transition-[grid-template-rows] duration-300 ease-out"
+                  style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
+                >
+                  <div className="overflow-hidden">
+                    <motion.p
+                      className="pb-6 pl-4 text-base leading-7 text-[var(--text-mid)]"
+                      initial={{ y: rm ? 0 : -8, opacity: rm ? 1 : 0 }}
+                      animate={isOpen ? { y: 0, opacity: 1 } : { y: rm ? 0 : -8, opacity: 0 }}
+                      transition={rm ? { duration: 0 } : { duration: 0.3, delay: 0.05 }}
                     >
-                      <motion.p
-                        className="pb-6 pl-4 text-base leading-7 text-[var(--text-mid)]"
-                        initial={{ y: rm ? 0 : -8, opacity: rm ? 1 : 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={rm ? { duration: 0 } : { duration: 0.3, delay: 0.05 }}
-                      >
-                        {faq.answer}
-                      </motion.p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                      {faq.answer}
+                    </motion.p>
+                  </div>
+                </div>
               </motion.div>
             );
           })}

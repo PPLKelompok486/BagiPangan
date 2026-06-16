@@ -25,14 +25,24 @@ export function Navbar() {
   const navContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    let rafId: number | null = null;
+
     const onScroll = () => {
-      setScrolled(window.scrollY > 80);
+      // Gate state update behind rAF — decouples event firing from render
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        setScrolled(window.scrollY > 80);
+      });
     };
 
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
 
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+    };
   }, []);
 
   // Track active section via IntersectionObserver
@@ -59,7 +69,8 @@ export function Navbar() {
     return () => observers.forEach((o) => o.disconnect());
   }, []);
 
-  // Update hover pill position
+  // Update hover pill position — store translateX + width instead of left/width
+  // to keep the pill animation on the compositor (no layout triggers)
   const handleNavHover = (index: number) => {
     if (!navContainerRef.current) return;
     const btn = navItemsRef.current[index];
@@ -94,17 +105,20 @@ export function Navbar() {
 
   return (
     <>
-      <motion.nav
-        animate={{
-          backgroundColor: scrolled ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0)",
-          backdropFilter: scrolled ? "blur(16px)" : "blur(0px)",
-          borderColor: scrolled ? "rgba(214,245,227,0.9)" : "rgba(255,255,255,0)",
-          boxShadow: scrolled ? "0 14px 34px rgba(13,43,26,0.08)" : "0 0 0 rgba(0,0,0,0)",
-          paddingTop: scrolled ? "12px" : "16px",
-          paddingBottom: scrolled ? "12px" : "16px",
-        }}
-        className="fixed inset-x-0 top-0 z-50 border-b"
-        transition={reducedMotion ? { duration: 0 } : { duration: 0.3, ease: "easeOut" }}
+      {/*
+        Use plain <nav> + CSS class — avoids Framer Motion animating
+        paddingTop/paddingBottom (layout trigger) and backgroundColor/
+        backdropFilter/boxShadow (paint triggers) on every scroll event.
+        CSS transitions on these properties are handled by the browser's
+        style engine and don't stall the compositor.
+      */}
+      <nav
+        className={cn(
+          "fixed inset-x-0 top-0 z-50 border-b transition-[background-color,backdrop-filter,border-color,box-shadow,padding] duration-300 ease-out",
+          scrolled
+            ? "border-[rgba(214,245,227,0.9)] bg-white/92 shadow-[0_14px_34px_rgba(13,43,26,0.08)] backdrop-blur-[16px] py-3"
+            : "border-transparent bg-transparent py-4",
+        )}
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-10">
           <Link aria-label="BagiPangan" href="/bagipangan">
@@ -116,7 +130,8 @@ export function Navbar() {
             className="relative hidden items-center gap-1 rounded-full border border-white/10 px-2 py-1 lg:flex"
             onMouseLeave={handleNavLeave}
           >
-            {/* Animated hover pill */}
+            {/* Animated hover pill — uses translateX+scaleX (compositor-only).
+                Avoid animating left/width which trigger Layout each frame. */}
             <AnimatePresence>
               {hoverRect && (
                 <motion.div
@@ -124,18 +139,20 @@ export function Navbar() {
                     "absolute top-1 h-[calc(100%-8px)] rounded-full",
                     scrolled ? "bg-[var(--brand-50)]" : "bg-white/10",
                   )}
-                  initial={{ opacity: 0 }}
+                  initial={{ opacity: 0, scaleX: 0.85 }}
                   animate={{
                     opacity: 1,
-                    left: hoverRect.left,
+                    scaleX: 1,
+                    x: hoverRect.left,
                     width: hoverRect.width,
                   }}
-                  exit={{ opacity: 0 }}
+                  exit={{ opacity: 0, scaleX: 0.85 }}
                   transition={
                     reducedMotion
                       ? { duration: 0 }
                       : { type: "spring", stiffness: 350, damping: 30 }
                   }
+                  style={{ transformOrigin: "left center", left: 0 }}
                   layoutId="nav-hover-pill"
                 />
               )}
@@ -254,7 +271,7 @@ export function Navbar() {
             </AnimatePresence>
           </button>
         </div>
-      </motion.nav>
+      </nav>
 
       <AnimatePresence>
         {open ? (

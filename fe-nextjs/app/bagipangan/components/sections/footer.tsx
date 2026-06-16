@@ -88,20 +88,16 @@ function FooterLinkList({ links, reducedMotion }: Readonly<FooterLinkListProps>)
   return (
     <ul className="space-y-3" role="list">
       {links.map((link) => (
-        <motion.li
+        <li
           key={link.href}
-          transition={
-            reducedMotion ? { duration: 0 } : { duration: 0.18, ease: "easeOut" }
-          }
-          whileHover={reducedMotion ? undefined : { x: 4 }}
         >
           <Link
-            className="text-sm text-white/55 transition-colors duration-150 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-300)]"
+            className="inline-block text-sm text-white/55 transition-all duration-200 hover:translate-x-1 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-300)]"
             href={link.href}
           >
             {link.label}
           </Link>
-        </motion.li>
+        </li>
       ))}
     </ul>
   );
@@ -116,17 +112,15 @@ type SocialButtonProps = {
 function SocialButton({ social, size = "md", reducedMotion }: Readonly<SocialButtonProps>) {
   const sizeClass = size === "md" ? "h-11 w-11" : "h-9 w-9";
   return (
-    <motion.a
+    <a
       aria-label={`${social.label} BagiPangan`}
-      className={`inline-flex ${sizeClass} items-center justify-center rounded-full border border-white/12 bg-white/6 text-white/55 transition-colors duration-150 hover:border-white/22 hover:bg-white/12 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-300)]`}
+      className={`inline-flex ${sizeClass} items-center justify-center rounded-full border border-white/12 bg-white/6 text-white/55 transition-all duration-200 hover:scale-[1.08] active:scale-[0.92] hover:border-white/22 hover:bg-white/12 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-300)]`}
       href={social.href}
       rel="noopener noreferrer"
       target="_blank"
-      whileHover={reducedMotion ? undefined : { scale: 1.08 }}
-      whileTap={reducedMotion ? undefined : { scale: 0.92 }}
     >
       {social.icon}
-    </motion.a>
+    </a>
   );
 }
 
@@ -187,37 +181,22 @@ export function Footer() {
             </h3>
             <div className="space-y-6">
               <div>
-                <motion.div
-                  transition={
-                    reducedMotion
-                      ? { duration: 0 }
-                      : { duration: 0.18, ease: "easeOut" }
-                  }
-                  whileHover={reducedMotion ? undefined : { x: 4 }}
-                >
+                <div className="mb-2">
                   <a
-                    className="text-sm text-white/55 transition-colors duration-150 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-300)]"
+                    className="inline-block text-sm text-white/55 transition-all duration-200 hover:translate-x-1 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-300)]"
                     href="mailto:halo@bagipangan.id"
                   >
                     halo@bagipangan.id
                   </a>
-                </motion.div>
-                <motion.div
-                  className="mt-2"
-                  transition={
-                    reducedMotion
-                      ? { duration: 0 }
-                      : { duration: 0.18, ease: "easeOut" }
-                  }
-                  whileHover={reducedMotion ? undefined : { x: 4 }}
-                >
+                </div>
+                <div>
                   <a
-                    className="text-sm text-white/55 transition-colors duration-150 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-300)]"
+                    className="inline-block text-sm text-white/55 transition-all duration-200 hover:translate-x-1 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-300)]"
                     href="mailto:partner@bagipangan.id"
                   >
                     partner@bagipangan.id
                   </a>
-                </motion.div>
+                </div>
               </div>
 
               {/* Social icons in contact column */}
