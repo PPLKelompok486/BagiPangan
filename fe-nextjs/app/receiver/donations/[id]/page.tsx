@@ -197,7 +197,7 @@ export default function DonationDetailPage({ params }: Props) {
   const showClaimCompleted = hasClaim && donation.status === "completed";
   const showUnavailable = !canClaim && !showClaimActions && !showClaimCompleted;
   const isSuccess = notification.includes("berhasil");
-  const heroImage = imageForDonation(donation);
+  const heroImage = donation.image ? resolveUploadUrl(donation.image) : imageForDonation(donation);
   const hoursLeft = (Date.parse(donation.pickup_time) - Date.now()) / 3_600_000;
   const isUrgent = hoursLeft >= 0 && hoursLeft < 2;
 
